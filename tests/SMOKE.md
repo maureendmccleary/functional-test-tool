@@ -47,6 +47,10 @@ cp tests/fixtures/evaluation-performed.json /tmp/smoke.json
       show the saved values
 - [ ] The **Assistive Technology** menu expands, and the checked boxes match the
       test's saved AT list
+- [ ] **New Functional Test** opens the editor with 5 blank steps already
+      present, and focus in the Name field
+- [ ] Typing into one of those 5 steps leaves the other four empty -- they are
+      separate steps, not one step shown five times
 - [ ] Editing a step's instructions and clicking away keeps the new text
 - [ ] **New Step** opens the step-number dialog; **Add Step** inserts a step at
       the chosen position and renumbers the ones after it

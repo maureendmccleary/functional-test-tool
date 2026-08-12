@@ -1,7 +1,9 @@
 import type { FunctionalTest } from '../types.js';
 import { AT_ALIAS_MAP, normalizeOperatingSystem } from '../domain/migration.js';
 import { collectSelectedValues, normalizeSelectionValues } from '../domain/selection-utils.js';
-import { emptyFunctionalTest, getTestComments } from '../domain/functional-test.js';
+import {
+    DEFAULT_NEW_TEST_STEPS, emptyFunctionalTest, getTestComments
+} from '../domain/functional-test.js';
 import { getCurrentTest, getEvaluation, setCurrentTestIndex } from '../state/store.js';
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
@@ -190,12 +192,12 @@ export function editTestButtonClicked(): void {
     populateEditor();
 }
 
-/** Appends an empty test and opens the editor on it. */
+/** Appends a test with the default blank steps and opens the editor on it. */
 export function newTestButtonClicked(): void {
     activateEditorForm();
     const evaluation = getEvaluation();
     setCurrentTestIndex(evaluation.tests.length);
-    evaluation.tests.push(emptyFunctionalTest());
+    evaluation.tests.push(emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS));
     populateEditor();
     requireEl("test-edit-name").focus();
 }

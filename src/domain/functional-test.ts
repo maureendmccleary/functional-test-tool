@@ -1,11 +1,23 @@
 import type { TestReport, TestRun, FunctionalTest } from '../types.js';
 
 /**
- * Creates a functional test with every field the editor form writes to.
+ * How many blank steps a functional test created from the editor starts with.
+ *
+ * Scripters were having to press "New Step" five times before writing anything.
  */
-export function emptyFunctionalTest(): FunctionalTest {
+export const DEFAULT_NEW_TEST_STEPS = 5;
+
+/**
+ * Creates a functional test with every field the editor form writes to.
+ *
+ * Each blank step is built separately. A shared step object would make typing
+ * into one instruction field change every other step at the same time.
+ *
+ * @param stepCount blank steps to start with; defaults to none
+ */
+export function emptyFunctionalTest(stepCount = 0): FunctionalTest {
     return {
-        steps: [],
+        steps: Array.from({ length: stepCount }, () => ({ instructions: "", issues: [] })),
         comments: [],
         operatingSystem: "",
         assistiveTechnologies: [],

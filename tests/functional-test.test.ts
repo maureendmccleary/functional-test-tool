@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import type { TestRun, FunctionalTest } from '../src/types.js';
-import { buildTestReport, emptyFunctionalTest, getTestComments } from '../src/domain/functional-test.js';
+import {
+    DEFAULT_NEW_TEST_STEPS, buildTestReport, emptyFunctionalTest, getTestComments
+} from '../src/domain/functional-test.js';
 import {
     emptyTestRun, ensureTestRunStepCount, findTestRunIndex
 } from '../src/domain/test-run.js';
@@ -18,6 +20,27 @@ describe('emptyFunctionalTest', () => {
     test('does not share arrays between calls', () => {
         emptyFunctionalTest().steps.push({ instructions: 'x', issues: [] });
         expect(emptyFunctionalTest().steps).toEqual([]);
+    });
+
+    test('starts with the requested number of blank steps', () => {
+        expect(emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS).steps).toEqual([
+            { instructions: '', issues: [] }, { instructions: '', issues: [] },
+            { instructions: '', issues: [] }, { instructions: '', issues: [] },
+            { instructions: '', issues: [] }
+        ]);
+    });
+
+    test('the editor default is five steps', () => {
+        expect(DEFAULT_NEW_TEST_STEPS).toBe(5);
+    });
+
+    test('gives each blank step its own object', () => {
+        const subject = emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS);
+        subject.steps[0].instructions = 'first';
+        subject.steps[0].issues.push({ description: 'x', findingURL: '', score: '1' });
+
+        expect(subject.steps[1].instructions).toBe('');
+        expect(subject.steps[1].issues).toEqual([]);
     });
 });
 
