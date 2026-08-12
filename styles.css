@@ -1,0 +1,140 @@
+button {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #006B74;
+    color: #ffffff;
+    border: 2px solid #006B74;
+    padding: 8px 16px;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #005860;
+    border-color: #005860;
+}
+
+button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px #006B74;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.field-error {
+    color: #B00020;
+    font-weight: bold;
+    margin: 4px 0;
+}
+
+[aria-invalid="true"] {
+    border: 2px solid #B00020;
+}
+
+.inactive {
+    display: none;
+}
+
+#perform-dialog::backdrop,
+#add-issue-dialog::backdrop,
+#generate-summary-dialog::backdrop,
+#eval-view-results-dialog::backdrop,
+#new-step-dialog::backdrop {
+    background-image: linear-gradient(45deg,
+            magenta, rebeccapurple,
+            dodgerblue, green);
+    opacity: 0.75;
+}
+
+#perform-dialog,
+#add-issue-dialog,
+#view-results-dialog,
+#generate-summary-dialog,
+#eval-view-results-dialog,
+#add-step-dialog {
+    width: 70%;
+    height: 70%;
+    border: 1px solid #000;
+padding: 20px;
+}
+
+.issue-aggregate {
+    width: 600px;
+    height: 400px;
+}
+
+.large-textarea {
+    width: 600px;
+    height: 400px;
+}
+
+.step-contents {
+    width: 600px;
+    height: 200px;
+}
+
+.issue-description {
+    width: 600px;
+    height: 200px;
+}
+
+table {
+    width: 75%;
+    border-collapse: collapse;
+    margin: 20px auto;
+}
+
+th {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+}
+
+td {
+    border: 1px solid #000;
+    padding: 10px;
+}
+
+tr {
+    height: 40px;
+}
+
+.close-button button {
+    position: absolute;
+    display: flex;
+    padding: 0px;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-color: #006B74;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-button button :hover {
+    background-color: red;
+    color: white;
+}
+
+.fa-trash {
+    color: darkred;
+}
+
+.fa-pencil {
+    color: darkgreen;
+}
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+}

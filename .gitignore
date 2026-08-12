@@ -1,0 +1,7 @@
+node_modules/
+dist/
+
+# Working notes for creating the GitHub issues; not part of the app.
+ISSUE-BACKLOG.md
+issues-to-create.json
+create-issues.sh

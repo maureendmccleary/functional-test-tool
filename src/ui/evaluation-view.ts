@@ -1,0 +1,110 @@
+import { normalizeEvaluation } from '../domain/migration.js';
+import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
+import { getEvaluation, setEvaluation } from '../state/store.js';
+import { fillListbox } from './controls.js';
+import { requireEl } from './dom.js';
+import { showStatusMessage } from './status.js';
+
+/**
+ * The native file dialogs steal focus while open. When one closes, focus
+ * returns to the page but screen readers need a moment to settle before they
+ * will announce an aria-live update; announcing immediately gets missed.
+ */
+const LOAD_ANNOUNCE_DELAY_MS = 100;
+const SAVE_ANNOUNCE_DELAY_MS = 500;
+
+/** Status region for each control that can trigger a save. */
+const SAVE_STATUS_TARGETS: Record<string, { elementId: string; message: string }> = {
+    'test-save': { elementId: 'test-editor-msg', message: 'Functional Test saved successfully.' },
+    'perform-save': { elementId: 'perform-msg', message: 'Functional Test data saved!' }
+};
+const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg', message: 'Evaluation data saved.' };
+
+const UNSUPPORTED_BROWSER_MESSAGE =
+    'This browser cannot open or save files. Use Chrome or Edge.';
+
+/**
+ * True when the user dismissed a file dialog rather than something failing.
+ *
+ * Both pickers reject with an AbortError on cancel, which is a normal outcome
+ * and must not be reported as an error.
+ */
+function isCancellation(error: unknown): boolean {
+    return error instanceof DOMException && error.name === 'AbortError';
+}
+
+/** Announces a message after the file dialog has released focus. */
+function announce(elementId: string, message: string, delayMs: number): void {
+    setTimeout(() => showStatusMessage(elementId, message), delayMs);
+}
+
+/**
+ * Prompts for an evaluation file, loads it, and enables the controls it
+ * unlocks. Cancelling the dialog leaves the loaded evaluation untouched.
+ */
+export async function loadEvalButtonClicked(e: Event): Promise<void> {
+    e.preventDefault();
+    if (!isFilePickerSupported()) {
+        showStatusMessage('evaluation-msg', UNSUPPORTED_BROWSER_MESSAGE, 0);
+        return;
+    }
+
+    let evaluation;
+    try {
+        evaluation = normalizeEvaluation(await loadFile());
+    } catch (error) {
+        if (isCancellation(error)) {
+            return;
+        }
+        const detail = error instanceof SyntaxError
+            ? 'That file is not valid JSON.'
+            : 'That file could not be read.';
+        showStatusMessage('evaluation-msg', `${detail} No evaluation was loaded.`, 0);
+        return;
+    }
+
+    fillListbox(evaluation.tests.map((test) => test.name), 'select-test');
+    setEvaluation(evaluation);
+
+    requireEl('eval-view-results').removeAttribute('disabled');
+    requireEl('eval-save-file').removeAttribute('disabled');
+    requireEl('edit-test').removeAttribute('disabled');
+    requireEl('perform-test').removeAttribute('disabled');
+
+    const evalMsg = requireEl('evaluation-msg');
+    evalMsg.textContent = '';
+    const summary = evaluation.tests.length === 1
+        ? 'Evaluation data loaded! 1 functional test.'
+        : `Evaluation data loaded! ${evaluation.tests.length} functional tests.`;
+    setTimeout(() => { evalMsg.textContent = summary; }, LOAD_ANNOUNCE_DELAY_MS);
+}
+
+/**
+ * Writes the evaluation to a file, then announces success in the region
+ * belonging to whichever control was used.
+ *
+ * The control is read before the first `await`: once the picker opens, dispatch
+ * has finished and `event.currentTarget` is null.
+ */
+export async function saveFileButtonClick(e: Event): Promise<void> {
+    e.preventDefault();
+    const sourceId = (e.currentTarget as HTMLElement | null)?.id;
+    const status = (sourceId && SAVE_STATUS_TARGETS[sourceId]) || DEFAULT_SAVE_STATUS;
+
+    if (!isFilePickerSupported()) {
+        showStatusMessage(status.elementId, UNSUPPORTED_BROWSER_MESSAGE, 0);
+        return;
+    }
+
+    try {
+        await saveEvaluation(getEvaluation());
+    } catch (error) {
+        if (isCancellation(error)) {
+            return;
+        }
+        announce(status.elementId, 'The file could not be saved.', SAVE_ANNOUNCE_DELAY_MS);
+        return;
+    }
+
+    announce(status.elementId, status.message, SAVE_ANNOUNCE_DELAY_MS);
+}

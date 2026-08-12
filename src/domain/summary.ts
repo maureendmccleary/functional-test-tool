@@ -1,0 +1,60 @@
+import type { Evaluation } from '../types.js';
+import { issuesText } from './scoring.js';
+import { getTestComments } from './functional-test.js';
+
+/**
+ * Severity headings, in order, for scores 1 through 4.
+ *
+ * The punctuation really is inconsistent: the first two carry a colon, the last
+ * two do not. This text is written into saved evaluation files and is matched
+ * by BANNER_PATTERN below, so it cannot be tidied. See ARCHITECTURE.md.
+ */
+export const SUMMARY_BANNERS = ["Stoppers:", "Major Issues:", "Minor Issues", "Advisory"];
+
+/**
+ * Matches a banner together with the punctuation and line break that follow it,
+ * so a Generate Summary -> Save round trip stores the issue text alone.
+ *
+ * Matching only the banner *word* left a stray ":\n" or "\n" at the front of
+ * every stored comment. Files saved before this was corrected still contain
+ * those characters; they are cosmetic and only affect display of old data.
+ */
+const BANNER_PATTERN = /(?:Stoppers|Major Issues|Minor Issues|Advisory):?[ \t]*\r?\n?/g;
+
+/** Assembles the comment block, emitting only severities that have issues. */
+export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
+    let summaryText = "";
+    let issueString = "";
+    for (let score = 0; score < 4; score++) {
+        issueString = issuesText(allIssues, score + 1);
+        if (issueString !== "") {
+            summaryText += SUMMARY_BANNERS[score];
+            summaryText += "\n";
+            summaryText += issueString;
+            summaryText += "\n\n";
+        }
+    }
+    return summaryText;
+}
+
+/** Splits an edited comment block back into individual comments. */
+export function splitSummaryComments(commentSummary: string): string[] {
+    const commentsWithoutBanners = commentSummary.replace(BANNER_PATTERN, "").trim();
+    return commentsWithoutBanners.split("\n\n");
+}
+
+/** The evaluation-wide comment block: every functional test, numbered, with its comments. */
+export function buildOverallCommentsText(evaluation: Evaluation): string {
+    let commentsText = "";
+    evaluation.tests.forEach((test, ucIndex) => {
+        commentsText += `${ucIndex + 1}. ${test.name}\n\n`;
+        const testComments = getTestComments(test);
+        if (testComments.length === 0) {
+            commentsText += "No issues.";
+        } else {
+            commentsText += testComments.join("\n\n");
+        }
+        commentsText += "\n\n";
+    });
+    return commentsText;
+}

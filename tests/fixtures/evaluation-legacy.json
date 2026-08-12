@@ -1,0 +1,191 @@
+{
+    "evalUCs": [
+        {
+            "steps": [
+                {
+                    "instructions": "Open the catalogue home page and confirm the \"Search the catalogue\" landmark is reachable.",
+                    "issues": [
+                        {
+                            "description": "The search landmark is labelled \"region\" with no accessible name, so screen reader users cannot tell it apart from the three other regions on the page.",
+                            "findingURL": "https://findings.example.org/landmark-names",
+                            "score": "3"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Enter \"tide pools\" in the search field and submit the search.",
+                    "issues": []
+                },
+                {
+                    "instructions": "Confirm the results heading announces how many titles matched.",
+                    "issues": [
+                        {
+                            "description": "The result count is rendered before the live region is created, so NVDA announces nothing. Users must navigate to the heading to discover how many titles matched.",
+                            "findingURL": "https://findings.example.org/live-regions",
+                            "score": "2"
+                        },
+                        {
+                            "description": "The results heading is a <div> styled to look like a heading, so it does not appear in the heading list.",
+                            "findingURL": "https://findings.example.org/semantic-headings",
+                            "score": "3"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Filter the results to \"Available now\" using the Availability checkboxes.",
+                    "issues": [
+                        {
+                            "description": "Availability is shown with a coloured dot and no text alternative, so there is no way to tell a title on the shelf from one already on loan.",
+                            "findingURL": "https://findings.example.org/colour-alone",
+                            "score": "1"
+                        },
+                        {
+                            "description": "The Availability checkboxes are not wrapped in a fieldset, so their shared purpose is never announced.",
+                            "findingURL": "https://findings.example.org/grouping",
+                            "score": "4"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Open the first result and review the title detail page.",
+                    "issues": [
+                        {
+                            "description": "Focus stays on the results list when the detail page loads, so screen reader users are not told the page changed.",
+                            "findingURL": "https://findings.example.org/focus-on-navigation",
+                            "score": "2"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Activate \"Place hold\" and confirm the hold was placed.",
+                    "issues": [
+                        {
+                            "description": "The hold confirmation appears in a dialog that never receives focus. Screen reader users have no indication the hold succeeded.",
+                            "findingURL": "https://findings.example.org/dialog-focus",
+                            "score": "1"
+                        },
+                        {
+                            "description": "The dialog's close button is an unlabelled icon button, announced only as \"button\".",
+                            "findingURL": "https://findings.example.org/icon-button-names",
+                            "score": "2"
+                        }
+                    ]
+                }
+            ],
+            "stepCount": 6,
+            "startlocation": "https://catalogue.example.org",
+            "name": "Search the catalogue and place a hold",
+            "goal": "Find a title and place a hold on it.",
+            "oses": [
+                "Windows"
+            ],
+            "ats": [
+                "NVDA"
+            ],
+            "score": 1,
+            "comments": [
+                "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
+                "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
+            ]
+        },
+        {
+            "steps": [
+                {
+                    "instructions": "Sign in and open \"My account\".",
+                    "issues": []
+                },
+                {
+                    "instructions": "Navigate to the \"Borrowed items\" tab.",
+                    "issues": []
+                },
+                {
+                    "instructions": "Locate the item due soonest and activate \"Renew\".",
+                    "issues": []
+                },
+                {
+                    "instructions": "Confirm the new due date is shown for that item.",
+                    "issues": []
+                }
+            ],
+            "stepCount": 4,
+            "startlocation": "https://catalogue.example.org",
+            "name": "Renew a borrowed item",
+            "goal": "Renew an item that is due soon.",
+            "oses": [
+                "Windows"
+            ],
+            "ats": [
+                "NVDA"
+            ],
+            "comments": []
+        },
+        {
+            "steps": [
+                {
+                    "instructions": "From \"My account\", open \"Notification preferences\".",
+                    "issues": []
+                },
+                {
+                    "instructions": "Change the reminder timing from \"3 days before\" to \"1 week before\".",
+                    "issues": [
+                        {
+                            "description": "The reminder timing control is a custom listbox that cannot be operated with the arrow keys; only a mouse click changes the value.",
+                            "findingURL": "https://findings.example.org/keyboard-operable",
+                            "score": "1"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Switch the notification channel from email to text message.",
+                    "issues": [
+                        {
+                            "description": "Choosing \"Text message\" reveals a phone number field, but the new field is not announced and focus is not moved to it.",
+                            "findingURL": "https://findings.example.org/dynamic-content",
+                            "score": "2"
+                        },
+                        {
+                            "description": "The phone number field has a placeholder but no persistent label.",
+                            "findingURL": "https://findings.example.org/visible-labels",
+                            "score": "2"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Save the preferences.",
+                    "issues": [
+                        {
+                            "description": "The \"Preferences saved\" message is styled as a toast and disappears after four seconds, which is not long enough to find it.",
+                            "findingURL": "https://findings.example.org/timed-messages",
+                            "score": "3"
+                        }
+                    ]
+                },
+                {
+                    "instructions": "Reload the page and confirm the saved values persist.",
+                    "issues": [
+                        {
+                            "description": "After reload the reminder timing shows the old value until the page is refreshed a second time.",
+                            "findingURL": "https://findings.example.org/state-persistence",
+                            "score": "2"
+                        }
+                    ]
+                }
+            ],
+            "stepCount": 5,
+            "startlocation": "https://catalogue.example.org",
+            "name": "Update notification preferences",
+            "goal": "Change how and when borrowing reminders are sent.",
+            "oses": [],
+            "ats": [],
+            "score": 1,
+            "comments": [
+                "The reminder timing control cannot be operated with the keyboard at all.",
+                "Switching notification channel reveals a phone number field that is neither announced nor labelled."
+            ]
+        }
+    ],
+    "comments": [
+        "Two tasks cannot be completed with a screen reader: placing a hold, and changing the reminder timing.",
+        "Status messages across the catalogue are either not announced or disappear before they can be read."
+    ]
+}
