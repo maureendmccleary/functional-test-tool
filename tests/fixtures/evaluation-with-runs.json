@@ -31,8 +31,8 @@
             "startlocation": "https://catalogue.example.org",
             "name": "Search the catalogue and place a hold",
             "goal": "Find a title and place a hold on it.",
-            "operator": "Screen reader user",
-            "application": "Firefox",
+            "operator": "Standard User",
+            "application": "Chrome",
             "oses": "Windows",
             "ats": [
                 "NVDA",
