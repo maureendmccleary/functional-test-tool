@@ -28,11 +28,16 @@ function initialize(): void {
     requireEl("new-step-btn").addEventListener('click', newStepButtonClick);
 
     // No form here is ever meant to submit: every control has a click handler
-    // and the data lives in the store. Left unguarded, pressing Enter in a text
-    // field implicitly submits, which reloads the page and silently drops the
-    // whole evaluation. The issue dialog is the live case -- Finding URL is the
-    // only text input in its form, so Enter submits it even though that form
-    // has no submit button at all.
+    // and the data lives in the store. A submit reloads the page and silently
+    // drops the whole evaluation, so this is a backstop, not a nicety.
+    //
+    // Two ways in. Buttons that omit `type` default to type="submit", and most
+    // of their handlers open with preventDefault -- but `toggleMenu` (the AT
+    // menu button) and `deleteStepButtonClicked` (a step's delete button) do
+    // not, so for those two this loop is the only thing between a click and a
+    // reload. Separately, pressing Enter in a lone text field submits its form:
+    // the issue dialog is the live case, where Finding URL is the only text
+    // input even though that form has no submit button at all.
     for (const form of document.forms) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
