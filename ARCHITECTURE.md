@@ -26,6 +26,11 @@ src/
 never the reverse. `domain/` imports nothing but `types.ts`. Nothing outside
 `state/` holds application state.
 
+The rule is enforced, not just documented: `eslint.config.js` restricts imports
+of `**/ui/*`, `**/state/*`, and `**/io/*` from `src/**`, and lifts that
+restriction only for `src/ui/`, `src/io/`, and `src/main.ts`. `npm run lint`
+fails on a violation.
+
 `ui/issue-dialog.ts` and `ui/perform-view.ts` import each other — perform-view
 builds the buttons that open the dialog, and the dialog refreshes them when it
 closes. The cycle is fine: both sides only call hoisted function declarations,
@@ -103,7 +108,6 @@ checklist for the dialog, focus, and file-picker behavior.
 
 - **Bundle `docx`** — `npm i docx@8.5.0` and a real import, replacing the CDN
   script. Removes the network dependency and retires the `any`.
-- **ESLint**, with an import rule that enforces the layering above.
 - **jsdom tests** for the view modules against the real `index.html`, replacing
   parts of `tests/SMOKE.md`.
 - **`noUncheckedIndexedAccess`** — expect noise from the pervasive array
