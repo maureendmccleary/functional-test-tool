@@ -88,3 +88,15 @@ Automated tests cover pure logic only, and use a hand-written DOM stub
 it after changes in those areas.
 
 Fixtures use the *older* field names on purpose, so loading them exercises the migration.
+
+## Commits and Pull Requests
+When we are discussing making new set of changes to the project, always create a new branch. This branch will target main in the repo.
+Remember when we are working and ready to commit changes to Github, never include a link or content of the session.
+Only include descriptions of the changes.
+Never include links to our conversation.
+When we are ready for a pull request, never add Co-Authored-By-Claude  annotations.
+Only include descriptions of the changes.
+Never include emojis.
+
+
+
