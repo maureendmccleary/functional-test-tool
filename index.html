@@ -16,9 +16,9 @@
     <div>
       <h1>Functional Accessibility Testing Tool</h1>
       <div role="group" aria-label="Evaluation File Actions">
-        <button id="eval-file-load">Load Evaluation File...</button>
-        <button id="eval-view-results" disabled>View Evaluation Results</button>
-        <button id="eval-save-file" disabled>Save Evaluation File</button>
+        <button type="button" id="eval-file-load">Load Evaluation File...</button>
+        <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
+        <button type="button" id="eval-save-file" disabled>Save Evaluation File</button>
       </div>
       <br><br>
       <label for="select-test">Select a Functional Test: </label>
@@ -34,7 +34,7 @@
     </div>
   </form>
   <form id="test-editor-form" class="inactive" name="testEditor">
-    <button disabled id="test-save">Save</button>
+    <button type="button" disabled id="test-save">Save</button>
     <div role="group" id="test-edit" aria-labelledby="test-header-edit">
       <h1>Functional Test Editor</h1>
       <br><br>
@@ -66,7 +66,7 @@
       <br>
       <br>
 
-      <button id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
+      <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
         Assistive Technology
       </button>
       <div id="test-edit-at-menu" role="menu" tabindex="0" hidden></div>
@@ -96,8 +96,8 @@
         <button type="button" autofocus id="perform-dialog-close" aria-label="close"><span
             class="fa fa-times"></span></button>
       </div>
-      <button id="perform-save">Save Functional Test Results</button>
-      <button id="view-test-results">View Results</button>
+      <button type="button" id="perform-save">Save Functional Test Results</button>
+      <button type="button" id="view-test-results">View Results</button>
       <h2 id="dialog-title">Perform Functional Test</h2>
       <br><br>
       <p id="perform-msg" role="status" aria-live="assertive"></p>
@@ -124,7 +124,7 @@
       <h4>Issues</h4>
       <ul id="perform-step-results[0]"></ul>
       <br><br>
-      <button id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]">Add Issue</button>
+      <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]">Add Issue</button>
       <br><br>
     </form>
     <div>

@@ -36,6 +36,7 @@ function addStepToEditor(stepNumber: number): HTMLElement {
     const newStepLabel = createStepLabelForEditor(stepNumber);
     const newStep = createStepForEditor(stepNumber);
     const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
     deleteBtn.setAttribute("id", `step-delete[${stepNumber}]`);
     deleteBtn.setAttribute("aria-label", "delete");
     const deleteIcon = document.createElement("span");

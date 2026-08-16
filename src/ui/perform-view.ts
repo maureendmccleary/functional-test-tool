@@ -123,6 +123,7 @@ function createStepResultsForPerform(stepNumber: number): HTMLElement {
 function createAddIssueButtonForPerform(stepNumber: number): HTMLElement {
     const addIssueButton = document.createElement('BUTTON');
     const stepLabelId = getStepLabelIdForPerform(stepNumber);
+    (addIssueButton as HTMLButtonElement).type = "button";
     (addIssueButton as HTMLButtonElement).innerText = "Add Issue";
     addIssueButton.addEventListener('click', addIssueButtonClick);
     addIssueButton.setAttribute("id", `add-issue-btn[${stepNumber}]`);
