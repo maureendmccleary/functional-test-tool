@@ -27,14 +27,14 @@ hand, so a broken handler often leaves a plausible-looking screen behind.
 Work on a scratch copy so you never overwrite a fixture:
 
 ```bash
-cp tests/fixtures/evaluation-performed.json /tmp/smoke.json
+cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 ```
 
 ## 1. Load an evaluation
 
 - [ ] **Load Evaluation File...** opens the picker; choose `/tmp/smoke.json`
-- [ ] "Select a Functional Test" fills with three names, "Take Quiz, select plan,
-      and checkout" first
+- [ ] "Select a Functional Test" fills with three names, "Search the catalogue
+      and place a hold" first
 - [ ] **View Evaluation Results**, **Save Evaluation File**, **Edit Functional
       Test**, and **Perform** all become enabled
 - [ ] "Evaluation data loaded!" is announced (it appears ~100 ms after the picker
@@ -42,7 +42,7 @@ cp tests/fixtures/evaluation-performed.json /tmp/smoke.json
 
 ## 2. Edit a functional test
 
-- [ ] Select "Cancel Subscriptionh", then **Edit Functional Test**
+- [ ] Select "Renew a borrowed item", then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
 - [ ] The **Assistive Technology** menu expands, and the checked boxes match the
@@ -63,13 +63,15 @@ cp tests/fixtures/evaluation-performed.json /tmp/smoke.json
 
 ## 3. Perform a functional test
 
-- [ ] Select "Take Quiz, select plan, and checkout", then **Perform**
+- [ ] Select "Search the catalogue and place a hold", then **Perform**
 - [ ] Every step shows its instructions, its recorded issues, and an **Add Issue**
       button
-- [ ] Changing **Assistive Technology Type** switches to that AT's recorded
-      results; switching back restores the first set
-- [ ] Choosing an AT with no saved results yields empty issue lists and a score of
-      `Not Rated (-1)`, and does not lose the other AT's data
+- [ ] Changing **Assistive Technology Type** between NVDA and JAWS switches to
+      that AT's recorded results (both have runs saved, with different issues);
+      switching back restores the first set
+- [ ] Add a third AT to this test in the editor, reopen **Perform**, and select
+      it: empty issue lists and a score of `Not Rated (-1)`, with the NVDA and
+      JAWS data still intact
 - [ ] Adding a step in the editor and reopening **Perform** shows the new step
       with an empty issue list
 
@@ -123,11 +125,11 @@ cp tests/fixtures/evaluation-performed.json /tmp/smoke.json
 
 ```bash
 diff <(node -e 'console.log(JSON.stringify(JSON.parse(require("fs").readFileSync("/tmp/smoke.json","utf8")), null, 2))') \
-     tests/golden/evaluation-performed.json
+     tests/golden/evaluation-with-runs.json
 ```
 
   Any difference here is a state-shape regression. The automated golden test
-  (`tests/golden-roundtrip.test.js`) covers the same ground for the load path;
+  (`tests/golden-roundtrip.test.ts`) covers the same ground for the load path;
   this step confirms the browser's save path agrees.
 
 ## Deliberate oddities -- not regressions
