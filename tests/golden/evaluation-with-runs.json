@@ -34,8 +34,8 @@
       "stepCount": 6,
       "name": "Search the catalogue and place a hold",
       "goal": "Find a title and place a hold on it.",
-      "operator": "Screen reader user",
-      "application": "Firefox",
+      "operator": "Standard User",
+      "application": "Chrome",
       "score": 1,
       "comments": [
         "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
