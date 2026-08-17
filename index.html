@@ -66,10 +66,20 @@
       <br>
       <br>
 
+      <!--
+        A disclosure, not a menu, and the container below is deliberately bare:
+        no role, no name, no tabindex. Each of those adds a stop between the
+        button and the first checkbox. role="menu" is the worst of them, since
+        it also throws a screen reader into menu mode, but a named role="group"
+        is announced as a grouping boundary in browse mode and tabindex makes
+        the container a tab stop. The disclosure relationship is carried by the
+        button's aria-expanded and aria-controls, and the checkboxes inside
+        carry their own labels, so the container needs nothing.
+      -->
       <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
         Assistive Technology
       </button>
-      <div id="test-edit-at-menu" role="menu" tabindex="0" hidden></div>
+      <div id="test-edit-at-menu" hidden></div>
 
       <br>
       <br>

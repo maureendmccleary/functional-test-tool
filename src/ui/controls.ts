@@ -1,7 +1,11 @@
 import type { ListboxOption, TypeCatalogEntry } from '../types.js';
 import { findEl, requireEl } from './dom.js';
 
-/** Builds the checkbox menu of assistive technologies from the at-types catalogue. */
+/**
+ * Builds the checkbox list of assistive technologies from the at-types
+ * catalogue. The container is the body of a disclosure and carries no role of
+ * its own, so these are plain checkboxes, not menuitemcheckboxes.
+ */
 export function fillCheckboxMenu(
     jobj: Record<string, TypeCatalogEntry>,
     checkboxMenuId: string,
@@ -103,7 +107,10 @@ export function appendNewlines(div: HTMLElement): void {
     div.appendChild(document.createElement("br"));
 }
 
-/** Expand/collapse handler for an aria-expanded button with aria-controls. */
+/**
+ * Expand/collapse handler for a disclosure button: an aria-expanded button
+ * whose aria-controls names the region it shows and hides.
+ */
 export function toggleMenu(e: Event): void {
     const target = e.target as HTMLElement;
     const isExpanded = target.getAttribute('aria-expanded') === 'true';
