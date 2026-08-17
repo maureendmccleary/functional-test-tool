@@ -45,8 +45,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Select "Renew a borrowed item", then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
-- [ ] The **Assistive Technology** menu expands, and the checked boxes match the
-      test's saved AT list
+- [ ] The **Assistive Technology** button expands its group, and the checked
+      boxes match the test's saved AT list
+- [ ] With the group expanded, one Tab from the **Assistive Technology** button
+      lands on the first checkbox -- there is no stop on the container in
+      between
+- [ ] With a screen reader running, one Down arrow from the button also reaches
+      the first checkbox: no menu mode, no "grouping" boundary, no stop of any
+      kind on the container
+- [ ] The checkboxes read as checkboxes, not as menu items
+- [ ] Escape while focus is inside the group collapses it and returns focus to
+      the **Assistive Technology** button
 - [ ] **New Functional Test** opens the editor with 5 blank steps already
       present, and focus in the Name field
 - [ ] Typing into one of those 5 steps leaves the other four empty -- they are
