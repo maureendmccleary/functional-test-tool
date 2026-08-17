@@ -56,6 +56,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] The checkboxes read as checkboxes, not as menu items
 - [ ] Escape while focus is inside the group collapses it and returns focus to
       the **Assistive Technology** button
+- [ ] Reopen the editor several times, then press Escape inside the group once:
+      it collapses once, with no repeated announcement
 - [ ] **New Functional Test** opens the editor with 5 blank steps already
       present, and focus in the Name field
 - [ ] Typing into one of those 5 steps leaves the other four empty -- they are

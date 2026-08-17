@@ -111,6 +111,25 @@ export function changeFormField(e: Event): void {
     (test as unknown as Record<string, unknown>)[target.name] = collectSelectedValues(checkedElements);
 }
 
+/**
+ * Wires the Assistive Technology disclosure button to the checkbox group it
+ * shows and hides. Called once at startup, not from `populateEditor`, so the
+ * Escape handler is not re-registered every time a test is opened.
+ */
+function addAssistiveTechnologyDisclosureEvents(): void {
+    const atMenuBtn = requireEl('test-edit-at-btn');
+    const atMenu = requireEl("test-edit-at-menu");
+
+    atMenuBtn.addEventListener("click", toggleMenu);
+    atMenu.addEventListener('keydown', (e) => {
+        if ((e as KeyboardEvent).key === "Escape") {
+            atMenuBtn.setAttribute("aria-expanded", "false");
+            atMenu.hidden = true;
+            atMenuBtn.focus(); // Return focus to button
+        }
+    });
+}
+
 /** Wires blur and change handlers onto every field of the editor form. */
 export function addFormEvents(): void {
     const form = requireForm("testEditor");
@@ -126,6 +145,7 @@ export function addFormEvents(): void {
             field.addEventListener('change', changeFormField);
         }
     }
+    addAssistiveTechnologyDisclosureEvents();
 }
 
 /** Fills the editor with the current test and renders its steps and comments. */
@@ -138,8 +158,6 @@ export function populateEditor(): void {
     requireEl<HTMLInputElement>("test-edit-operator").value = test.operator || "";
     requireEl<HTMLInputElement>("test-edit-application").value = test.application || "";
     requireEl<HTMLInputElement>("test-edit-operating-system").value = normalizeOperatingSystem(test.operatingSystem);
-    const atMenuBtn = requireEl('test-edit-at-btn');
-    atMenuBtn.addEventListener("click", toggleMenu);
     const atMenu = requireEl("test-edit-at-menu");
     const atOptions = atMenu.querySelectorAll("label");
     const existingAts = normalizeSelectionValues(test.assistiveTechnologies || [], AT_ALIAS_MAP);
@@ -152,13 +170,6 @@ export function populateEditor(): void {
         }
         checkbox.checked = existingAts.some((value) => value === checkbox.value || value === atOptions[j].textContent?.trim());
     }
-    atMenu.addEventListener('keydown', (e) => {
-        if ((e as KeyboardEvent).key === "Escape") {
-            atMenuBtn.setAttribute("aria-expanded", "false");
-            atMenu.hidden = true;
-            atMenuBtn.focus(); // Return focus to button
-        }
-    });
     redrawSteps(test);
     const summaryList = requireEl("summary-list");
     while (summaryList.firstChild) {
