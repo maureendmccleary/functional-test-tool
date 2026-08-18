@@ -58,11 +58,35 @@ export interface FunctionalTest {
     runs: TestRun[];
 }
 
+/**
+ * A tester's verdict on one assistive technology across every test in the evaluation.
+ *
+ * Deliberately not derived from the runs. The report's per-AT "Overall Rating"
+ * is assigned by the tester after performing every test with that AT, and does
+ * not have to agree with the average or the minimum of those runs' scores.
+ */
+export interface AssistiveTechnologySummary {
+    assistiveTechnology: string;
+    /** Assigned by the tester; -1 until they set one, matching TestRun.score. */
+    overallRating: number;
+    significantIssues: string[];
+}
+
 /** A saved file: every functional test in one engagement, with evaluation-wide comments. */
 export interface Evaluation {
+    /**
+     * Cover page identity: the company the work is for, the thing being
+     * evaluated, and the name of this evaluation. Absent in files saved before
+     * these fields existed; normalizeEvaluation fills them with "".
+     */
+    workspace?: string;
+    asset?: string;
+    name?: string;
     tests: FunctionalTest[];
     score: number;
     comments?: string[];
+    /** One entry per assistive technology used; filled in by normalizeEvaluation. */
+    assistiveTechnologySummaries?: AssistiveTechnologySummary[];
 }
 
 /**

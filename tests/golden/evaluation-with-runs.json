@@ -338,5 +338,20 @@
       ]
     }
   ],
-  "score": 0
+  "score": 0,
+  "workspace": "",
+  "asset": "",
+  "name": "",
+  "assistiveTechnologySummaries": [
+    {
+      "assistiveTechnology": "NVDA",
+      "overallRating": -1,
+      "significantIssues": []
+    },
+    {
+      "assistiveTechnology": "JAWS",
+      "overallRating": -1,
+      "significantIssues": []
+    }
+  ]
 }

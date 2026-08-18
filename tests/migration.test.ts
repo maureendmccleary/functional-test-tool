@@ -160,3 +160,64 @@ describe('loading a file that already has runs', () => {
         expect(reloaded.tests.map((t) => t.runs.length)).toEqual([2, 1, 1]);
     });
 });
+
+describe('report identity fields', () => {
+    test('are empty strings in a file saved before they existed', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-legacy'));
+        expect(evaluation.workspace).toBe('');
+        expect(evaluation.asset).toBe('');
+        expect(evaluation.name).toBe('');
+    });
+
+    test('are trimmed and stringified when present', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [], workspace: '  Example Company  ', asset: 42, name: 'Q3 Evaluation'
+        });
+        expect(evaluation.workspace).toBe('Example Company');
+        expect(evaluation.asset).toBe('42');
+        expect(evaluation.name).toBe('Q3 Evaluation');
+    });
+});
+
+describe('assistive technology summaries', () => {
+    test('gains an empty summary for every assistive technology in use', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        expect(evaluation.assistiveTechnologySummaries)
+            .toEqual([
+                { assistiveTechnology: 'NVDA', overallRating: -1, significantIssues: [] },
+                { assistiveTechnology: 'JAWS', overallRating: -1, significantIssues: [] }
+            ]);
+    });
+
+    test('keeps a stored summary whose assistive technology is no longer assigned', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [],
+            assistiveTechnologySummaries: [
+                { assistiveTechnology: 'JAWS', overallRating: 2, significantIssues: ['kept'] }
+            ]
+        });
+        expect(evaluation.assistiveTechnologySummaries).toEqual([
+            { assistiveTechnology: 'JAWS', overallRating: 2, significantIssues: ['kept'] }
+        ]);
+    });
+
+    test('drops entries naming no assistive technology and repairs bad fields', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [],
+            assistiveTechnologySummaries: [
+                { assistiveTechnology: '  ', overallRating: 3, significantIssues: [] },
+                { assistiveTechnology: 'NVDA', overallRating: 'two', significantIssues: 'nope' }
+            ]
+        });
+        expect(evaluation.assistiveTechnologySummaries).toEqual([
+            { assistiveTechnology: 'NVDA', overallRating: -1, significantIssues: [] }
+        ]);
+    });
+
+    test('survives a load, save and reload without duplicating', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        const reloaded = normalizeEvaluation(JSON.parse(JSON.stringify(evaluation)));
+        expect(reloaded.assistiveTechnologySummaries)
+            .toEqual(evaluation.assistiveTechnologySummaries);
+    });
+});
