@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Evaluation, FunctionalTest, Issue } from '../src/types.js';
 import {
     buildScorecard, collectAssistiveTechnologies, findSummary,
-    groupRunsByAssistiveTechnology, runScore
+    groupRunsByAssistiveTechnology, runScore, stepScore
 } from '../src/domain/evaluation.js';
 
 /** An issue at the given severity, which is all the scoring cares about. */
@@ -80,6 +80,22 @@ describe('groupRunsByAssistiveTechnology', () => {
         expect(groups.map((group) => group.assistiveTechnology)).toEqual(['NVDA']);
     });
 
+    test('numbers each test by its place in the evaluation, not in the group', () => {
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [] }),
+            testWithRuns('two', { JAWS: [] }),
+            testWithRuns('three', { NVDA: [], JAWS: [] })
+        ]);
+        const groups = groupRunsByAssistiveTechnology(evaluation);
+        const positionsFor = (at: string) => groups
+            .find((group) => group.assistiveTechnology === at)!
+            .pairings.map((pairing) => pairing.position);
+        // "three" is third in the evaluation, so it is 3 under both ATs even
+        // though it is only the second use case listed under JAWS.
+        expect(positionsFor('NVDA')).toEqual([1, 3]);
+        expect(positionsFor('JAWS')).toEqual([2, 3]);
+    });
+
     test('skips runs with no assistive technology recorded', () => {
         const evaluation = evaluationOf([testWithRuns('one', { '': [], NVDA: [] })]);
         expect(groupRunsByAssistiveTechnology(evaluation)).toHaveLength(1);
@@ -95,6 +111,20 @@ describe('runScore', () => {
     test('is the most severe issue present', () => {
         const subject = testWithRuns('one', { NVDA: [issue('3'), issue('1'), issue('4')] });
         expect(runScore(subject.runs[0])).toBe(1);
+    });
+});
+
+describe('stepScore', () => {
+    test('is 5 for a step with no issues', () => {
+        expect(stepScore({ issues: [] })).toBe(5);
+    });
+
+    test('is the most severe issue on that step', () => {
+        expect(stepScore({ issues: [issue('4'), issue('2')] })).toBe(2);
+    });
+
+    test('ignores issues scored outside the scale', () => {
+        expect(stepScore({ issues: [issue('-1')] })).toBe(5);
     });
 });
 

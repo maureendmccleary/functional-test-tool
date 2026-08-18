@@ -1,5 +1,5 @@
 import type {
-    AssistiveTechnologySummary, Evaluation, FunctionalTest, TestRun
+    AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, TestRun
 } from '../types.js';
 import { issuesMap, minimumScore } from './scoring.js';
 
@@ -19,6 +19,15 @@ const HIGHEST_SCORE = 5;
 export interface RunPairing {
     test: FunctionalTest;
     run: TestRun;
+    /**
+     * The test's 1-based position in the evaluation, which the report prints
+     * as the use case number.
+     *
+     * Taken from the evaluation, not from the position within the group, so a
+     * script keeps the same number under every assistive technology it was
+     * performed with.
+     */
+    position: number;
 }
 
 /** Every run recorded against one assistive technology, in evaluation order. */
@@ -79,17 +88,18 @@ export function collectAssistiveTechnologies(tests: FunctionalTest[]): string[] 
 export function groupRunsByAssistiveTechnology(evaluation: Evaluation): AssistiveTechnologyGroup[] {
     const groups = new Map<string, RunPairing[]>();
 
-    (evaluation.tests || []).forEach((test) => {
+    (evaluation.tests || []).forEach((test, testIndex) => {
         (test.runs || []).forEach((run) => {
             const name = cleanName(run.assistiveTechnology);
             if (name === '') {
                 return;
             }
+            const pairing = { test, run, position: testIndex + 1 };
             const pairings = groups.get(name);
             if (pairings) {
-                pairings.push({ test, run });
+                pairings.push(pairing);
             } else {
-                groups.set(name, [{ test, run }]);
+                groups.set(name, [pairing]);
             }
         });
     });
@@ -108,6 +118,16 @@ export function groupRunsByAssistiveTechnology(evaluation: Evaluation): Assistiv
  */
 export function runScore(run: TestRun): number {
     return minimumScore(issuesMap(run));
+}
+
+/**
+ * The score for a single step: its most severe issue, or 5 when it has none.
+ *
+ * The same rule as `runScore` and as the perform dialog, so a step's score and
+ * the use case's score are read off the same scale.
+ */
+export function stepScore(step: { issues: Issue[] }): number {
+    return minimumScore(issuesMap({ steps: [step] }));
 }
 
 /** The summary stored for one assistive technology, or undefined when none is. */

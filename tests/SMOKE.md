@@ -151,6 +151,13 @@ Open that document and check:
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
 - [ ] Each use case has **two** tables: its metadata, then its steps
+- [ ] Use case names are numbered from 01, in evaluation order, in the contents,
+      the heading and the metadata table's Name row. The same script keeps the
+      same number under every assistive technology
+- [ ] The step table's columns are Step #, Main Success Case, Score, Issues
+      Encountered, in that order
+- [ ] A step with no issues scores 5; a step holding a stopper scores 1, **not**
+      an average of its issues
 - [ ] With a screen reader in the metadata table, moving to a value announces
       its field name -- "Goal", "Operator", "Start Location" -- rather than
       reading the value bare

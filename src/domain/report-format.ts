@@ -69,6 +69,17 @@ export function formatAssistiveTechnology(name: string, version: string | undefi
     return trimmed === '' ? name : `${name} ${trimmed}`;
 }
 
+/**
+ * A use case name with its number, for example "01 Review exit polls".
+ *
+ * `position` is 1-based and comes from the test's place in the evaluation, so
+ * the number identifies the script rather than its order under one assistive
+ * technology.
+ */
+export function formatUseCaseName(position: number, name: string): string {
+    return `${String(position).padStart(2, '0')} ${String(name || '').trim()}`.trim();
+}
+
 /** Joins the cover's asset and evaluation name, skipping whichever is blank. */
 export function buildCoverSubtitle(asset: string | undefined, name: string | undefined): string {
     return [asset, name]

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
     SCORE_LABELS, buildCoverSubtitle, formatAssistiveTechnology, formatOverallRating,
-    formatReportTimestamp, formatScore, scoreLabel
+    formatReportTimestamp, formatScore, formatUseCaseName, scoreLabel
 } from '../src/domain/report-format.js';
 
 describe('scoreLabel', () => {
@@ -47,6 +47,21 @@ describe('formatAssistiveTechnology', () => {
     test('leaves the name alone when no version is known', () => {
         expect(formatAssistiveTechnology('JAWS', undefined)).toBe('JAWS');
         expect(formatAssistiveTechnology('JAWS', '   ')).toBe('JAWS');
+    });
+});
+
+describe('formatUseCaseName', () => {
+    test('prepends the number, padded to two digits', () => {
+        expect(formatUseCaseName(1, 'Review exit polls')).toBe('01 Review exit polls');
+        expect(formatUseCaseName(12, 'Review exit polls')).toBe('12 Review exit polls');
+    });
+
+    test('does not truncate past ninety nine', () => {
+        expect(formatUseCaseName(100, 'Review exit polls')).toBe('100 Review exit polls');
+    });
+
+    test('leaves just the number when the name is blank', () => {
+        expect(formatUseCaseName(3, '   ')).toBe('03');
     });
 });
 

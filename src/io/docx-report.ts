@@ -1,12 +1,12 @@
 import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import {
-    buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore
+    buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore, stepScore
 } from '../domain/evaluation.js';
 import { buildTestReport } from '../domain/functional-test.js';
 import {
     SCORE_LABELS, SCORING_KEY_PARAGRAPHS, buildCoverSubtitle, formatAssistiveTechnology,
-    formatOverallRating, formatReportTimestamp, formatScore
+    formatOverallRating, formatReportTimestamp, formatScore, formatUseCaseName
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -195,9 +195,11 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(contentsEntry(
             group.assistiveTechnology, assistiveTechnologyBookmark(groupIndex), false
         ));
-        group.pairings.forEach(({ test }, pairingIndex) => {
+        group.pairings.forEach(({ test, position }, pairingIndex) => {
             children.push(contentsEntry(
-                String(test.name || ''), useCaseBookmark(groupIndex, pairingIndex), true
+                formatUseCaseName(position, String(test.name || '')),
+                useCaseBookmark(groupIndex, pairingIndex),
+                true
             ));
         });
     });
@@ -263,22 +265,25 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(bookmarkedHeading(
             group.assistiveTechnology, HeadingLevel.HEADING_2, assistiveTechnologyBookmark(groupIndex)
         ));
-        group.pairings.forEach(({ test, run }, pairingIndex) => {
+        group.pairings.forEach(({ test, run, position }, pairingIndex) => {
             appendFunctionalTest(
-                test, run, group.assistiveTechnology, useCaseBookmark(groupIndex, pairingIndex)
+                test, run, group.assistiveTechnology,
+                useCaseBookmark(groupIndex, pairingIndex), position
             );
         });
     });
 
     function appendFunctionalTest(
-        test: FunctionalTest, run: TestRun, assistiveTechnology: string, anchor: string
+        test: FunctionalTest, run: TestRun, assistiveTechnology: string,
+        anchor: string, position: number
     ): void {
         const report = buildTestReport(test, run);
         const score = runScore(run);
+        const useCaseName = formatUseCaseName(position, String(report.name || ''));
 
-        children.push(bookmarkedHeading(String(report.name || ''), HeadingLevel.HEADING_3, anchor));
+        children.push(bookmarkedHeading(useCaseName, HeadingLevel.HEADING_3, anchor));
         children.push(makeTable([], [
-            ['Name', String(report.name || '')],
+            ['Name', useCaseName],
             ['Goal', String(report.goal || '')],
             ['Operator', String(report.operator || '')],
             ['Start Location', String(report.startLocation || '')],
@@ -286,14 +291,18 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Application', String(report.application || '')]
         ], true));
 
-        const stepRows = report.steps.map((step) => {
+        const stepRows = report.steps.map((step, stepIndex) => {
             const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));
             return [
+                String(stepIndex + 1),
                 String(step.instructions || ''),
+                String(stepScore({ issues: step.issues || [] })),
                 issueLines.length > 0 ? issueLines : ['No issues']
             ];
         });
-        children.push(makeTable(['Main Success Case', 'Issues Encountered'], stepRows));
+        children.push(makeTable(
+            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
+        ));
 
         children.push(text(`Score: ${formatScore(score)}`, { bold: true }));
 
