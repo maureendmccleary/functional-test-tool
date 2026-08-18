@@ -39,6 +39,39 @@ function announce(elementId: string, message: string, delayMs: number): void {
 }
 
 /**
+ * The evaluation fields shown on the main screen, by element id.
+ *
+ * The name matches the property on `Evaluation`, so one handler serves all
+ * three, the way the test editor's blur handler serves its form.
+ */
+const EVALUATION_DETAIL_FIELDS = {
+    'eval-workspace': 'workspace',
+    'eval-asset': 'asset',
+    'eval-name': 'name'
+} as const;
+
+/** Writes an edited evaluation detail back to the loaded evaluation. */
+function evaluationDetailChanged(e: Event): void {
+    const field = e.target as HTMLInputElement;
+    const property = EVALUATION_DETAIL_FIELDS[field.id as keyof typeof EVALUATION_DETAIL_FIELDS];
+    getEvaluation()[property] = field.value;
+}
+
+/** Wires the evaluation detail inputs. Called once at startup. */
+export function addEvaluationDetailEvents(): void {
+    for (const elementId of Object.keys(EVALUATION_DETAIL_FIELDS)) {
+        requireEl(elementId).addEventListener('blur', evaluationDetailChanged);
+    }
+}
+
+/** Shows the loaded evaluation's workspace, asset and name. */
+function populateEvaluationDetails(): void {
+    for (const [elementId, property] of Object.entries(EVALUATION_DETAIL_FIELDS)) {
+        requireEl<HTMLInputElement>(elementId).value = getEvaluation()[property] || '';
+    }
+}
+
+/**
  * Prompts for an evaluation file, loads it, and enables the controls it
  * unlocks. Cancelling the dialog leaves the loaded evaluation untouched.
  */
@@ -65,6 +98,7 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
 
     fillListbox(evaluation.tests.map((test) => test.name), 'select-test');
     setEvaluation(evaluation);
+    populateEvaluationDetails();
 
     requireEl('eval-view-results').removeAttribute('disabled');
     requireEl('eval-save-file').removeAttribute('disabled');
