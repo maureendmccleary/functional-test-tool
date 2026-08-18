@@ -108,6 +108,23 @@ at bookmarks on the assistive technology and use case headings, so they work as
 soon as the file opens. **The document contains no fields at all** -- adding one
 anywhere brings the prompt back.
 
+Each use case carries two tables, deliberately not one. The first is its
+metadata, where the field names are **row** headings; the second is the steps,
+where "Main Success Case" and "Issues Encountered" are **column** headings.
+Merging them would leave a screen reader reading values with no heading to
+attach them to.
+
+OOXML has no per-cell equivalent of `<th>`, so headings are recorded two ways:
+`w:tblHeader` marks a repeating header row, and `w:tblLook` records which of the
+first row and first column are headings -- the "Header Row" and "First Column"
+checkboxes in Word's Table Design tab, and what a screen reader reads to work
+out a cell's headings. `docx@8.5.0` has no API for `w:tblLook`, so
+`applyTableLook` pushes the element into the table properties itself. That is
+only safe because the library version is pinned by the subresource integrity
+hash in `index.html`, so the internals cannot shift without a deliberate version
+bump -- **if you bump `docx`, check that `Table.root[0]` is still the
+`w:tblPr` element.**
+
 The report says "use case" where the rest of the codebase says functional test.
 That is deliberate: the wording is output, matching the platform export the
 report is modelled on, and it is not commentary to be brought in line with the

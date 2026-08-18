@@ -31,6 +31,14 @@ const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
     1: { plain: 'FBE9E9', achieved: 'E06666' }
 };
 
+/**
+ * The part of a docx `Table` that `applyTableLook` writes to: the table
+ * properties element, which is always the first entry of a Table's `root`.
+ */
+interface TableWithProperties {
+    root: Array<{ root: unknown[] }>;
+}
+
 /** Bookmark names the contents list links to. Word requires no spaces here. */
 function assistiveTechnologyBookmark(groupIndex: number): string {
     return `at${groupIndex}`;
@@ -49,7 +57,8 @@ function catalogueVersion(assistiveTechnology: string): string | undefined {
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
     const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
-            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType } = docx;
+            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
+            XmlComponent } = docx;
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
         return new Paragraph({ children: [new TextRun({ text: String(content ?? ''), ...options })] });
@@ -93,14 +102,54 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
-    function makeTable(headers: unknown[], dataRows: unknown[][]) {
-        const rows = dataRows.map((row) => new TableRow({ children: row.map((c) => cell(c)) }));
-        return new Table({
+    /**
+     * Records which of a table's first row and first column are headings.
+     *
+     * OOXML has no per-cell equivalent of `<th>`. Word stores the choice as
+     * `w:tblLook` -- the "Header Row" and "First Column" checkboxes in Table
+     * Design -- and that is what a screen reader reads to work out which
+     * headings belong to a cell. `docx@8.5.0` exposes no API for it, so the
+     * element is pushed straight into the table properties.
+     *
+     * Reaching into the library like this is safe only because the version is
+     * pinned by the subresource integrity hash in index.html: the internals
+     * cannot shift without a deliberate version bump, which is already a
+     * documented, deliberate change. See ARCHITECTURE.md.
+     */
+    function applyTableLook(table: TableWithProperties, firstRow: boolean, firstColumn: boolean): void {
+        const look = new XmlComponent('w:tblLook');
+        look.root.push({
+            _attr: {
+                'w:firstRow': firstRow ? '1' : '0',
+                'w:firstColumn': firstColumn ? '1' : '0',
+                'w:lastRow': '0',
+                'w:lastColumn': '0',
+                'w:noHBand': '0',
+                'w:noVBand': '1'
+            }
+        });
+        table.root[0].root.push(look);
+    }
+
+    /**
+     * A table, optionally with column headings and row headings.
+     *
+     * `rowHeadings` turns each row's first cell into a heading, which is what
+     * a label and value table like the scorecard needs: without it a screen
+     * reader reads the value with nothing to say what it is.
+     */
+    function makeTable(headers: unknown[], dataRows: unknown[][], rowHeadings = false) {
+        const rows = dataRows.map((row) => new TableRow({
+            children: row.map((c, index) => (rowHeadings && index === 0 ? headerCell(c) : cell(c)))
+        }));
+        const table = new Table({
             rows: headers.length > 0
                 ? [new TableRow({ tableHeader: true, children: headers.map(headerCell) }), ...rows]
                 : rows,
             width: { size: 100, type: WidthType.PERCENTAGE }
         });
+        applyTableLook(table, headers.length > 0, rowHeadings);
+        return table;
     }
 
     /** Bullets, or a single "No issues." line when the list is empty. */
@@ -169,7 +218,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         ['4', String(scorecard.countsByScore.get(4) || 0)],
         ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
         ['Overall Rating', formatOverallRating(scorecard.overallRating)]
-    ]));
+    ], true));
 
     children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
     if (groups.length > 0) {
@@ -235,7 +284,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Start Location', String(report.startLocation || '')],
             ['Operating System', String(report.operatingSystem || '')],
             ['Application', String(report.application || '')]
-        ]));
+        ], true));
 
         const stepRows = report.steps.map((step) => {
             const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));

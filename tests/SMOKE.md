@@ -150,6 +150,14 @@ Open that document and check:
       issues typed into the dialog
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
+- [ ] Each use case has **two** tables: its metadata, then its steps
+- [ ] With a screen reader in the metadata table, moving to a value announces
+      its field name -- "Goal", "Operator", "Start Location" -- rather than
+      reading the value bare
+- [ ] In the steps table, moving between columns announces "Main Success Case"
+      and "Issues Encountered"
+- [ ] The Scorecard reads the same way: each number is announced with the label
+      beside it
 - [ ] Each use case ends with the five score labels, the one it scored filled in
       a stronger colour and bold
 - [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
