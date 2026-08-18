@@ -125,9 +125,31 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] With no overall comments saved, the Significant Issues area reads
       "No issues." -- **not** the literal word "undefined"
 - [ ] **View Overall Comments** -> **Generate Overall Comments** -> **Save**
-- [ ] **Generate Report (.docx)** downloads a file that opens in Word, with each
-      functional test and its issues
+- [ ] The **Assistive Technology Summaries** area shows one block per assistive
+      technology in the evaluation, each with a rating select and an issues
+      textarea
+- [ ] Set a rating and type two paragraphs of significant issues, close the
+      dialog, reopen it: both come back
+- [ ] **Generate Report (.docx)** downloads a file that opens in Word
       <br>*(needs network access -- `docx` loads from unpkg)*
+
+Open that document and check:
+
+- [ ] The cover shows the workspace, then the asset and evaluation name joined
+      with a dash, then the date and time the file was generated
+- [ ] Word offers to update fields on open; accepting fills in the table of
+      contents page numbers. The contents list each assistive technology with
+      its functional tests indented under it
+- [ ] The Scorecard's total counts **runs**, not scripts: three functional tests
+      performed with two ATs each totals six
+- [ ] Overall Rating is the average of the ratings entered above, to one decimal
+      place, and reads "Not rated" when none were set
+- [ ] Significant Issues lists each assistive technology with its rating and the
+      issues typed into the dialog
+- [ ] Detailed results are grouped by assistive technology first, with each
+      functional test under the AT it was performed with
+- [ ] Each functional test ends with the five score labels, the one it scored
+      filled in a stronger colour and bold
 
 ## 7. Save and diff
 
