@@ -19,7 +19,7 @@ import { requireEl } from '../ui/dom.js';
  * The layout follows the platform export this replaces: a cover, a table of
  * contents, a scorecard, the significant issues per assistive technology, the
  * scoring key, then the detailed results grouped by assistive technology
- * rather than by functional test.
+ * rather than by use case.
  */
 
 /** Shading behind each score in the key, palest for the scores not achieved. */
@@ -31,8 +31,14 @@ const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
     1: { plain: 'FBE9E9', achieved: 'E06666' }
 };
 
-/** Heading levels the table of contents picks up: assistive technologies and functional tests. */
-const CONTENTS_HEADING_RANGE = '2-3';
+/** Bookmark names the contents list links to. Word requires no spaces here. */
+function assistiveTechnologyBookmark(groupIndex: number): string {
+    return `at${groupIndex}`;
+}
+
+function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
+    return `uc${groupIndex}_${pairingIndex}`;
+}
 
 /** The version recorded in the catalogue for an assistive technology, if it is listed. */
 function catalogueVersion(assistiveTechnology: string): string | undefined {
@@ -42,8 +48,8 @@ function catalogueVersion(assistiveTechnology: string): string | undefined {
 }
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
-    const { AlignmentType, Document, HeadingLevel, PageBreak, Paragraph, ShadingType,
-            Table, TableCell, TableOfContents, TableRow, TextRun, WidthType } = docx;
+    const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
+            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType } = docx;
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
         return new Paragraph({ children: [new TextRun({ text: String(content ?? ''), ...options })] });
@@ -51,6 +57,25 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     function heading(content: string, level: unknown) {
         return new Paragraph({ text: content, heading: level });
+    }
+
+    /** A heading the contents list can link to. */
+    function bookmarkedHeading(content: string, level: unknown, anchor: string) {
+        return new Paragraph({
+            heading: level,
+            children: [new Bookmark({ id: anchor, children: [new TextRun(content)] })]
+        });
+    }
+
+    /** One line of the contents list, linking to a bookmarked heading. */
+    function contentsEntry(content: string, anchor: string, indented: boolean) {
+        return new Paragraph({
+            indent: indented ? { left: 360 } : undefined,
+            children: [new InternalHyperlink({
+                anchor,
+                children: [new TextRun({ text: content, style: 'Hyperlink' })]
+            })]
+        });
     }
 
     function cell(content: unknown, options: Record<string, unknown> = {}) {
@@ -93,9 +118,9 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     const cover = [
         String(evaluation.workspace || ''),
         subtitle,
-        'Functional Test Results',
+        'Use Case Results',
         formatReportTimestamp(now),
-        'Produced by the Functional Accessibility Testing Tool'
+        'Produced by Functional Test Tool, Level Access Inc.'
     ];
     cover.forEach((line, index) => {
         if (line === '') {
@@ -108,28 +133,41 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     });
     children.push(new Paragraph({ children: [new PageBreak()] }));
 
-    // Table of contents. Word leaves the page numbers blank until fields are
-    // updated, which `updateFields` below asks it to do when the file opens.
-    children.push(heading('Table of Contents', HeadingLevel.HEADING_1));
-    children.push(new TableOfContents('Table of Contents', {
-        hyperlink: true,
-        headingStyleRange: CONTENTS_HEADING_RANGE
-    }));
-    children.push(new Paragraph({ children: [new PageBreak()] }));
-
-    // Summary: the scorecard, then the assistive technologies used.
     const scorecard = buildScorecard(evaluation);
     const groups = groupRunsByAssistiveTechnology(evaluation);
 
-    children.push(heading('Functional Test Results Summary', HeadingLevel.HEADING_1));
+    // Table of contents, written out from the evaluation rather than left to a
+    // Word field. A field would carry page numbers, but Word cannot fill them
+    // in without being asked to update fields when the document opens, and
+    // that prompt is worse than the missing page numbers. These entries are
+    // ordinary internal hyperlinks, so they work the moment the file opens.
+    children.push(heading('Table of Contents', HeadingLevel.HEADING_1));
+    groups.forEach((group, groupIndex) => {
+        children.push(contentsEntry(
+            group.assistiveTechnology, assistiveTechnologyBookmark(groupIndex), false
+        ));
+        group.pairings.forEach(({ test }, pairingIndex) => {
+            children.push(contentsEntry(
+                String(test.name || ''), useCaseBookmark(groupIndex, pairingIndex), true
+            ));
+        });
+    });
+    if (groups.length === 0) {
+        children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));
+    }
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+
+    // Summary: the scorecard, then the assistive technologies used.
+
+    children.push(heading('Use Case Results Summary', HeadingLevel.HEADING_1));
     children.push(heading('Scorecard', HeadingLevel.HEADING_2));
     children.push(makeTable([], [
-        ['Total Number of Functional Tests', String(scorecard.totalRuns)],
+        ['Total Number of Use Cases', String(scorecard.totalRuns)],
         ['1 (worst)', String(scorecard.countsByScore.get(1) || 0)],
         ['2', String(scorecard.countsByScore.get(2) || 0)],
         ['3', String(scorecard.countsByScore.get(3) || 0)],
         ['4', String(scorecard.countsByScore.get(4) || 0)],
-        ['Functional Tests that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
+        ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
         ['Overall Rating', formatOverallRating(scorecard.overallRating)]
     ]));
 
@@ -142,13 +180,13 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             )])
         ));
     } else {
-        children.push(new Paragraph({ text: 'No functional tests have been performed yet.' }));
+        children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));
     }
 
     // Significant issues, per assistive technology.
     children.push(heading('Significant Issues', HeadingLevel.HEADING_1));
     children.push(new Paragraph({
-        text: 'The following problems are the most significant, widespread and high severity problems encountered during testing. A problem may have occurred in some, most or all of the functional tests, or in a single one that was severe enough to note here.'
+        text: 'The following problems are the most significant, widespread and high severity problems encountered during testing. A problem may have occurred in some, most or all of the use cases, or in a single one that was severe enough to note here.'
     }));
     if (groups.length === 0) {
         children.push(new Paragraph({ text: 'No issues.' }));
@@ -171,19 +209,25 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     ));
 
     // Detailed results, grouped by assistive technology.
-    children.push(heading('Detailed Functional Test Results', HeadingLevel.HEADING_1));
-    groups.forEach((group) => {
-        children.push(heading(group.assistiveTechnology, HeadingLevel.HEADING_2));
-        group.pairings.forEach(({ test, run }) => {
-            appendFunctionalTest(test, run, group.assistiveTechnology);
+    children.push(heading('Detailed Use Case Results', HeadingLevel.HEADING_1));
+    groups.forEach((group, groupIndex) => {
+        children.push(bookmarkedHeading(
+            group.assistiveTechnology, HeadingLevel.HEADING_2, assistiveTechnologyBookmark(groupIndex)
+        ));
+        group.pairings.forEach(({ test, run }, pairingIndex) => {
+            appendFunctionalTest(
+                test, run, group.assistiveTechnology, useCaseBookmark(groupIndex, pairingIndex)
+            );
         });
     });
 
-    function appendFunctionalTest(test: FunctionalTest, run: TestRun, assistiveTechnology: string): void {
+    function appendFunctionalTest(
+        test: FunctionalTest, run: TestRun, assistiveTechnology: string, anchor: string
+    ): void {
         const report = buildTestReport(test, run);
         const score = runScore(run);
 
-        children.push(heading(String(report.name || ''), HeadingLevel.HEADING_3));
+        children.push(bookmarkedHeading(String(report.name || ''), HeadingLevel.HEADING_3, anchor));
         children.push(makeTable([], [
             ['Name', String(report.name || '')],
             ['Goal', String(report.goal || '')],
@@ -207,7 +251,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));
         bullets(report.comments).forEach((paragraph) => children.push(paragraph));
 
-        // The five scores, with the one this functional test reached filled in.
+        // The five scores, with the one this use case reached filled in.
         children.push(new Table({
             rows: SCORE_LABELS.map((entry) => {
                 const achieved = entry.score === score;
@@ -227,10 +271,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         }));
     }
 
-    return new Document({
-        features: { updateFields: true },
-        sections: [{ children }]
-    });
+    return new Document({ sections: [{ children }] });
 }
 
 /**

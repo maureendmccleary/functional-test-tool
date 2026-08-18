@@ -137,19 +137,24 @@ Open that document and check:
 
 - [ ] The cover shows the workspace, then the asset and evaluation name joined
       with a dash, then the date and time the file was generated
-- [ ] Word offers to update fields on open; accepting fills in the table of
-      contents page numbers. The contents list each assistive technology with
-      its functional tests indented under it
-- [ ] The Scorecard's total counts **runs**, not scripts: three functional tests
+- [ ] Word opens the document with **no prompt of any kind** -- no offer to
+      update fields, no macro or security bar. A prompt means a field crept back
+      into the document
+- [ ] The Table of Contents lists each assistive technology with its use cases
+      indented under it, and clicking an entry jumps to that heading
+- [ ] The Scorecard's total counts **runs**, not scripts: three use cases
       performed with two ATs each totals six
 - [ ] Overall Rating is the average of the ratings entered above, to one decimal
       place, and reads "Not rated" when none were set
 - [ ] Significant Issues lists each assistive technology with its rating and the
       issues typed into the dialog
 - [ ] Detailed results are grouped by assistive technology first, with each
-      functional test under the AT it was performed with
-- [ ] Each functional test ends with the five score labels, the one it scored
-      filled in a stronger colour and bold
+      use case under the AT it was performed with
+- [ ] Each use case ends with the five score labels, the one it scored filled in
+      a stronger colour and bold
+- [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
+- [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
+      wording is deliberate output, see ARCHITECTURE.md
 
 ## 7. Save and diff
 

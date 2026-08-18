@@ -4,9 +4,11 @@
  * Kept out of io/docx-report.ts so the wording and the date format can be
  * tested without building a document or loading the docx library.
  *
- * The report follows the structure of the platform export it replaces, but
- * uses this tool's vocabulary: what that export calls a "use case" is a
- * functional test here. See the data model vocabulary note in CLAUDE.md.
+ * The report deliberately says "use case", not "functional test", even though
+ * functional test is this codebase's term for the same thing. This wording is
+ * output, matching the platform export the report is modelled on, and is not
+ * commentary to be brought in line with the rest of the source. See the data
+ * model vocabulary note in CLAUDE.md.
  */
 
 /** How the report names each score, highest first. */
@@ -14,35 +16,35 @@ export const SCORE_LABELS: ReadonlyArray<{ score: number; label: string; definit
     {
         score: 5,
         label: 'Pass - No Accessibility Problem(s)',
-        definition: 'The functional test is a complete success. No accessibility problems are found to hinder its completion.'
+        definition: 'The use case is a complete success. No accessibility problems are found to hinder its completion.'
     },
     {
         score: 4,
         label: 'Pass - Optimizations Suggested',
-        definition: 'The functional test is readily completed, but a slight modification would make it easier or more reliably accessible.'
+        definition: 'The use case is readily completed, but a slight modification would make it easier or more reliably accessible.'
     },
     {
         score: 3,
         label: 'Pass - Minor Accessibility Problem(s)',
-        definition: 'One or more minor accessibility problems makes completion of the functional test tricky or more difficult than it should be.'
+        definition: 'One or more minor accessibility problems makes completion of the use case tricky or more difficult than it should be.'
     },
     {
         score: 2,
         label: 'Fail - Major Accessibility Problem(s)',
-        definition: 'One or more major (or a significant number of minor) accessibility problems makes the completion of the functional test very difficult. Many disabled users who are less diligent or proficient in their assistive technology would be expected to give up.'
+        definition: 'One or more major (or a significant number of minor) accessibility problems makes the completion of the use case very difficult. Many disabled users who are less diligent or proficient in their assistive technology would be expected to give up.'
     },
     {
         score: 1,
         label: 'Fail - Severe Accessibility Problem(s)',
-        definition: 'The functional test cannot be completed, or the confidence in its success is very low, due to one or more major accessibility problems.'
+        definition: 'The use case cannot be completed, or the confidence in its success is very low, due to one or more major accessibility problems.'
     }
 ];
 
 /** The explanatory text above the scoring table. */
 export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
-    'Each functional test is performed as a "Success Case" according to the specified steps. Every effort is made to achieve success, but minor, major, or fatal accessibility problems can occur at any point, which are noted in the "Issues Encountered" column next to the step where the problem occurred. At the end of each functional test, its success or failure is scored on a 5 point scale, where "5" indicates complete success and "1" indicates complete failure. The following chart is an explanation of all five possible scores.',
-    'After the entire set of functional tests has been performed with an assistive technology, the tester assigns an overall score for that assistive technology and assembles a list of the most significant problems encountered across all of the functional tests. Those are recorded in the Significant Issues section of this report.',
-    'If, during testing, the tester encounters any "stoppers" -- problems severe enough to prevent the completion of the functional test -- the functional test is automatically given a score of 1, "Fail - Severe Accessibility Problem(s)". Testers are generally instructed to get past the point of failure so that the whole functional test is still performed, which is why problems may be noted in steps after a stopper.'
+    'Each use case is performed as a "Success Case" according to the specified steps. Every effort is made to achieve success, but minor, major, or fatal accessibility problems can occur at any point, which are noted in the "Issues Encountered" column next to the step where the problem occurred. At the end of each use case, its success or failure is scored on a 5 point scale, where "5" indicates complete success and "1" indicates complete failure. The following chart is an explanation of all five possible scores.',
+    'After the entire set of use cases has been performed with an assistive technology, the tester assigns an overall score for that assistive technology and assembles a list of the most significant problems encountered across all of the use cases. Those are recorded in the Significant Issues section of this report.',
+    'If, during testing, the tester encounters any "stoppers" -- problems severe enough to prevent the completion of the use case -- the use case is automatically given a score of 1, "Fail - Severe Accessibility Problem(s)". Testers are generally instructed to get past the point of failure so that the whole use case is still performed, which is why problems may be noted in steps after a stopper.'
 ];
 
 /** The label for a score, or an empty string when it is not one of the five. */

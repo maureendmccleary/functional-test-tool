@@ -100,16 +100,19 @@ Two consequences worth knowing:
   That field is only written while the perform dialog is open, so it is stale in
   any file whose issues were edited afterwards.
 
-The table of contents is a real Word field. `Document` is built with
-`features: { updateFields: true }`, which asks Word to populate the page numbers
-when the file opens; until it does, the entries show without page numbers. The
-field picks up heading levels 2 and 3, which is why the assistive technologies
-are `Heading2` and the functional tests under them are `Heading3`, while the
-top-level section titles are `Heading1` and stay out of the contents.
+The table of contents is written out from the evaluation, not left to a Word
+`TableOfContents` field. A field would carry page numbers, but only after Word
+is asked to update fields when the document opens, and that prompt is worse than
+the missing page numbers. The entries are ordinary internal hyperlinks pointing
+at bookmarks on the assistive technology and use case headings, so they work as
+soon as the file opens. **The document contains no fields at all** -- adding one
+anywhere brings the prompt back.
 
-The report uses this tool's vocabulary, not the platform's: what that export
-calls a "use case" is a functional test here. The wording lives in
-`domain/report-format.ts` so it can be changed in one place.
+The report says "use case" where the rest of the codebase says functional test.
+That is deliberate: the wording is output, matching the platform export the
+report is modelled on, and it is not commentary to be brought in line with the
+source. It lives in `domain/report-format.ts` and the section headings in
+`io/docx-report.ts`.
 
 ## Build and deploy
 
