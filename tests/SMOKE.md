@@ -120,14 +120,25 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Evaluation results and report
 
-- [ ] **View Evaluation Results** opens the results dialog with an Executive
-      Summary, Significant Issues, and the scoring key
-- [ ] With no overall comments saved, the Significant Issues area reads
-      "No issues." -- **not** the literal word "undefined"
+- [ ] **View Evaluation Results** opens the results dialog. Its sections are, in
+      order: Use Case Results Summary (Scorecard, Assistive Technologies Used),
+      Significant Issues, Assistive Technology Summaries, Testing and Scoring
+      Key, Detailed Use Case Results -- **the same order as the report**, and
+      with no "Executive Summary" heading anywhere
+- [ ] The dialog's Scorecard matches the report's for the same evaluation
+- [ ] Significant Issues lists each assistive technology's overall rating
+      followed by its issues, reading "No issues." where none were entered --
+      **not** the literal word "undefined"
+- [ ] Detailed Use Case Results groups by assistive technology: the AT is a
+      heading, and each numbered use case is a heading under it
 - [ ] **View Overall Comments** -> **Generate Overall Comments** -> **Save**
+      <br>*(these comments are no longer displayed in the dialog or the report;
+      see the note in `../ARCHITECTURE.md`)*
 - [ ] The **Assistive Technology Summaries** area shows one block per assistive
       technology in the evaluation, each with a rating select and an issues
       textarea
+- [ ] Editing a rating or issues there and reopening the dialog updates the
+      Significant Issues section and the Scorecard's Overall Rating
 - [ ] Set a rating and type two paragraphs of significant issues, close the
       dialog, reopen it: both come back
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word

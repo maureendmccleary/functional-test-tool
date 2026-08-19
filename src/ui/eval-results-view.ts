@@ -1,9 +1,18 @@
 import { defaults } from '../config/defaults.js';
+import {
+    buildScorecard, findSummary, groupRunsByAssistiveTechnology
+} from '../domain/evaluation.js';
 import { buildOverallCommentsText } from '../domain/summary.js';
 import { buildTestReport } from '../domain/functional-test.js';
-import { renderEvalResultsDocx } from '../io/docx-report.js';
+import {
+    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatAssistiveTechnology,
+    formatOverallRating, formatUseCaseName
+} from '../domain/report-format.js';
+import { catalogueVersion, renderEvalResultsDocx } from '../io/docx-report.js';
 import { getEvaluation } from '../state/store.js';
-import { appendNewlines, createUnorderedList, fillListbox } from './controls.js';
+import {
+    appendNewlines, createDataTable, createLabelValueTable, createUnorderedList, fillListbox
+} from './controls.js';
 import { requireEl } from './dom.js';
 import { createResultsTable } from './results-view.js';
 
@@ -86,25 +95,116 @@ export function renderAssistiveTechnologySummaries(): void {
     });
 }
 
-/** Redraws the evaluation-wide results: overall comments plus one table per performance. */
-export function renderEvalResults(): void {
-    const evaluation = getEvaluation();
-    const overallCommentsDiv = requireEl("eval-results-summary");
-    overallCommentsDiv.innerHTML = "";
-    const unorderedList = createUnorderedList(evaluation.comments, "No issues.");
-    overallCommentsDiv.appendChild(unorderedList);
-    renderAssistiveTechnologySummaries();
+/** Replaces an element's contents with the given nodes. */
+function replaceContents(elementId: string, nodes: Node[]): void {
+    const parent = requireEl(elementId);
+    parent.innerHTML = "";
+    nodes.forEach((node) => parent.appendChild(node));
+}
 
+/** The Scorecard: how many use cases landed on each score. */
+function renderScorecard(): void {
+    const scorecard = buildScorecard(getEvaluation());
+    replaceContents("eval-results-scorecard", [createLabelValueTable([
+        ["Total Number of Use Cases", String(scorecard.totalRuns)],
+        ["1 (worst)", String(scorecard.countsByScore.get(1) || 0)],
+        ["2", String(scorecard.countsByScore.get(2) || 0)],
+        ["3", String(scorecard.countsByScore.get(3) || 0)],
+        ["4", String(scorecard.countsByScore.get(4) || 0)],
+        ["Use Cases that Scored a 5 (best)", String(scorecard.countsByScore.get(5) || 0)],
+        ["Overall Rating", formatOverallRating(scorecard.overallRating)]
+    ])]);
+}
+
+/** The assistive technologies with recorded runs, and their catalogue versions. */
+function renderAssistiveTechnologiesUsed(): void {
+    const groups = groupRunsByAssistiveTechnology(getEvaluation());
+    if (groups.length === 0) {
+        replaceContents("eval-results-at-used",
+            [createUnorderedList([], "No use cases have been performed yet.")]);
+        return;
+    }
+    replaceContents("eval-results-at-used", [createDataTable(
+        ["Assistive Technologies & Versions"],
+        groups.map((group) => [formatAssistiveTechnology(
+            group.assistiveTechnology, catalogueVersion(group.assistiveTechnology)
+        )])
+    )]);
+}
+
+/** Significant Issues: each assistive technology's rating, then its issues. */
+function renderSignificantIssues(): void {
+    const evaluation = getEvaluation();
+    requireEl("eval-results-issues-intro").textContent = SIGNIFICANT_ISSUES_INTRO;
+
+    const groups = groupRunsByAssistiveTechnology(evaluation);
+    if (groups.length === 0) {
+        replaceContents("eval-results-summary", [createUnorderedList([], "No issues.")]);
+        return;
+    }
+
+    const nodes: Node[] = [];
+    groups.forEach((group) => {
+        const summary = findSummary(evaluation, group.assistiveTechnology);
+        const rating = document.createElement("p");
+        rating.textContent = `${group.assistiveTechnology} Overall Rating: `
+            + formatOverallRating(summary?.overallRating ?? -1);
+        nodes.push(rating);
+        nodes.push(createUnorderedList(summary?.significantIssues, "No issues."));
+    });
+    replaceContents("eval-results-summary", nodes);
+}
+
+/** The scoring key, from the same wording the report uses. */
+function renderScoringKey(): void {
+    const nodes: Node[] = SCORING_KEY_PARAGRAPHS.map((paragraph) => {
+        const p = document.createElement("p");
+        p.textContent = paragraph;
+        return p;
+    });
+    nodes.push(createDataTable(
+        ["Score", "Meaning", "Explanation"],
+        SCORE_LABELS.map((entry) => [String(entry.score), entry.label, entry.definition])
+    ));
+    replaceContents("eval-results-scoring-key", nodes);
+}
+
+/** The detailed results, grouped by assistive technology as the report groups them. */
+function renderDetailedResults(): void {
     const parentDiv = requireEl("eval-results-tests");
     parentDiv.innerHTML = "";
 
-    evaluation.tests.forEach(test => {
-        (test.runs || []).forEach(run => {
-            let resultsDiv = document.createElement("div");
-            resultsDiv = createResultsTable(buildTestReport(test, run), resultsDiv) as HTMLDivElement;
+    groupRunsByAssistiveTechnology(getEvaluation()).forEach((group) => {
+        const atHeading = document.createElement("h3");
+        atHeading.textContent = group.assistiveTechnology;
+        parentDiv.appendChild(atHeading);
+
+        group.pairings.forEach(({ test, run, position }) => {
+            const resultsDiv = document.createElement("div");
+            createResultsTable(buildTestReport(test, run), resultsDiv, {
+                title: formatUseCaseName(position, test.name),
+                headingLevel: 4
+            });
             parentDiv.appendChild(resultsDiv);
         });
     });
+}
+
+/**
+ * Redraws the evaluation results dialog.
+ *
+ * Deliberately mirrors `io/docx-report.ts` section for section, so what is on
+ * screen and what is exported cannot drift apart. Both read the same wording
+ * from `domain/report-format.ts` and group runs with the same
+ * `groupRunsByAssistiveTechnology`.
+ */
+export function renderEvalResults(): void {
+    renderScorecard();
+    renderAssistiveTechnologiesUsed();
+    renderSignificantIssues();
+    renderAssistiveTechnologySummaries();
+    renderScoringKey();
+    renderDetailedResults();
 }
 
 /** Replaces the overall comments with text assembled from every test. */

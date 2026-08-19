@@ -5,8 +5,9 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport } from '../domain/functional-test.js';
 import {
-    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, buildCoverSubtitle, formatAssistiveTechnology,
-    formatOverallRating, formatReportTimestamp, formatScore, formatUseCaseName
+    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
+    formatAssistiveTechnology, formatOverallRating, formatReportTimestamp, formatScore,
+    formatUseCaseName
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -48,8 +49,11 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
     return `uc${groupIndex}_${pairingIndex}`;
 }
 
-/** The version recorded in the catalogue for an assistive technology, if it is listed. */
-function catalogueVersion(assistiveTechnology: string): string | undefined {
+/**
+ * The version recorded in the catalogue for an assistive technology, if it is
+ * listed. Exported for the results dialog, which lists the same versions.
+ */
+export function catalogueVersion(assistiveTechnology: string): string | undefined {
     const entry = Object.values(defaults['at-types'])
         .find((candidate) => candidate['friendly-name'] === assistiveTechnology);
     return entry?.version;
@@ -236,9 +240,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     // Significant issues, per assistive technology.
     children.push(heading('Significant Issues', HeadingLevel.HEADING_1));
-    children.push(new Paragraph({
-        text: 'The following problems are the most significant, widespread and high severity problems encountered during testing. A problem may have occurred in some, most or all of the use cases, or in a single one that was severe enough to note here.'
-    }));
+    children.push(new Paragraph({ text: SIGNIFICANT_ISSUES_INTRO }));
     if (groups.length === 0) {
         children.push(new Paragraph({ text: 'No issues.' }));
     }

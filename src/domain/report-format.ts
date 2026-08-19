@@ -40,6 +40,17 @@ export const SCORE_LABELS: ReadonlyArray<{ score: number; label: string; definit
     }
 ];
 
+/**
+ * The paragraph introducing the Significant Issues section.
+ *
+ * Shared by the report and the results dialog so the two cannot drift.
+ */
+export const SIGNIFICANT_ISSUES_INTRO =
+    'The following list of problems includes the most significant, widespread, high severity '
+    + 'problems that were encountered during testing. Any given problem may have occurred on '
+    + 'some, most, or all of the use cases, or it may have occurred on a single use case (but '
+    + 'was of sufficiently high severity to be noted here).';
+
 /** The explanatory text above the scoring table. */
 export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
     'Each use case is performed as a "Success Case" according to the specified steps. Every effort is made to achieve success, but minor, major, or fatal accessibility problems can occur at any point, which are noted in the "Issues Encountered" column next to the step where the problem occurred. At the end of each use case, its success or failure is scored on a 5 point scale, where "5" indicates complete success and "1" indicates complete failure. The following chart is an explanation of all five possible scores.',

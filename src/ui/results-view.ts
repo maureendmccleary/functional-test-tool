@@ -32,16 +32,28 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
     }
 }
 
+/** How a results table is titled and what heading level it sits at. */
+export interface ResultsTableOptions {
+    /** Overrides the default "Detailed Results: <name>" heading text. */
+    title?: string;
+    /** Heading level for the title; the problem summary sits one level below. */
+    headingLevel?: number;
+}
+
 /**
  * Renders the per-step results table into resultsDiv.
  *
  * The per-step score is the *mean* of that step's issue scores, floored, which
  * is a different calculation from the overall rating below it (the minimum).
- * Both are current behavior.
+ * Both are current behavior, and `domain/evaluation.ts` keeps the report on the
+ * same two rules.
  */
-export function createResultsTable(test: TestReport, resultsDiv: HTMLElement): HTMLElement {
-    const testName = document.createElement("h2");
-    testName.innerHTML = `Detailed Results: ${test.name}`;
+export function createResultsTable(
+    test: TestReport, resultsDiv: HTMLElement, options: ResultsTableOptions = {}
+): HTMLElement {
+    const headingLevel = options.headingLevel ?? 2;
+    const testName = document.createElement(`h${headingLevel}`);
+    testName.textContent = options.title ?? `Detailed Results: ${test.name}`;
     resultsDiv.appendChild(testName);
     const p2 = document.createElement("p");
     p2.innerHTML = `Assistive Technology: ${test.assistiveTechnology}<br>`;
@@ -97,9 +109,9 @@ export function createResultsTable(test: TestReport, resultsDiv: HTMLElement): H
         descriptionCell = "";
     });
     resultsDiv.appendChild(resultsTable);
-    const h2Heading = document.createElement("h2");
-    h2Heading.textContent = "Problem Summary";
-    resultsDiv.appendChild(h2Heading);
+    const summaryHeading = document.createElement(`h${Math.min(headingLevel + 1, 6)}`);
+    summaryHeading.textContent = `Problem Summary (${test.assistiveTechnology})`;
+    resultsDiv.appendChild(summaryHeading);
     const p1 = document.createElement("p");
     const score = minimumScore(issuesMap(test));
     p1.innerHTML = `${test.assistiveTechnology} Overall Rating: ${score}`;

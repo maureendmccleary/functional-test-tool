@@ -136,6 +136,17 @@ hash in `index.html`, so the internals cannot shift without a deliberate version
 bump -- **if you bump `docx`, check that `Table.root[0]` is still the
 `w:tblPr` element.**
 
+`ui/eval-results-view.ts` renders the results dialog section for section
+against the report, reading its wording from `domain/report-format.ts` and
+grouping runs with the same `groupRunsByAssistiveTechnology`. Changing one
+without the other is what the two are arranged to prevent, so add new sections
+to both.
+
+One loose end from that alignment: `Evaluation.comments`, written by the "View
+Overall Comments" dialog, is no longer displayed anywhere. Significant Issues
+now shows the per-AT ratings and issues instead, per the AMP layout. The control
+still stores its text, so nothing is lost, but it has no reader.
+
 The report says "use case" where the rest of the codebase says functional test.
 That is deliberate: the wording is output, matching the platform export the
 report is modelled on, and it is not commentary to be brought in line with the
