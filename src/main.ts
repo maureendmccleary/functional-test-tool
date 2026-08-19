@@ -5,7 +5,9 @@ import {
     addFormEvents, editTestButtonClicked, newStepButtonClick, newTestButtonClicked
 } from './ui/editor-view.js';
 import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
-import { loadEvalButtonClicked, saveFileButtonClick } from './ui/evaluation-view.js';
+import {
+    addEvaluationDetailEvents, loadEvalButtonClicked, saveFileButtonClick
+} from './ui/evaluation-view.js';
 import { confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed } from './ui/issue-dialog.js';
 import { performButtonClick } from './ui/perform-view.js';
 
@@ -19,6 +21,7 @@ function initialize(): void {
 
     fillCheckboxMenu(defaults["at-types"], "test-edit-at-menu", "ats");
     addFormEvents();
+    addEvaluationDetailEvents();
 
     const ucFileSave = requireEl("test-save");
     ucFileSave.addEventListener('click', saveFileButtonClick);

@@ -101,6 +101,45 @@ export function createUnorderedList(listItems: string[] | undefined, emptyText =
     return list;
 }
 
+/**
+ * A two column table whose first cell in each row is a row heading.
+ *
+ * The label/value shape used by the scorecard and a use case's details. The
+ * labels are `<th scope="row">` so a screen reader announces the field name
+ * with the value, which is the same reason the report sets `w:tblLook`.
+ */
+export function createLabelValueTable(rows: Array<[string, string]>): HTMLTableElement {
+    const table = document.createElement("table");
+    rows.forEach(([label, value]) => {
+        const row = table.insertRow(-1);
+        const heading = document.createElement("th");
+        heading.setAttribute("scope", "row");
+        heading.textContent = label;
+        row.appendChild(heading);
+        row.insertCell(-1).textContent = value;
+    });
+    return table;
+}
+
+/** A table with column headings, each `<th scope="col">`. */
+export function createDataTable(headers: string[], rows: string[][]): HTMLTableElement {
+    const table = document.createElement("table");
+    const headingRow = table.insertRow(-1);
+    headers.forEach((header) => {
+        const heading = document.createElement("th");
+        heading.setAttribute("scope", "col");
+        heading.textContent = header;
+        headingRow.appendChild(heading);
+    });
+    rows.forEach((cells) => {
+        const row = table.insertRow(-1);
+        cells.forEach((cellText) => {
+            row.insertCell(-1).textContent = cellText;
+        });
+    });
+    return table;
+}
+
 /** Appends two <br> elements, matching the spacing used elsewhere in the forms. */
 export function appendNewlines(div: HTMLElement): void {
     div.appendChild(document.createElement("br"));

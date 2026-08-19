@@ -120,14 +120,68 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Evaluation results and report
 
-- [ ] **View Evaluation Results** opens the results dialog with an Executive
-      Summary, Significant Issues, and the scoring key
-- [ ] With no overall comments saved, the Significant Issues area reads
-      "No issues." -- **not** the literal word "undefined"
+- [ ] **View Evaluation Results** opens the results dialog. Its sections are, in
+      order: Use Case Results Summary (Scorecard, Assistive Technologies Used),
+      Significant Issues, Assistive Technology Summaries, Testing and Scoring
+      Key, Detailed Use Case Results -- **the same order as the report**, and
+      with no "Executive Summary" heading anywhere
+- [ ] The dialog's Scorecard matches the report's for the same evaluation
+- [ ] Significant Issues lists each assistive technology's overall rating
+      followed by its issues, reading "No issues." where none were entered --
+      **not** the literal word "undefined"
+- [ ] Detailed Use Case Results groups by assistive technology: the AT is a
+      heading, and each numbered use case is a heading under it
 - [ ] **View Overall Comments** -> **Generate Overall Comments** -> **Save**
-- [ ] **Generate Report (.docx)** downloads a file that opens in Word, with each
-      functional test and its issues
+      <br>*(these comments are no longer displayed in the dialog or the report;
+      see the note in `../ARCHITECTURE.md`)*
+- [ ] The **Assistive Technology Summaries** area shows one block per assistive
+      technology in the evaluation, each with a rating select and an issues
+      textarea
+- [ ] Editing a rating or issues there and reopening the dialog updates the
+      Significant Issues section and the Scorecard's Overall Rating
+- [ ] Set a rating and type two paragraphs of significant issues, close the
+      dialog, reopen it: both come back
+- [ ] **Generate Report (.docx)** downloads a file that opens in Word
       <br>*(needs network access -- `docx` loads from unpkg)*
+
+Open that document and check:
+
+- [ ] The cover shows the workspace, then the asset and evaluation name joined
+      with a dash, then the date and time the file was generated
+- [ ] Word opens the document with **no prompt of any kind** -- no offer to
+      update fields, no macro or security bar. A prompt means a field crept back
+      into the document
+- [ ] The Table of Contents lists each assistive technology with its use cases
+      indented under it, and clicking an entry jumps to that heading
+- [ ] The Scorecard's total counts **runs**, not scripts: three use cases
+      performed with two ATs each totals six
+- [ ] Overall Rating is the average of the ratings entered above, to one decimal
+      place, and reads "Not rated" when none were set
+- [ ] Significant Issues lists each assistive technology with its rating and the
+      issues typed into the dialog
+- [ ] Detailed results are grouped by assistive technology first, with each
+      use case under the AT it was performed with
+- [ ] Each use case has **two** tables: its metadata, then its steps
+- [ ] Use case names are numbered from 01, in evaluation order, in the contents,
+      the heading and the metadata table's Name row. The same script keeps the
+      same number under every assistive technology
+- [ ] The step table's columns are Step #, Main Success Case, Score, Issues
+      Encountered, in that order
+- [ ] A step with no issues scores 5; a step with issues scores the average of
+      them, rounded down -- so a step holding a stopper among minor issues can
+      read higher than the use case's own score, which is deliberate
+- [ ] With a screen reader in the metadata table, moving to a value announces
+      its field name -- "Goal", "Operator", "Start Location" -- rather than
+      reading the value bare
+- [ ] In the steps table, moving between columns announces "Main Success Case"
+      and "Issues Encountered"
+- [ ] The Scorecard reads the same way: each number is announced with the label
+      beside it
+- [ ] Each use case ends with the five score labels, the one it scored filled in
+      a stronger colour and bold
+- [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
+- [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
+      wording is deliberate output, see ARCHITECTURE.md
 
 ## 7. Save and diff
 

@@ -9,9 +9,13 @@ import type { Evaluation, TestRun, FunctionalTest } from '../types.js';
  */
 
 let evaluation: Evaluation = {
+    workspace: '',
+    asset: '',
+    name: '',
     tests: [],
     score: 0,
-    comments: []
+    comments: [],
+    assistiveTechnologySummaries: []
 };
 
 /**

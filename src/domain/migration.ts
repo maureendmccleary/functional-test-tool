@@ -1,4 +1,7 @@
-import type { Evaluation, FunctionalTest, Issue, Step, TestRun } from '../types.js';
+import type {
+    AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, Step, TestRun
+} from '../types.js';
+import { collectAssistiveTechnologies } from './evaluation.js';
 import { normalizeSelectionValues } from './selection-utils.js';
 
 /**
@@ -147,6 +150,43 @@ function normalizeRun(raw: RawRecord): TestRun {
 }
 
 /**
+ * Builds the per-assistive-technology summary list.
+ *
+ * Stored summaries are kept whatever their assistive technology, even when no
+ * test refers to it any more: unassigning an AT for a moment must not throw
+ * away the significant issues someone wrote against it. Summaries missing for
+ * an AT the evaluation does use are added empty, so the report and the entry
+ * form always have a row to work with.
+ */
+function normalizeSummaries(raw: unknown, tests: FunctionalTest[]): AssistiveTechnologySummary[] {
+    const summaries: AssistiveTechnologySummary[] = [];
+
+    (Array.isArray(raw) ? raw : []).forEach((entry) => {
+        const record = (entry ?? {}) as RawRecord;
+        const assistiveTechnology = record.assistiveTechnology === undefined
+            ? '' : String(record.assistiveTechnology).trim();
+        if (assistiveTechnology === '') {
+            return;
+        }
+        summaries.push({
+            assistiveTechnology,
+            overallRating: typeof record.overallRating === 'number' ? record.overallRating : -1,
+            significantIssues: Array.isArray(record.significantIssues)
+                ? record.significantIssues.map((issue) => String(issue ?? ''))
+                : []
+        });
+    });
+
+    collectAssistiveTechnologies(tests).forEach((assistiveTechnology) => {
+        if (!summaries.some((summary) => summary.assistiveTechnology === assistiveTechnology)) {
+            summaries.push({ assistiveTechnology, overallRating: -1, significantIssues: [] });
+        }
+    });
+
+    return summaries;
+}
+
+/**
  * Turns the contents of a saved file into an `Evaluation`.
  *
  * Mutates and returns the parsed object rather than rebuilding it, so fields
@@ -168,5 +208,16 @@ export function normalizeEvaluation(raw: unknown): Evaluation {
     if (!Array.isArray(source.comments)) {
         source.comments = [];
     }
+
+    for (const field of ['workspace', 'asset', 'name'] as const) {
+        source[field] = source[field] === undefined || source[field] === null
+            ? ''
+            : String(source[field]).trim();
+    }
+    source.assistiveTechnologySummaries = normalizeSummaries(
+        source.assistiveTechnologySummaries,
+        source.tests as FunctionalTest[]
+    );
+
     return source as unknown as Evaluation;
 }

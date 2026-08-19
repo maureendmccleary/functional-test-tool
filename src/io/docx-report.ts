@@ -1,6 +1,14 @@
-import type { Evaluation } from '../types.js';
+import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
+import { defaults } from '../config/defaults.js';
+import {
+    buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore, stepScore
+} from '../domain/evaluation.js';
 import { buildTestReport } from '../domain/functional-test.js';
-import { issuesMap, minimumScore } from '../domain/scoring.js';
+import {
+    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
+    formatAssistiveTechnology, formatOverallRating, formatReportTimestamp, formatScore,
+    formatUseCaseName
+} from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
 /**
@@ -8,121 +16,320 @@ import { requireEl } from '../ui/dom.js';
  *
  * Separated from the download so the structure can be asserted on directly.
  * `docx` is the UMD global loaded from unpkg by index.html.
+ *
+ * The layout follows the platform export this replaces: a cover, a table of
+ * contents, a scorecard, the significant issues per assistive technology, the
+ * scoring key, then the detailed results grouped by assistive technology
+ * rather than by use case.
  */
-export function buildEvalResultsDocument(evaluation: Evaluation): unknown {
-    const { Document, Paragraph, TextRun, Table, TableRow, TableCell,
-            HeadingLevel, WidthType, ShadingType } = docx;
 
-    function headerCell(text: unknown) {
+/** Shading behind each score in the key, palest for the scores not achieved. */
+const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
+    5: { plain: 'EAF4EA', achieved: '92D050' },
+    4: { plain: 'EFF6E7', achieved: 'C6E0B4' },
+    3: { plain: 'FFF8E5', achieved: 'FFD966' },
+    2: { plain: 'FDEEE3', achieved: 'F4B183' },
+    1: { plain: 'FBE9E9', achieved: 'E06666' }
+};
+
+/**
+ * The part of a docx `Table` that `applyTableLook` writes to: the table
+ * properties element, which is always the first entry of a Table's `root`.
+ */
+interface TableWithProperties {
+    root: Array<{ root: unknown[] }>;
+}
+
+/** Bookmark names the contents list links to. Word requires no spaces here. */
+function assistiveTechnologyBookmark(groupIndex: number): string {
+    return `at${groupIndex}`;
+}
+
+function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
+    return `uc${groupIndex}_${pairingIndex}`;
+}
+
+/**
+ * The version recorded in the catalogue for an assistive technology, if it is
+ * listed. Exported for the results dialog, which lists the same versions.
+ */
+export function catalogueVersion(assistiveTechnology: string): string | undefined {
+    const entry = Object.values(defaults['at-types'])
+        .find((candidate) => candidate['friendly-name'] === assistiveTechnology);
+    return entry?.version;
+}
+
+export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
+    const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
+            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
+            XmlComponent } = docx;
+
+    function text(content: unknown, options: Record<string, unknown> = {}) {
+        return new Paragraph({ children: [new TextRun({ text: String(content ?? ''), ...options })] });
+    }
+
+    function heading(content: string, level: unknown) {
+        return new Paragraph({ text: content, heading: level });
+    }
+
+    /** A heading the contents list can link to. */
+    function bookmarkedHeading(content: string, level: unknown, anchor: string) {
+        return new Paragraph({
+            heading: level,
+            children: [new Bookmark({ id: anchor, children: [new TextRun(content)] })]
+        });
+    }
+
+    /** One line of the contents list, linking to a bookmarked heading. */
+    function contentsEntry(content: string, anchor: string, indented: boolean) {
+        return new Paragraph({
+            indent: indented ? { left: 360 } : undefined,
+            children: [new InternalHyperlink({
+                anchor,
+                children: [new TextRun({ text: content, style: 'Hyperlink' })]
+            })]
+        });
+    }
+
+    function cell(content: unknown, options: Record<string, unknown> = {}) {
+        const lines = Array.isArray(content) ? content : [content];
+        const paragraphs = lines.length > 0
+            ? lines.map((line: unknown) => text(line, options))
+            : [new Paragraph({ text: '' })];
+        return new TableCell({ children: paragraphs, ...(options.shading ? { shading: options.shading } : {}) });
+    }
+
+    function headerCell(content: unknown) {
         return new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: String(text), bold: true })] })],
+            children: [text(content, { bold: true })],
             shading: { type: ShadingType.CLEAR, fill: 'EEEEEE', color: 'auto' }
         });
     }
 
-    function dataCell(content: unknown) {
-        let paragraphs;
-        if (Array.isArray(content)) {
-            paragraphs = content.map((t: unknown) => new Paragraph({ children: [new TextRun(String(t || ''))] }));
-            if (paragraphs.length === 0) {
-                paragraphs = [new Paragraph({ text: '' })];
+    /**
+     * Records which of a table's first row and first column are headings.
+     *
+     * OOXML has no per-cell equivalent of `<th>`. Word stores the choice as
+     * `w:tblLook` -- the "Header Row" and "First Column" checkboxes in Table
+     * Design -- and that is what a screen reader reads to work out which
+     * headings belong to a cell. `docx@8.5.0` exposes no API for it, so the
+     * element is pushed straight into the table properties.
+     *
+     * Reaching into the library like this is safe only because the version is
+     * pinned by the subresource integrity hash in index.html: the internals
+     * cannot shift without a deliberate version bump, which is already a
+     * documented, deliberate change. See ARCHITECTURE.md.
+     */
+    function applyTableLook(table: TableWithProperties, firstRow: boolean, firstColumn: boolean): void {
+        const look = new XmlComponent('w:tblLook');
+        look.root.push({
+            _attr: {
+                'w:firstRow': firstRow ? '1' : '0',
+                'w:firstColumn': firstColumn ? '1' : '0',
+                'w:lastRow': '0',
+                'w:lastColumn': '0',
+                'w:noHBand': '0',
+                'w:noVBand': '1'
             }
-        } else {
-            paragraphs = [new Paragraph({ children: [new TextRun(String(content || ''))] })];
-        }
-        return new TableCell({ children: paragraphs });
+        });
+        table.root[0].root.push(look);
     }
 
-    function makeTable(headers: unknown[], dataRows: unknown[][]) {
-        const headerRow = new TableRow({
-            tableHeader: true,
-            children: headers.map(h => headerCell(h))
-        });
-        const rows = dataRows.map(row => new TableRow({
-            children: row.map(c => dataCell(c))
+    /**
+     * A table, optionally with column headings and row headings.
+     *
+     * `rowHeadings` turns each row's first cell into a heading, which is what
+     * a label and value table like the scorecard needs: without it a screen
+     * reader reads the value with nothing to say what it is.
+     */
+    function makeTable(headers: unknown[], dataRows: unknown[][], rowHeadings = false) {
+        const rows = dataRows.map((row) => new TableRow({
+            children: row.map((c, index) => (rowHeadings && index === 0 ? headerCell(c) : cell(c)))
         }));
-        return new Table({
-            rows: [headerRow, ...rows],
+        const table = new Table({
+            rows: headers.length > 0
+                ? [new TableRow({ tableHeader: true, children: headers.map(headerCell) }), ...rows]
+                : rows,
             width: { size: 100, type: WidthType.PERCENTAGE }
         });
+        applyTableLook(table, headers.length > 0, rowHeadings);
+        return table;
+    }
+
+    /** Bullets, or a single "No issues." line when the list is empty. */
+    function bullets(items: string[] | undefined) {
+        if (!Array.isArray(items) || items.length === 0) {
+            return [new Paragraph({ text: 'No issues.' })];
+        }
+        return items.map((item) => new Paragraph({ text: String(item || ''), bullet: { level: 0 } }));
     }
 
     const children: unknown[] = [];
 
-    children.push(new Paragraph({ text: 'Evaluation Results', heading: HeadingLevel.HEADING_1 }));
-    children.push(new Paragraph({ text: 'Executive Summary', heading: HeadingLevel.HEADING_2 }));
-    children.push(new Paragraph({ text: 'Significant Issues', heading: HeadingLevel.HEADING_2 }));
+    // Cover.
+    const subtitle = buildCoverSubtitle(evaluation.asset, evaluation.name);
+    const cover = [
+        String(evaluation.workspace || ''),
+        subtitle,
+        'Use Case Results',
+        formatReportTimestamp(now),
+        'Produced by Functional Test Tool, Level Access Inc.'
+    ];
+    cover.forEach((line, index) => {
+        if (line === '') {
+            return;
+        }
+        children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: line, bold: index === 0, size: index === 0 ? 40 : 28 })]
+        }));
+    });
+    children.push(new Paragraph({ children: [new PageBreak()] }));
 
-    if (Array.isArray(evaluation.comments) && evaluation.comments.length > 0) {
-        evaluation.comments.forEach(c => {
-            children.push(new Paragraph({ text: String(c || ''), bullet: { level: 0 } }));
-        });
-    } else {
-        children.push(new Paragraph({ text: 'No issues.' }));
-    }
+    const scorecard = buildScorecard(evaluation);
+    const groups = groupRunsByAssistiveTechnology(evaluation);
 
-    children.push(new Paragraph({ text: 'Testing and Scoring Key', heading: HeadingLevel.HEADING_2 }));
-    children.push(makeTable(
-        ['Score', 'Title', 'Definition'],
-        [
-            ['5', 'Pass with no accessibility problems', 'The functional test is a complete success. No accessibility problems are found to hinder its completion.'],
-            ['4', 'Pass with recommended optimizations', 'The functional test is readily completed, but a slight modification would make it easier or more reliably accessible.'],
-            ['3', 'Pass with minor accessibility problems', 'One or more minor accessibility problems makes completion of the functional test more challenging than it should be.'],
-            ['2', 'Fail with major accessibility problems', "One or more major accessibility problems that would hinder people with disabilities' ability to complete the functional test."],
-            ['1', 'Fail with severe accessibility problems', 'The functional test cannot be completed due to one or more major accessibility problems.'],
-        ]
-    ));
-
-    evaluation.tests.forEach(test => {
-        (test.runs || []).forEach(run => {
-            const report = buildTestReport(test, run);
-            const testName = String(report.name || '');
-            const reportAt = String(report.assistiveTechnology || '');
-            const reportOperatingSystem = String(report.operatingSystem || '');
-            const reportOperator = String(report.operator || '');
-            const reportApplication = String(report.application || '');
-
-            children.push(new Paragraph({ text: `Detailed Results: ${testName}`, heading: HeadingLevel.HEADING_2 }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Assistive Technology: ', bold: true }), new TextRun(reportAt)] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Goal: ', bold: true }), new TextRun(String(report.goal || ''))] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Operator: ', bold: true }), new TextRun(reportOperator)] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Start Location: ', bold: true }), new TextRun(String(report.startLocation || ''))] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Operating System: ', bold: true }), new TextRun(reportOperatingSystem)] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'Application: ', bold: true }), new TextRun(reportApplication)] }));
-
-            const stepRows = report.steps.map((step, index) => {
-                let scoreTotal = 0;
-                const issueLines: string[] = [];
-                if (step.issues && step.issues.length > 0) {
-                    step.issues.forEach(issue => {
-                        scoreTotal += parseInt(issue.score) || 0;
-                        issueLines.push(String(issue.description || ''));
-                    });
-                }
-                const score = (!step.issues || step.issues.length === 0)
-                    ? '5'
-                    : String(Math.floor(scoreTotal / step.issues.length));
-                return [String(index + 1), String(step.instructions || ''), score, issueLines.length > 0 ? issueLines : ['No issues']];
-            });
-
-            children.push(makeTable(['#', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows));
-
-            children.push(new Paragraph({ text: 'Problem Summary', heading: HeadingLevel.HEADING_3 }));
-            const score = minimumScore(issuesMap(report));
-            children.push(new Paragraph({ children: [
-                new TextRun({ text: `${reportAt} Overall Rating: `, bold: true }),
-                new TextRun(String(score))
-            ]}));
-
-            if (report.comments && report.comments.length > 0) {
-                report.comments.forEach(c => {
-                    children.push(new Paragraph({ text: String(c || ''), bullet: { level: 0 } }));
-                });
-            } else {
-                children.push(new Paragraph({ text: 'No issues.' }));
-            }
+    // Table of contents, written out from the evaluation rather than left to a
+    // Word field. A field would carry page numbers, but Word cannot fill them
+    // in without being asked to update fields when the document opens, and
+    // that prompt is worse than the missing page numbers. These entries are
+    // ordinary internal hyperlinks, so they work the moment the file opens.
+    children.push(heading('Table of Contents', HeadingLevel.HEADING_1));
+    groups.forEach((group, groupIndex) => {
+        children.push(contentsEntry(
+            group.assistiveTechnology, assistiveTechnologyBookmark(groupIndex), false
+        ));
+        group.pairings.forEach(({ test, position }, pairingIndex) => {
+            children.push(contentsEntry(
+                formatUseCaseName(position, String(test.name || '')),
+                useCaseBookmark(groupIndex, pairingIndex),
+                true
+            ));
         });
     });
+    if (groups.length === 0) {
+        children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));
+    }
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+
+    // Summary: the scorecard, then the assistive technologies used.
+
+    children.push(heading('Use Case Results Summary', HeadingLevel.HEADING_1));
+    children.push(heading('Scorecard', HeadingLevel.HEADING_2));
+    children.push(makeTable([], [
+        ['Total Number of Use Cases', String(scorecard.totalRuns)],
+        ['1 (worst)', String(scorecard.countsByScore.get(1) || 0)],
+        ['2', String(scorecard.countsByScore.get(2) || 0)],
+        ['3', String(scorecard.countsByScore.get(3) || 0)],
+        ['4', String(scorecard.countsByScore.get(4) || 0)],
+        ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
+        ['Overall Rating', formatOverallRating(scorecard.overallRating)]
+    ], true));
+
+    children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
+    if (groups.length > 0) {
+        children.push(makeTable(
+            ['Assistive Technologies & Versions'],
+            groups.map((group) => [formatAssistiveTechnology(
+                group.assistiveTechnology, catalogueVersion(group.assistiveTechnology)
+            )])
+        ));
+    } else {
+        children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));
+    }
+
+    // Significant issues, per assistive technology.
+    children.push(heading('Significant Issues', HeadingLevel.HEADING_1));
+    children.push(new Paragraph({ text: SIGNIFICANT_ISSUES_INTRO }));
+    if (groups.length === 0) {
+        children.push(new Paragraph({ text: 'No issues.' }));
+    }
+    groups.forEach((group) => {
+        const summary = findSummary(evaluation, group.assistiveTechnology);
+        children.push(text(
+            `${group.assistiveTechnology} Overall Rating: ${formatOverallRating(summary?.overallRating ?? -1)}`,
+            { bold: true }
+        ));
+        bullets(summary?.significantIssues).forEach((paragraph) => children.push(paragraph));
+    });
+
+    // Scoring key.
+    children.push(heading('Testing and Scoring Key', HeadingLevel.HEADING_1));
+    SCORING_KEY_PARAGRAPHS.forEach((paragraph) => children.push(new Paragraph({ text: paragraph })));
+    children.push(makeTable(
+        ['Score', 'Meaning', 'Explanation'],
+        SCORE_LABELS.map((entry) => [String(entry.score), entry.label, entry.definition])
+    ));
+
+    // Detailed results, grouped by assistive technology.
+    children.push(heading('Detailed Use Case Results', HeadingLevel.HEADING_1));
+    groups.forEach((group, groupIndex) => {
+        children.push(bookmarkedHeading(
+            group.assistiveTechnology, HeadingLevel.HEADING_2, assistiveTechnologyBookmark(groupIndex)
+        ));
+        group.pairings.forEach(({ test, run, position }, pairingIndex) => {
+            appendFunctionalTest(
+                test, run, group.assistiveTechnology,
+                useCaseBookmark(groupIndex, pairingIndex), position
+            );
+        });
+    });
+
+    function appendFunctionalTest(
+        test: FunctionalTest, run: TestRun, assistiveTechnology: string,
+        anchor: string, position: number
+    ): void {
+        const report = buildTestReport(test, run);
+        const score = runScore(run);
+        const useCaseName = formatUseCaseName(position, String(report.name || ''));
+
+        children.push(bookmarkedHeading(useCaseName, HeadingLevel.HEADING_3, anchor));
+        children.push(makeTable([], [
+            ['Name', useCaseName],
+            ['Goal', String(report.goal || '')],
+            ['Operator', String(report.operator || '')],
+            ['Start Location', String(report.startLocation || '')],
+            ['Operating System', String(report.operatingSystem || '')],
+            ['Application', String(report.application || '')]
+        ], true));
+
+        const stepRows = report.steps.map((step, stepIndex) => {
+            const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));
+            return [
+                String(stepIndex + 1),
+                String(step.instructions || ''),
+                String(stepScore({ issues: step.issues || [] })),
+                issueLines.length > 0 ? issueLines : ['No issues']
+            ];
+        });
+        children.push(makeTable(
+            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
+        ));
+
+        children.push(text(`Score: ${formatScore(score)}`, { bold: true }));
+
+        children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));
+        bullets(report.comments).forEach((paragraph) => children.push(paragraph));
+
+        // The five scores, with the one this use case reached filled in.
+        children.push(new Table({
+            rows: SCORE_LABELS.map((entry) => {
+                const achieved = entry.score === score;
+                const fill = SCORE_FILLS[entry.score];
+                return new TableRow({
+                    children: [new TableCell({
+                        children: [text(entry.label, { bold: achieved })],
+                        shading: {
+                            type: ShadingType.CLEAR,
+                            fill: achieved ? fill.achieved : fill.plain,
+                            color: 'auto'
+                        }
+                    })]
+                });
+            }),
+            width: { size: 100, type: WidthType.PERCENTAGE }
+        }));
+    }
 
     return new Document({ sections: [{ children }] });
 }

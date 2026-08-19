@@ -21,6 +21,18 @@
         <button type="button" id="eval-save-file" disabled>Save Evaluation File</button>
       </div>
       <br><br>
+      <div role="group" aria-labelledby="evaluation-details-heading">
+        <h2 id="evaluation-details-heading">Evaluation Details</h2>
+        <label for="eval-workspace">Workspace: </label>
+        <input name="workspace" type="text" id="eval-workspace">
+        <br><br>
+        <label for="eval-asset">Asset: </label>
+        <input name="asset" type="text" id="eval-asset">
+        <br><br>
+        <label for="eval-name">Evaluation: </label>
+        <input name="name" type="text" id="eval-name">
+      </div>
+      <br><br>
       <label for="select-test">Select a Functional Test: </label>
       <select name="select-test" id="select-test"></select>
       <br><br>
@@ -248,64 +260,29 @@
         <p id="generate-pdf-status" role="status" aria-live="polite"></p>
         <h1 id="eval-view-results-dialog-title">Evaluation Results</h1>
         <br><br>
-        <h2>Executive Summary</h2>
+        <h2>Use Case Results Summary</h2>
+        <h3>Scorecard</h3>
+        <div id="eval-results-scorecard"></div>
+        <h3>Assistive Technologies Used</h3>
+        <div id="eval-results-at-used"></div>
+        <br><br>
         <h2>Significant Issues</h2>
-        <p>This document will outline the most significant, widespread high severity problems that were encountered
-          during testing. Any given problem may have occurred on some, most, or all the functional tests, or it may have
-          occurred on a single functional test (but was of sufficiently high severity to be noted here).
-        </p>
+        <!-- Filled from SIGNIFICANT_ISSUES_INTRO so the dialog and the report cannot drift. -->
+        <p id="eval-results-issues-intro"></p>
         <div id="eval-results-summary"></div>
-        <br><br>    
-        <h2>Testing and Scoring     Key</h2>
-        <p>Each Functional Test is tested as a "Success Case" according to the specified steps. In some cases, "Extensions" are
-          also performed inline that are peripheral to the execution of the functional test. A typical example of an Extension
-          is to instruct the tester to deliberately submit invalid data in a form to test the accessibility of its error
-          handling. Every effort is made to achieve success, but minor, major, or "fatal" accessibility problems can
-          occur at any point, which are noted in the "Issues" column next to the step where the problem(s)occurred.
-          At the end of each functional test, its success or failure is scored on a 5-point scale, where "5" indicates complete
-          success and "1" indicates complete failure (see below for a further explanation of "stoppers"). The following
-          chart is an explanation of all five possible scores. After the entire set of Functional Tests have been performed
-          with that Assistive Technology, the tester then assigns an overall score and assembles a list of the most
-          significant problems encountered across all Functional Tests. The overall score and comments are detailed in the
-          Significant Issues section of this report.
-          If, during functional test testing, the tester encounters any "stoppers"- problems that are deemed to be so severe
-          that they effectively prevent the completion of the functional test - the Functional Test is automatically given a score of
-          1,"Complete Failure." However, to ensure that the entire functional test is performed, testers are generally
-          instructed to artificially get past the point(s) of failure, such as by getting the assistance of a
-          non-disabled colleague. This explains why there may be problems noted in functional test steps past a stopper.
+        <br><br>
+        <h2>Assistive Technology Summaries</h2>
+        <p>Rate each assistive technology once the whole evaluation has been performed with it, and list
+          the most significant problems it ran into. Both appear in the Significant Issues section above
+          and in the report, and the ratings are averaged into the scorecard's overall rating.
         </p>
-        <table>
-          <tr>
-            <th scope="col">Score</th>
-            <th scope="col">Title</th>
-            <th scope="col">Definition</th>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td>Pass with no accessibility problems</td>
-            <td>The functional test is a complete success. No accessibility problems are found to hinder its completion.</td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>Pass with recommended optimizations</td>
-            <td>The functional test is readily completed, but a slight modification would make it easier or more reliably accessible.</td>
-          </tr>
-          <tr>
-          <td>3</td>
-          <td>Pass with minor accessibility problems</td>
-          <td>One or more minor accessibility problems makes completion of the functional test more challenging than it should be.</td>
-          </tr>
-          <tr>
-            <td>2</td>
-<td>Fail with major accessibility problems</td>
-<td>One or more major accessibility problems that would hinder people with disabilities’ ability to complete the functional test.</td>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>Fail with severe accessibility problems</td>
-            <td>The functional test cannot be completed due to one or more major accessibility problems.</td>
-          </tr>
-          </table>
+        <div id="at-summaries"></div>
+        <br><br>
+        <h2>Testing and Scoring Key</h2>
+        <!-- Rendered from SCORING_KEY_PARAGRAPHS and SCORE_LABELS, for the same reason. -->
+        <div id="eval-results-scoring-key"></div>
+        <br><br>
+        <h2>Detailed Use Case Results</h2>
               </div>
       <div id="eval-results-tests"></div>
     </form>

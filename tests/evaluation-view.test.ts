@@ -18,7 +18,8 @@ const { loadEvalButtonClicked, saveFileButtonClick } = await import('../src/ui/e
 
 const ELEMENT_IDS = [
     'select-test', 'eval-view-results', 'eval-save-file', 'edit-test',
-    'perform-test', 'evaluation-msg', 'test-editor-msg', 'perform-msg'
+    'perform-test', 'evaluation-msg', 'test-editor-msg', 'perform-msg',
+    'eval-workspace', 'eval-asset', 'eval-name'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */

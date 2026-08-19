@@ -12,7 +12,8 @@ src/
   state/
     store.ts         the single owner of mutable application state
   domain/            pure logic, no DOM, directly unit-testable
-    selection-utils, functional-test, test-run, migration, scoring, summary
+    selection-utils, functional-test, test-run, migration, scoring, summary,
+    evaluation (evaluation-wide queries), report-format (report wording)
   io/
     file-picker.ts   File System Access API wrappers
     docx-report.ts   builds and downloads the .docx report
@@ -46,6 +47,18 @@ been run against. Issues and scores live on the run, not the functional test, so
 the same script can be run against several assistive technologies and keep
 separate results.
 
+The evaluation also carries what the report cover needs — `workspace` (the
+company the work is for), `asset` (the thing under evaluation) and `name` — plus
+one **assistive technology summary** per AT in use. That summary holds an
+`overallRating` and a list of `significantIssues`, both assigned by the tester
+after performing the whole evaluation with that AT. Neither is derived from the
+runs: the report's overall rating is the mean of these per-AT ratings, and it
+does not have to agree with the average or the minimum of the run scores.
+
+`normalizeEvaluation` adds an empty summary for every AT the evaluation refers
+to, and keeps stored summaries whose AT is no longer assigned to any test, so
+briefly unassigning an AT does not discard the text written against it.
+
 Files saved by earlier versions used different field names (`evalUCs`,
 `performedUCs`, `ats`, `oses`, `startlocation`). `domain/migration.ts` accepts
 both spellings on load and always writes the current ones, so opening an old
@@ -69,6 +82,76 @@ dispatch has finished and the browser has cleared it to null.
 The report library is loaded from a CDN, so `io/docx-report.ts` checks it is
 present and reports build and packing failures rather than leaving
 "Generating report, please wait..." on screen.
+
+## The report
+
+`io/docx-report.ts` follows the structure of the platform export it replaces: a
+cover, a table of contents, a scorecard, the significant issues per assistive
+technology, the scoring key, then the detailed results. The detailed section is
+grouped **by assistive technology first**, then by functional test, which is why
+`domain/evaluation.ts` exists — the grouping and the scorecard are questions no
+single test or run can answer.
+
+Three consequences worth knowing:
+
+- The scorecard counts **runs**, not functional tests, so three scripts
+  performed against three ATs give a total of nine.
+- A run's reported score is derived from its issues, not read from `run.score`.
+  That field is only written while the perform dialog is open, so it is stale in
+  any file whose issues were edited afterwards.
+- Use case numbers come from the test's position in the evaluation, not its
+  position under one assistive technology, so a script is "03" under every AT it
+  was performed with even where it is the first one listed.
+
+The two scores in the detailed section use **different rules on purpose**.
+`runScore` is the most severe issue in the run, or 5 when there are none -- the
+same `minimumScore` the perform dialog uses. `stepScore` is the mean of that
+step's issue scores, rounded down. So a step holding one stopper among minor
+issues reads as a 2 while the run it belongs to still reads as a 1. That is the
+reporting rule this export has always used; unifying them would be a scoring
+change, not a cleanup.
+
+The table of contents is written out from the evaluation, not left to a Word
+`TableOfContents` field. A field would carry page numbers, but only after Word
+is asked to update fields when the document opens, and that prompt is worse than
+the missing page numbers. The entries are ordinary internal hyperlinks pointing
+at bookmarks on the assistive technology and use case headings, so they work as
+soon as the file opens. **The document contains no fields at all** -- adding one
+anywhere brings the prompt back.
+
+Each use case carries two tables, deliberately not one. The first is its
+metadata, where the field names are **row** headings; the second is the steps,
+where "Main Success Case" and "Issues Encountered" are **column** headings.
+Merging them would leave a screen reader reading values with no heading to
+attach them to.
+
+OOXML has no per-cell equivalent of `<th>`, so headings are recorded two ways:
+`w:tblHeader` marks a repeating header row, and `w:tblLook` records which of the
+first row and first column are headings -- the "Header Row" and "First Column"
+checkboxes in Word's Table Design tab, and what a screen reader reads to work
+out a cell's headings. `docx@8.5.0` has no API for `w:tblLook`, so
+`applyTableLook` pushes the element into the table properties itself. That is
+only safe because the library version is pinned by the subresource integrity
+hash in `index.html`, so the internals cannot shift without a deliberate version
+bump -- **if you bump `docx`, check that `Table.root[0]` is still the
+`w:tblPr` element.**
+
+`ui/eval-results-view.ts` renders the results dialog section for section
+against the report, reading its wording from `domain/report-format.ts` and
+grouping runs with the same `groupRunsByAssistiveTechnology`. Changing one
+without the other is what the two are arranged to prevent, so add new sections
+to both.
+
+One loose end from that alignment: `Evaluation.comments`, written by the "View
+Overall Comments" dialog, is no longer displayed anywhere. Significant Issues
+now shows the per-AT ratings and issues instead, per the AMP layout. The control
+still stores its text, so nothing is lost, but it has no reader.
+
+The report says "use case" where the rest of the codebase says functional test.
+That is deliberate: the wording is output, matching the platform export the
+report is modelled on, and it is not commentary to be brought in line with the
+source. It lives in `domain/report-format.ts` and the section headings in
+`io/docx-report.ts`.
 
 ## Build and deploy
 
