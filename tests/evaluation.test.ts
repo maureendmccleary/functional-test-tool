@@ -119,12 +119,21 @@ describe('stepScore', () => {
         expect(stepScore({ issues: [] })).toBe(5);
     });
 
-    test('is the most severe issue on that step', () => {
-        expect(stepScore({ issues: [issue('4'), issue('2')] })).toBe(2);
+    test('averages the issue scores and rounds down', () => {
+        expect(stepScore({ issues: [issue('4'), issue('2')] })).toBe(3);
+        expect(stepScore({ issues: [issue('4'), issue('3')] })).toBe(3);
+        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3'), issue('3')] })).toBe(2);
     });
 
-    test('ignores issues scored outside the scale', () => {
-        expect(stepScore({ issues: [issue('-1')] })).toBe(5);
+    test('does not take the most severe issue, unlike runScore', () => {
+        // One stopper among minor issues averages up; the run it belongs to
+        // still scores 1. See the note on stepScore.
+        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3')] })).toBe(2);
+    });
+
+    test('counts an unrated issue as its own value and junk as zero', () => {
+        expect(stepScore({ issues: [issue('-1')] })).toBe(-1);
+        expect(stepScore({ issues: [issue('not a score'), issue('4')] })).toBe(2);
     });
 });
 

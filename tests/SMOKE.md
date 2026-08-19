@@ -156,8 +156,9 @@ Open that document and check:
       same number under every assistive technology
 - [ ] The step table's columns are Step #, Main Success Case, Score, Issues
       Encountered, in that order
-- [ ] A step with no issues scores 5; a step holding a stopper scores 1, **not**
-      an average of its issues
+- [ ] A step with no issues scores 5; a step with issues scores the average of
+      them, rounded down -- so a step holding a stopper among minor issues can
+      read higher than the use case's own score, which is deliberate
 - [ ] With a screen reader in the metadata table, moving to a value announces
       its field name -- "Goal", "Operator", "Start Location" -- rather than
       reading the value bare

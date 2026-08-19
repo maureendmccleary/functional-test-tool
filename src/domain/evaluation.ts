@@ -121,13 +121,26 @@ export function runScore(run: TestRun): number {
 }
 
 /**
- * The score for a single step: its most severe issue, or 5 when it has none.
+ * The score for a single step: the mean of its issue scores, rounded down, or
+ * 5 when it has none.
  *
- * The same rule as `runScore` and as the perform dialog, so a step's score and
- * the use case's score are read off the same scale.
+ * Deliberately *not* `minimumScore`, which is what `runScore` and the perform
+ * dialog use. A step holding one stopper and three minor issues averages to 2
+ * here while the run it belongs to still scores 1. That is the reporting rule
+ * this export has always used, and changing it is a scoring change, not a
+ * cleanup.
+ *
+ * A score outside 1..5 counts as itself, and a non-numeric one as 0, both of
+ * which can drag the average below 1. Issue scores are validated on entry, so
+ * this only shows up in hand-edited files.
  */
 export function stepScore(step: { issues: Issue[] }): number {
-    return minimumScore(issuesMap({ steps: [step] }));
+    const issues = Array.isArray(step.issues) ? step.issues : [];
+    if (issues.length === 0) {
+        return HIGHEST_SCORE;
+    }
+    const total = issues.reduce((sum, issue) => sum + (parseInt(issue.score) || 0), 0);
+    return Math.floor(total / issues.length);
 }
 
 /** The summary stored for one assistive technology, or undefined when none is. */

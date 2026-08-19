@@ -103,11 +103,13 @@ Three consequences worth knowing:
   position under one assistive technology, so a script is "03" under every AT it
   was performed with even where it is the first one listed.
 
-Both the per-step score and the per-run score are the **most severe** issue
-present, or 5 when there are none -- `stepScore` and `runScore` share
-`minimumScore`, the same rule the perform dialog uses. An earlier version of the
-export averaged a step's issue scores instead, which could report a step as a 3
-when it held a stopper.
+The two scores in the detailed section use **different rules on purpose**.
+`runScore` is the most severe issue in the run, or 5 when there are none -- the
+same `minimumScore` the perform dialog uses. `stepScore` is the mean of that
+step's issue scores, rounded down. So a step holding one stopper among minor
+issues reads as a 2 while the run it belongs to still reads as a 1. That is the
+reporting rule this export has always used; unifying them would be a scoring
+change, not a cleanup.
 
 The table of contents is written out from the evaluation, not left to a Word
 `TableOfContents` field. A field would carry page numbers, but only after Word
