@@ -19,7 +19,7 @@ function initialize(): void {
     requireEl("edit-test").addEventListener("click", editTestButtonClicked);
     requireEl("new-test").addEventListener("click", newTestButtonClicked);
 
-    fillCheckboxMenu(defaults["at-types"], "test-edit-at-menu", "ats");
+    fillCheckboxMenu(defaults["at-types"], "test-edit-at-menu", "assistiveTechnologies");
     addFormEvents();
     addEvaluationDetailEvents();
 

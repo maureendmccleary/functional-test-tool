@@ -86,7 +86,15 @@ export function deleteStepButtonClicked(e: Event): void {
     }
 }
 
-/** Writes an edited field back to the test when focus leaves it. */
+/**
+ * Writes an edited field back to the test when focus leaves it.
+ *
+ * The field's `name` attribute is the property it writes, so every input in the
+ * editor must be named for the property it edits. Naming them for the spellings
+ * older files used -- `startlocation`, `oses` -- wrote fields nothing reads,
+ * and the edit was lost the next time the editor was opened. The migration is
+ * where old spellings are understood; see domain/migration.ts.
+ */
 export function blurFormField(e: Event): void {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement;
     const test = getCurrentTest();
@@ -101,7 +109,7 @@ export function blurFormField(e: Event): void {
     }
 }
 
-/** Writes the checked assistive technologies back to the test. */
+/** Writes the checked assistive technologies back to the test, by field name as above. */
 export function changeFormField(e: Event): void {
     const target = e.target as HTMLInputElement;
     const test = getCurrentTest();
