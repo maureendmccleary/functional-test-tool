@@ -103,6 +103,7 @@ describe('scoring a real evaluation', () => {
             const map = issuesMap(run);
             return [1, 2, 3, 4].map((score) => map.get(score)!.size);
         });
+        // One run per script, and the search script was split in two.
         expect(counts).toEqual([
             [2, 3, 2, 1],   // search, NVDA
             [0, 3, 2, 1],   // search, JAWS -- the blocking issues do not occur
@@ -116,14 +117,14 @@ describe('scoring a real evaluation', () => {
     });
 
     test('a run with no issues scores 5', () => {
-        const renew = evaluation.tests[1].runs[0];
+        const renew = evaluation.tests[2].runs[0];
         expect(minimumScore(issuesMap(renew))).toBe(5);
     });
 
     test('the stored score can disagree with the recomputed one', () => {
         // Stored scores are only refreshed when Generate Summary is clicked, so
         // a file can drift. Do not "fix" this by recomputing on load.
-        const jaws = evaluation.tests[0].runs[1];
+        const jaws = evaluation.tests[1].runs[0];
         expect(jaws.score).toBe(1);
         expect(minimumScore(issuesMap(jaws))).toBe(2);
     });

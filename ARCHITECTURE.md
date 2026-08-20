@@ -19,8 +19,9 @@ src/
     docx-report.ts   builds and downloads the .docx report
   ui/
     dom, step-ids, status, controls        primitives
-    evaluation-view, editor-view, perform-view, issue-dialog,
-    summary-dialog, results-view, eval-results-view
+    screens.ts       shows one of the three screens and moves focus to it
+    evaluation-view, evaluation-editor-view, editor-view, perform-view,
+    issue-dialog, summary-dialog, results-view, eval-results-view
 ```
 
 **Dependencies run one way:** `ui/` → `domain/`, `state/`, `io/`, `config/`, and
@@ -37,15 +38,69 @@ builds the buttons that open the dialog, and the dialog refreshes them when it
 closes. The cycle is fine: both sides only call hoisted function declarations,
 at event time.
 
+## Screens
+
+Three screens live in `index.html` at once, and `ui/screens.ts` shows one at a
+time by toggling the `inactive` class. It also moves focus to the new screen's
+heading, which carries `tabindex="-1"`: hiding the element focus was on drops
+focus to the document and leaves a screen reader user with no idea anything
+changed.
+
+- **Landing** — load or save the evaluation file, view the results, start or
+  edit an evaluation, and choose a functional test to Edit or Perform. This is
+  the tester's screen.
+- **Evaluation** — the evaluation's own details (workspace, asset, name) and its
+  list of functional tests, with Add Test, Edit and Delete. This is where an
+  evaluation is put together. Edit is there because the copies made for each
+  assistive technology start identical and often should not stay that way:
+  driving a screen reader through a task reads differently from driving speech
+  recognition through it, so a copy gets instructions of its own here.
+- **Functional test editor** — one script: its metadata, its assistive
+  technologies, and its steps.
+
+Both the evaluation screen and the editor have a Back. Nothing on either is held
+back until Save — the evaluation is changed in place as it is edited — so Back
+differs from Save only in not announcing that the evaluation is ready to
+perform. Leaving a screen should not require claiming to be finished with it.
+
+The editor's Back returns to whichever screen opened it, and drops a script that
+was never saved: it has no assistive technology, so it has no place in the
+evaluation and would otherwise sit in every list as a nameless entry.
+
 ## Data model
 
 An **Evaluation** holds **functional tests** — previously called *use cases*,
 which is why saved files and some identifiers still carry `UC`. Each functional
-test carries the authoring script — its steps and their instructions — plus a
-list of **runs**, one per (assistive technology, operating system) pair it has
-been run against. Issues and scores live on the run, not the functional test, so
-the same script can be run against several assistive technologies and keep
-separate results.
+test is a script written for **one assistive technology**, and carries exactly
+one **run** holding the issues and score recorded against it.
+
+A script the author writes for three assistive technologies therefore becomes
+three functional tests. `addAssistiveTechnologyCopies` does that when the editor
+saves, and `splitByAssistiveTechnology` — the same function — does it to older
+files on load. The copies share the script's `testNumber`, which is what makes
+them recognisable as the same script performed three ways; `formatUseCaseName`
+composes the name the tester sees from the number, the name and the technology,
+as in `01 Place a hold - NVDA`.
+
+The operating system belongs to the script the same way the assistive
+technology does, so one script performed with NVDA on Windows and another with
+VoiceOver on macOS keep separate results. Saving a script brings its run's
+operating system into line with it — otherwise editing the field would never
+reach the report, which reads it from the run. A run that has already been
+performed keeps the operating system it was performed under: that is a record
+of the conditions of the test, not a field to be rewritten afterwards.
+
+`testNumber` is assigned once and never reassigned. Deleting a copy leaves a gap
+in the numbering on purpose: the number is part of a name that may already have
+been reported on, and renumbering would silently rename other scripts.
+
+A run's `score` is `-1` until the tester picks one, and that is the only signal
+that the run was performed. A run carries no issues both when the script passed
+cleanly and when nobody has opened it yet, so without it an evaluation that had
+been written but not performed would report every script as a 5. Nothing else
+writes the score: `isPerformed` reads it, `buildScorecard` skips runs that fail
+it, and `runScore` returns `-1` for them so the detailed section says
+"Not rated".
 
 The evaluation also carries what the report cover needs — `workspace` (the
 company the work is for), `asset` (the thing under evaluation) and `name` — plus
@@ -62,7 +117,10 @@ briefly unassigning an AT does not discard the text written against it.
 Files saved by earlier versions used different field names (`evalUCs`,
 `performedUCs`, `ats`, `oses`, `startlocation`). `domain/migration.ts` accepts
 both spellings on load and always writes the current ones, so opening an old
-file and saving it quietly upgrades it.
+file and saving it quietly upgrades it. Old spellings belong in that module and
+nowhere else: the editor's inputs are named for the properties they write, and
+naming them for the old spellings — which they once were — wrote fields nothing
+reads, losing the edit the next time the editor opened.
 
 `domain/migration.ts` is the only place untrusted file contents become an
 `Evaluation`. Everything downstream can assume the normalized shape.
@@ -94,18 +152,19 @@ single test or run can answer.
 
 Three consequences worth knowing:
 
-- The scorecard counts **runs**, not functional tests, so three scripts
+- The scorecard counts **performed runs**, so a script written for three ATs
+  contributes nothing until each of the three has been scored, and three scripts
   performed against three ATs give a total of nine.
 - A run's reported score is derived from its issues, not read from `run.score`.
-  That field is only written while the perform dialog is open, so it is stale in
+  That field records only *whether* a score was picked; its value goes stale in
   any file whose issues were edited afterwards.
-- Use case numbers come from the test's position in the evaluation, not its
-  position under one assistive technology, so a script is "03" under every AT it
-  was performed with even where it is the first one listed.
+- Use case numbers come from `testNumber`, not from position, so a script is
+  "03" under every AT it was performed with even where it is the first one
+  listed, and stays "03" after an earlier script is deleted.
 
 The two scores in the detailed section use **different rules on purpose**.
-`runScore` is the most severe issue in the run, or 5 when there are none -- the
-same `minimumScore` the perform dialog uses. `stepScore` is the mean of that
+`runScore` is the most severe issue in the run, or 5 when there are none and the
+run has been performed. `stepScore` is the mean of that
 step's issue scores, rounded down. So a step holding one stopper among minor
 issues reads as a 2 while the run it belongs to still reads as a 1. That is the
 reporting rule this export has always used; unifying them would be a scoring

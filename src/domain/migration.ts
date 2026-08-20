@@ -2,6 +2,7 @@ import type {
     AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, Step, TestRun
 } from '../types.js';
 import { collectAssistiveTechnologies } from './evaluation.js';
+import { splitByAssistiveTechnology } from './functional-test.js';
 import { normalizeSelectionValues } from './selection-utils.js';
 
 /**
@@ -149,6 +150,45 @@ function normalizeRun(raw: RawRecord): TestRun {
     return raw as unknown as TestRun;
 }
 
+/** A number that can serve as a script number. */
+function isTestNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+/**
+ * Numbers each group of scripts, one group per original test.
+ *
+ * The copies of one script share a number, and a number already in the file is
+ * kept: it is part of the name the tester sees, so renumbering would rename
+ * scripts that have already been reported on. Only groups without one are
+ * given the lowest numbers still free.
+ */
+function assignTestNumbers(groups: FunctionalTest[][]): void {
+    const numbers = groups.map((group) => {
+        const existing = group.map((script) => script.testNumber).find(isTestNumber);
+        return existing === undefined ? 0 : existing;
+    });
+
+    const taken = new Set(numbers.filter((testNumber) => testNumber > 0));
+    let next = 1;
+    numbers.forEach((testNumber, index) => {
+        if (testNumber > 0) {
+            return;
+        }
+        while (taken.has(next)) {
+            next++;
+        }
+        numbers[index] = next;
+        taken.add(next);
+    });
+
+    groups.forEach((group, index) => {
+        group.forEach((script) => {
+            script.testNumber = numbers[index];
+        });
+    });
+}
+
 /**
  * Builds the per-assistive-technology summary list.
  *
@@ -190,7 +230,9 @@ function normalizeSummaries(raw: unknown, tests: FunctionalTest[]): AssistiveTec
  * Turns the contents of a saved file into an `Evaluation`.
  *
  * Mutates and returns the parsed object rather than rebuilding it, so fields
- * written by other versions survive a load/save round trip untouched.
+ * written by other versions survive a load/save round trip untouched. Tests are
+ * the exception: each is split into one script per assistive technology, which
+ * cannot be done in place. The copies are deep, and unknown fields survive.
  *
  * @param raw the result of `JSON.parse` on a saved evaluation file
  */
@@ -198,8 +240,10 @@ export function normalizeEvaluation(raw: unknown): Evaluation {
     const source = (raw ?? {}) as RawRecord;
 
     const rawTests = pick(source, ['tests', LEGACY_FIELDS.evaluationTests], []);
-    source.tests = (Array.isArray(rawTests) ? rawTests : [])
-        .map((entry) => normalizeTest(entry as RawRecord));
+    const groups = (Array.isArray(rawTests) ? rawTests : [])
+        .map((entry) => splitByAssistiveTechnology(normalizeTest(entry as RawRecord)));
+    assignTestNumbers(groups);
+    source.tests = groups.flat();
     dropLegacy(source, LEGACY_FIELDS.evaluationTests, 'tests');
 
     if (typeof source.score !== 'number') {

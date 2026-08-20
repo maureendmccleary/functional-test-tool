@@ -3,7 +3,7 @@ import type { FunctionalTest } from '../src/types.js';
 import {
     migrateLegacyTestRun, normalizeEvaluation, normalizeOperatingSystem
 } from '../src/domain/migration.js';
-import { getTestComments } from '../src/domain/functional-test.js';
+import { getTestComments, testDisplayName } from '../src/domain/functional-test.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 /**
@@ -121,10 +121,13 @@ describe('loading a file saved before runs existed', () => {
         expect(preferences.runs[0].operatingSystem).toBe('');
     });
 
-    test('leaves a test with no recorded issues unmigrated', () => {
-        // Nothing to move. Inventing an empty run would misrepresent the test
-        // as having been performed.
-        expect(renew.runs).toEqual([]);
+    test('gives a test with no recorded issues an unperformed run', () => {
+        // migrateLegacyTestRun still moves nothing, having nothing to move.
+        // The split then adds the run every script carries, left unperformed so
+        // the scorecard does not count it as a clean pass.
+        expect(renew.runs).toHaveLength(1);
+        expect(renew.runs[0].score).toBe(-1);
+        expect(renew.runs[0].steps.every((step) => step.issues.length === 0)).toBe(true);
         expect(getTestComments(renew)).toEqual([]);
     });
 
@@ -141,23 +144,71 @@ describe('loading a file saved before runs existed', () => {
 describe('loading a file that already has runs', () => {
     const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
 
-    test('keeps every recorded run', () => {
-        expect(evaluation.tests.map((t) => t.runs.length)).toEqual([2, 1, 1]);
+    test('splits a test performed with two technologies into two scripts', () => {
+        expect(evaluation.tests.map(testDisplayName)).toEqual([
+            '01 Search the catalogue and place a hold - NVDA',
+            '01 Search the catalogue and place a hold - JAWS',
+            '02 Renew a borrowed item - NVDA',
+            '03 Update notification preferences - NVDA'
+        ]);
+    });
+
+    test('gives every script exactly one run', () => {
+        expect(evaluation.tests.map((t) => t.runs.length)).toEqual([1, 1, 1, 1]);
     });
 
     test('renames run fields without disturbing their contents', () => {
-        const [nvda, jaws] = evaluation.tests[0].runs;
+        const nvda = evaluation.tests[0].runs[0];
+        const jaws = evaluation.tests[1].runs[0];
         expect(nvda.assistiveTechnology).toBe('NVDA');
         expect(jaws.assistiveTechnology).toBe('JAWS');
         expect(nvda.steps.map((step) => step.issues.length)).toEqual([1, 0, 2, 2, 1, 2]);
         expect((nvda as unknown as Record<string, unknown>).ats).toBeUndefined();
     });
 
-    test('does not add a second run to a test that already has one', () => {
-        // migrateLegacyTestRun must not fire when runs are present, or every
-        // load would append another copy.
+    test('does not add a second run to a script that already has one', () => {
+        // migrateLegacyTestRun must not fire when runs are present, and a
+        // second split must not re-split what is already one script per
+        // technology, or every load would append another copy.
         const reloaded = normalizeEvaluation(JSON.parse(JSON.stringify(evaluation)));
-        expect(reloaded.tests.map((t) => t.runs.length)).toEqual([2, 1, 1]);
+        expect(reloaded.tests.map((t) => t.runs.length)).toEqual([1, 1, 1, 1]);
+        expect(reloaded.tests).toHaveLength(4);
+    });
+
+    test('the copies of one script share its number', () => {
+        expect(evaluation.tests.map((t) => t.testNumber)).toEqual([1, 1, 2, 3]);
+    });
+
+    test('does not share steps between the copies of one script', () => {
+        const reloaded = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        reloaded.tests[0].steps[0].instructions = 'changed';
+        expect(reloaded.tests[1].steps[0].instructions).not.toBe('changed');
+    });
+});
+
+describe('script numbers', () => {
+    test('are assigned in order to a file that has none', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-legacy'));
+        expect(evaluation.tests.map((t) => t.testNumber)).toEqual([1, 2, 3]);
+    });
+
+    test('already in the file are kept, and gaps are filled from the bottom', () => {
+        // A number is part of the name the tester sees, so a stored one is
+        // never reassigned; only the script without one is given a number.
+        const evaluation = normalizeEvaluation({
+            tests: [
+                { name: 'kept', testNumber: 4, ats: ['NVDA'] },
+                { name: 'new', ats: ['NVDA'] }
+            ]
+        });
+        expect(evaluation.tests.map((t) => t.testNumber)).toEqual([4, 1]);
+    });
+
+    test('ignore a stored value that could not be a number', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [{ name: 'one', testNumber: 'two', ats: ['NVDA'] }]
+        });
+        expect(evaluation.tests[0].testNumber).toBe(1);
     });
 });
 

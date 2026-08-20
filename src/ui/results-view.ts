@@ -1,6 +1,6 @@
 import type { TestReport } from '../types.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
-import { buildTestReport } from '../domain/functional-test.js';
+import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
 import { requireEl } from './dom.js';
 
@@ -137,6 +137,8 @@ export function viewResultsButtonClicked(e: Event): void {
     const test = getCurrentTest();
     const run = getCurrentRun();
     const resultsDiv = document.createElement("div");
-    createResultsTable(buildTestReport(test, run), resultsDiv);
+    createResultsTable(buildTestReport(test, run), resultsDiv, {
+        title: `Detailed Results: ${testDisplayName(test)}`
+    });
     parentDiv.appendChild(resultsDiv);
 }

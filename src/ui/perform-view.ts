@@ -1,12 +1,10 @@
 import type { FunctionalTest } from '../types.js';
 import { defaults } from '../config/defaults.js';
+import { testAssistiveTechnology } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
+import { emptyTestRun, ensureTestRunStepCount } from '../domain/test-run.js';
 import {
-    emptyTestRun, ensureTestRunStepCount, findTestRunIndex
-} from '../domain/test-run.js';
-import { issuesMap, minimumScore } from '../domain/scoring.js';
-import {
-    getCurrentRun, getCurrentTest, setCurrentRunIndex, setCurrentTestIndex
+    getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
@@ -15,12 +13,6 @@ import { addIssueButtonClick } from './issue-dialog.js';
 import { viewResultsButtonClicked } from './results-view.js';
 import { getStepLabelIdForPerform } from './step-ids.js';
 import { viewSummaryButtonClicked } from './summary-dialog.js';
-
-/** The assistive technology chosen in the perform dialog, or an empty string. */
-export function getSelectedAssistiveTechnology(): string {
-    const atSelect = requireEl<HTMLSelectElement>("perform-at");
-    return atSelect.options.length ? atSelect.options[atSelect.selectedIndex].textContent as string : "";
-}
 
 /** The current test's operating system. */
 export function getSelectedOperatingSystem(): string {
@@ -72,25 +64,38 @@ export function updateAddIssueButtons(): void {
     });
 }
 
-/** Switches to the performance matching the chosen AT/OS, creating it if needed. */
-export function selectTestRun(): void {
+/**
+ * Points the store at the script's run and fills the dialog from it.
+ *
+ * A script is written for one assistive technology and carries one run, so
+ * there is nothing to choose between here. The run is created only for a file
+ * hand-edited to drop it; everything the tool writes already has one.
+ *
+ * The score is shown as stored and not recomputed. Picking one is what marks
+ * the run performed, so filling it in on the tester's behalf would report every
+ * script as performed the moment it was opened.
+ */
+export function openTestRun(): void {
     const test = getCurrentTest();
-    const ats = getSelectedAssistiveTechnology();
-    const operatingSystem = getSelectedOperatingSystem();
-    let index = findTestRunIndex(test, ats, operatingSystem);
-    if (index === -1) {
-        test.runs.push(emptyTestRun(test, ats, operatingSystem));
-        index = test.runs.length - 1;
-    } else {
-        ensureTestRunStepCount(test, test.runs[index]);
+    if (test.runs.length === 0) {
+        test.runs.push(emptyTestRun(test, testAssistiveTechnology(test), getSelectedOperatingSystem()));
     }
-    setCurrentRunIndex(index);
-    const run = getCurrentRun();
+    ensureTestRunStepCount(test, test.runs[0]);
+    setCurrentRunIndex(0);
     populateIssuesList();
     updateAddIssueButtons();
-    const score = requireEl<HTMLSelectElement>("perform-score");
-    score.value = String(minimumScore(issuesMap(run)));
-    run.score = parseInt(score.value, 10);
+    requireEl<HTMLSelectElement>("perform-score").value = String(getCurrentRun().score);
+}
+
+/**
+ * Records the score the tester picked.
+ *
+ * The only place the tester's own score reaches the run. Until it does, the
+ * run's score is -1 and the run counts as not yet performed.
+ */
+export function scoreChanged(): void {
+    getCurrentRun().score = parseInt(requireEl<HTMLSelectElement>("perform-score").value, 10);
+    markEvaluationChanged();
 }
 
 function createStepLabelForPerform(stepNumber: number): HTMLElement {
@@ -170,8 +175,8 @@ export function populatePerform(): void {
     });
     const performForm = requireEl<HTMLFormElement>("perform-form");
     performForm.reset();
-    fillListbox(test.assistiveTechnologies, "perform-at");
     fillListbox(defaults["scores"], "perform-score");
+    requireEl("perform-at").textContent = testAssistiveTechnology(test);
     requireEl("perform-name").innerHTML = test.name;
     requireEl("perform-goal").innerHTML = test.goal;
     requireEl("perform-operator").textContent = test.operator || "";
@@ -184,7 +189,7 @@ export function populatePerform(): void {
     const span = requireEl("perform-start-location");
     span.innerHTML = "";
     span.appendChild(a);
-    requireEl("perform-at").addEventListener("change", selectTestRun);
+    requireEl("perform-score").addEventListener("change", scoreChanged);
 
     for (let i = 0; i < test.steps.length; i++) {
         if (i === 0) {
@@ -201,7 +206,7 @@ export function populatePerform(): void {
     viewSummaryBtn.addEventListener('click', viewSummaryButtonClicked);
 
     requireEl("add-issue-btn[0]").addEventListener('click', addIssueButtonClick);
-    selectTestRun();
+    openTestRun();
 }
 
 /** Opens the perform dialog on the test chosen in the list. */

@@ -81,14 +81,28 @@ export function formatAssistiveTechnology(name: string, version: string | undefi
 }
 
 /**
- * A use case name with its number, for example "01 Review exit polls".
+ * A use case name with its number and assistive technology, for example
+ * "01 Review exit polls - NVDA".
  *
- * `position` is 1-based and comes from the test's place in the evaluation, so
- * the number identifies the script rather than its order under one assistive
- * technology.
+ * This is the one place the three parts are put together. The number comes from
+ * the script rather than from its position in the evaluation, so the copies
+ * made of one script for different assistive technologies share it and a
+ * deleted copy does not renumber the rest.
+ *
+ * The assistive technology is omitted rather than left dangling when a script
+ * has none, which only happens in files written before the split. A number that
+ * is not a positive whole one is dropped the same way, rather than printed as
+ * "00" or "undefined".
  */
-export function formatUseCaseName(position: number, name: string): string {
-    return `${String(position).padStart(2, '0')} ${String(name || '').trim()}`.trim();
+export function formatUseCaseName(
+    testNumber: number, name: string, assistiveTechnology = ''
+): string {
+    const trimmedName = String(name || '').trim();
+    const numbered = Number.isInteger(testNumber) && testNumber > 0
+        ? `${String(testNumber).padStart(2, '0')} ${trimmedName}`.trim()
+        : trimmedName;
+    const technology = String(assistiveTechnology || '').trim();
+    return technology === '' ? numbered : `${numbered} - ${technology}`;
 }
 
 /** Joins the cover's asset and evaluation name, skipping whichever is blank. */

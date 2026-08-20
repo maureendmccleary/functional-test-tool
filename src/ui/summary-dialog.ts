@@ -1,6 +1,6 @@
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildSummaryText, splitSummaryComments } from '../domain/summary.js';
-import { getCurrentRun } from '../state/store.js';
+import { getCurrentRun, markEvaluationChanged } from '../state/store.js';
 import { requireEl } from './dom.js';
 
 /** Fills the comment box with the run's issues grouped by severity, and updates its score. */
@@ -26,6 +26,7 @@ export function saveGeneralComments(e: Event): void {
     while (summaryList.firstChild) {
         summaryList.removeChild(summaryList.firstChild);
     }
+    markEvaluationChanged();
     const commentSummary = requireEl<HTMLTextAreaElement>("general-comments").value.trim();
     if (commentSummary === "") {
         run.comments.length = 0;

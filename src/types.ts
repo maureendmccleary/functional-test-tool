@@ -32,6 +32,13 @@ export interface TestRun {
     /** A single assistive technology, unlike FunctionalTest's list. */
     assistiveTechnology: string;
     operatingSystem: string;
+    /**
+     * -1 until the tester picks a score, which is what marks the run performed.
+     *
+     * Every script carries a run from the moment it is created, so "no issues
+     * recorded" cannot tell a clean pass from work not yet started. The tester
+     * choosing a score is the signal; see isPerformed in domain/test-run.ts.
+     */
     score: number;
     comments: string[];
     steps: TestRunStep[];
@@ -39,7 +46,17 @@ export interface TestRun {
 
 /** A script to be performed: the steps to follow, plus every recorded run of them. */
 export interface FunctionalTest {
+    /** The plain script name, without the number or assistive technology. */
     name: string;
+    /**
+     * The script's number in the evaluation, printed as "01" in names and reports.
+     *
+     * Assigned once and then left alone: the copies of one script made for each
+     * assistive technology share a number, and deleting a copy does not
+     * renumber the rest. So it cannot be derived from the position in
+     * Evaluation.tests. formatUseCaseName composes the displayed name from it.
+     */
+    testNumber: number;
     goal: string;
     startLocation: string;
     /** Absent in files saved before these fields existed; always read with `|| ""`. */
@@ -49,12 +66,21 @@ export interface FunctionalTest {
     stepCount?: number;
     /** Normalized to a single string on load; older files store an array. */
     operatingSystem: string;
-    /** Every assistive technology this test is meant to be run against. */
+    /**
+     * The assistive technologies this test is meant to be run against.
+     *
+     * A saved script holds exactly one: the editor duplicates a script into one
+     * copy per checked assistive technology on save. The array survives because
+     * it is the editor's working surface -- while the checkbox group is open it
+     * holds every technology checked -- and because it is the saved file's
+     * spelling.
+     */
     assistiveTechnologies: string[];
     /** Absent in some legacy files, which migrateLegacyTestRun allows for. */
     score?: number;
     steps: Step[];
     comments: string[];
+    /** Exactly one, paired with the single entry in assistiveTechnologies. */
     runs: TestRun[];
 }
 

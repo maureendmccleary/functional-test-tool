@@ -63,6 +63,21 @@ describe('formatUseCaseName', () => {
     test('leaves just the number when the name is blank', () => {
         expect(formatUseCaseName(3, '   ')).toBe('03');
     });
+
+    test('appends the assistive technology', () => {
+        expect(formatUseCaseName(1, 'Review exit polls', 'NVDA'))
+            .toBe('01 Review exit polls - NVDA');
+    });
+
+    test('omits the technology when the script has none', () => {
+        expect(formatUseCaseName(1, 'Review exit polls', '   ')).toBe('01 Review exit polls');
+    });
+
+    test('omits a number that is not a positive whole one', () => {
+        expect(formatUseCaseName(0, 'Review exit polls', 'JAWS')).toBe('Review exit polls - JAWS');
+        expect(formatUseCaseName(undefined as unknown as number, 'Review exit polls'))
+            .toBe('Review exit polls');
+    });
 });
 
 describe('buildCoverSubtitle', () => {
