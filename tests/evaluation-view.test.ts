@@ -18,7 +18,8 @@ const { loadEvalButtonClicked, saveFileButtonClick } = await import('../src/ui/e
 
 const ELEMENT_IDS = [
     'select-test', 'eval-select-test', 'eval-edit', 'eval-view-results', 'eval-save-file',
-    'edit-test', 'perform-test', 'eval-delete-test', 'evaluation-msg', 'test-editor-msg',
+    'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
+    'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name'
 ];
 

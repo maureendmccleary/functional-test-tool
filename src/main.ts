@@ -7,8 +7,9 @@ import {
 } from './ui/editor-view.js';
 import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
 import {
-    addTestButtonClicked, deleteTestButtonClicked, editEvaluationButtonClicked,
-    newEvaluationButtonClicked, saveEvaluationButtonClicked
+    addTestButtonClicked, backEvaluationButtonClicked, deleteTestButtonClicked,
+    editEvaluationButtonClicked, editSelectedTestButtonClicked, newEvaluationButtonClicked,
+    saveEvaluationButtonClicked
 } from './ui/evaluation-editor-view.js';
 import {
     addEvaluationDetailEvents, loadEvalButtonClicked, saveFileButtonClick
@@ -27,8 +28,10 @@ function initialize(): void {
     requireEl("edit-test").addEventListener("click", editTestButtonClicked);
 
     requireEl("eval-add-test").addEventListener("click", addTestButtonClicked);
+    requireEl("eval-edit-test").addEventListener("click", editSelectedTestButtonClicked);
     requireEl("eval-delete-test").addEventListener("click", deleteTestButtonClicked);
     requireEl("eval-editor-save").addEventListener("click", saveEvaluationButtonClicked);
+    requireEl("evaluation-editor-back").addEventListener("click", backEvaluationButtonClicked);
 
     fillCheckboxMenu(defaults["at-types"], "test-edit-at-menu", "assistiveTechnologies");
     addFormEvents();

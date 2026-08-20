@@ -216,6 +216,26 @@ describe('addAssistiveTechnologyCopies', () => {
         ]);
     });
 
+    test('re-saving a script with only its own technology changes nothing', () => {
+        // The path taken when a copy is opened to give it instructions of its
+        // own. Saving must not spawn a second copy of the same technology.
+        const tests = [script(1, 'NVDA', 4)];
+
+        expect(addAssistiveTechnologyCopies(tests, 0)).toEqual([]);
+        expect(tests.map(testDisplayName)).toEqual(['01 Place a hold - NVDA']);
+        expect(tests[0].runs[0].score).toBe(4);
+    });
+
+    test('keeps the edits made to a copy when it is saved again', () => {
+        const tests = [script(1, 'NVDA')];
+        tests[0].steps[0].instructions = 'Use NVDA browse mode to reach the search field.';
+
+        addAssistiveTechnologyCopies(tests, 0);
+
+        expect(tests[0].steps[0].instructions)
+            .toBe('Use NVDA browse mode to reach the search field.');
+    });
+
     test('adds a copy for a technology checked after the script was written', () => {
         const tests = [script(1, 'NVDA', 3)];
         tests[0].assistiveTechnologies = ['NVDA', 'JAWS'];

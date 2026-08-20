@@ -50,10 +50,18 @@ changed.
   edit an evaluation, and choose a functional test to Edit or Perform. This is
   the tester's screen.
 - **Evaluation** — the evaluation's own details (workspace, asset, name) and its
-  list of functional tests, with Add Test and Delete. This is where an
-  evaluation is put together.
+  list of functional tests, with Add Test, Edit and Delete. This is where an
+  evaluation is put together. Edit is there because the copies made for each
+  assistive technology start identical and often should not stay that way:
+  driving a screen reader through a task reads differently from driving speech
+  recognition through it, so a copy gets instructions of its own here.
 - **Functional test editor** — one script: its metadata, its assistive
   technologies, and its steps.
+
+Both the evaluation screen and the editor have a Back. Nothing on either is held
+back until Save — the evaluation is changed in place as it is edited — so Back
+differs from Save only in not announcing that the evaluation is ready to
+perform. Leaving a screen should not require claiming to be finished with it.
 
 The editor's Back returns to whichever screen opened it, and drops a script that
 was never saved: it has no assistive technology, so it has no place in the

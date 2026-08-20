@@ -68,6 +68,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Save** on the evaluation screen returns to the landing screen; the
       functional test list is there with Edit and Perform, and there is no
       **New Functional Test** button
+- [ ] **Back** on the evaluation screen also returns to the landing screen, and
+      does **not** announce that the evaluation is ready to perform
 - [ ] **New Evaluation** with unsaved changes warns before discarding them;
       cancelling keeps the loaded evaluation intact
 - [ ] **New Evaluation** immediately after loading a file does **not** warn --
@@ -83,6 +85,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Only the technology the editor is now on stays checked
 - [ ] **Back** returns to the evaluation screen with all three in the list,
       together and in order, and no prompt about discarding
+- [ ] **Edit Functional Test** on the evaluation screen opens the editor on the
+      selected copy; **Back** returns to the evaluation screen, not the landing
+      screen
+- [ ] Give one copy instructions of its own -- reword a step for that
+      technology -- and **Save**: the wording sticks, **no** further copy is
+      created, and the other copies keep the wording they had
 - [ ] Edit one of the three, check a fourth technology, and **Save**: one more
       functional test appears, and the one edited keeps its own issues
 - [ ] Edit it again, uncheck its own technology, and **Save**: nothing is

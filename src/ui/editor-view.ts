@@ -301,12 +301,22 @@ export function backButtonClicked(e: Event): void {
     showScreen(returnScreen);
 }
 
-/** Opens the editor on the test chosen in the list. */
-export function editTestButtonClicked(): void {
-    openTestEditor('landing');
-    const selectUC = requireEl<HTMLSelectElement>("select-test");
-    setCurrentTestIndex(selectUC.value);
+/**
+ * Opens the editor on the test chosen in one of the lists.
+ *
+ * Both screens that list functional tests can edit one, and each has to be
+ * returned to afterwards, so the caller says which list it read and where the
+ * editor came from.
+ */
+export function editTest(selectId: string, from: ScreenName): void {
+    openTestEditor(from);
+    setCurrentTestIndex(requireEl<HTMLSelectElement>(selectId).value);
     populateEditor();
+}
+
+/** Opens the editor on the test chosen on the landing screen. */
+export function editTestButtonClicked(): void {
+    editTest("select-test", 'landing');
 }
 
 /**

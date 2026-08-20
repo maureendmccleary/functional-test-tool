@@ -4,7 +4,7 @@ import {
     getEvaluation, hasUnsavedChanges, markEvaluationChanged, setEvaluation
 } from '../state/store.js';
 import { requireEl } from './dom.js';
-import { newTestButtonClicked } from './editor-view.js';
+import { editTest, newTestButtonClicked } from './editor-view.js';
 import {
     enableEvaluationControls, populateEvaluationDetails, refreshTestList
 } from './evaluation-view.js';
@@ -53,6 +53,19 @@ export function addTestButtonClicked(e: Event): void {
 }
 
 /**
+ * Opens the functional test editor on the selected script.
+ *
+ * The copies made for each assistive technology start identical, and often
+ * should not stay that way: the steps for driving a screen reader through a
+ * task read differently from the steps for driving speech recognition through
+ * it. This is where a copy is given instructions of its own.
+ */
+export function editSelectedTestButtonClicked(e: Event): void {
+    e.preventDefault();
+    editTest('eval-select-test', 'evaluation');
+}
+
+/**
  * Deletes the selected script, asking first.
  *
  * One copy, not every copy of the script: the copies are separate functional
@@ -90,4 +103,18 @@ export function saveEvaluationButtonClicked(e: Event): void {
     refreshTestList();
     showScreen('landing');
     showStatusMessage('evaluation-msg', 'Evaluation ready to perform.');
+}
+
+/**
+ * Leaves the evaluation screen without declaring it finished.
+ *
+ * Nothing is held back until Save -- the evaluation is changed in place as it
+ * is edited -- so this differs from Save only in not announcing that the
+ * evaluation is ready to perform. It exists because leaving a screen should
+ * never require claiming to be done with it.
+ */
+export function backEvaluationButtonClicked(e: Event): void {
+    e.preventDefault();
+    refreshTestList();
+    showScreen('landing');
 }

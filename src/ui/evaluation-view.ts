@@ -83,7 +83,7 @@ export function populateEvaluationDetails(): void {
 const TEST_LIST_IDS = ['select-test', 'eval-select-test'];
 
 /** Controls that need a functional test to act on. */
-const TEST_CONTROL_IDS = ['edit-test', 'perform-test', 'eval-delete-test'];
+const TEST_CONTROL_IDS = ['edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test'];
 
 /** Controls that need an evaluation, whether loaded from a file or newly started. */
 const EVALUATION_CONTROL_IDS = ['eval-edit', 'eval-view-results', 'eval-save-file'];
