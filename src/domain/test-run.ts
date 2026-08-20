@@ -1,5 +1,21 @@
 import type { TestRun, FunctionalTest } from '../types.js';
 
+/** The lowest score a tester can assign. Below it means no score was chosen. */
+const LOWEST_SCORE = 1;
+
+/**
+ * True once the tester has chosen a score for this run.
+ *
+ * Every script carries a run from the moment it is created, so an empty issue
+ * list cannot tell a clean pass from work not yet started. Picking a score is
+ * the tester's signal that the run happened, which is why the Perform dialog no
+ * longer fills the score in on their behalf. Unperformed runs are left out of
+ * the scorecard.
+ */
+export function isPerformed(run: TestRun): boolean {
+    return typeof run.score === 'number' && run.score >= LOWEST_SCORE;
+}
+
 /** Creates an unscored run with one empty step per step of the test. */
 export function emptyTestRun(test: FunctionalTest, assistiveTechnology: string, operatingSystem: string): TestRun {
     return {

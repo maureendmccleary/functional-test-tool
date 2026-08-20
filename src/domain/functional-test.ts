@@ -1,4 +1,7 @@
 import type { TestReport, TestRun, FunctionalTest } from '../types.js';
+import { collectAssistiveTechnologies } from './evaluation.js';
+import { formatUseCaseName } from './report-format.js';
+import { emptyTestRun } from './test-run.js';
 
 /**
  * How many blank steps a functional test created from the editor starts with.
@@ -15,13 +18,14 @@ export const DEFAULT_NEW_TEST_STEPS = 5;
  *
  * @param stepCount blank steps to start with; defaults to none
  */
-export function emptyFunctionalTest(stepCount = 0): FunctionalTest {
+export function emptyFunctionalTest(stepCount = 0, testNumber = 1): FunctionalTest {
     return {
         steps: Array.from({ length: stepCount }, () => ({ instructions: "", issues: [] })),
         comments: [],
         operatingSystem: "",
         assistiveTechnologies: [],
         name: "",
+        testNumber,
         startLocation: "",
         goal: "",
         operator: "",
@@ -29,6 +33,82 @@ export function emptyFunctionalTest(stepCount = 0): FunctionalTest {
         score: -1,
         runs: []
     };
+}
+
+/** The lowest script number no test in the evaluation is using. */
+export function nextTestNumber(tests: FunctionalTest[]): number {
+    const used = (Array.isArray(tests) ? tests : [])
+        .map((test) => test.testNumber)
+        .filter((testNumber) => typeof testNumber === 'number' && testNumber > 0);
+    return used.length > 0 ? Math.max(...used) + 1 : 1;
+}
+
+/**
+ * Every assistive technology one test needs a script of its own for.
+ *
+ * A test that names none still yields one entry, the empty string, so a script
+ * with no assistive technology assigned survives the split rather than
+ * vanishing from the evaluation.
+ */
+function testTechnologies(test: FunctionalTest): string[] {
+    const technologies = collectAssistiveTechnologies([test]);
+    return technologies.length > 0 ? technologies : [''];
+}
+
+/**
+ * A deep copy of a value that came out of JSON.parse or of the editor.
+ *
+ * The copies must not share step or issue objects: editing one script's steps
+ * would otherwise edit its siblings'. Round-tripping through JSON also keeps
+ * unknown fields and key order, which is what the migration needs.
+ */
+function clone<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/**
+ * Splits a test into one script per assistive technology assigned to it.
+ *
+ * This is the whole of the one-script-per-technology rule, used both when the
+ * editor saves a newly written script and when an older file is loaded. Each
+ * script keeps a single technology and the single run recorded against it; a
+ * technology with no run yet gets an empty, unperformed one, so every script
+ * has somewhere to record results from the moment it exists. That is what
+ * stops an assigned technology from being quietly skipped.
+ *
+ * The copies share the test's number, which identifies the script rather than
+ * the copy.
+ */
+export function splitByAssistiveTechnology(test: FunctionalTest): FunctionalTest[] {
+    const recordedRuns = Array.isArray(test.runs) ? test.runs : [];
+    return testTechnologies(test).map((assistiveTechnology) => {
+        const script = clone(test);
+        script.assistiveTechnologies = assistiveTechnology === '' ? [] : [assistiveTechnology];
+        const recorded = recordedRuns.find(
+            (run) => String(run.assistiveTechnology ?? '').trim() === assistiveTechnology
+        );
+        script.runs = [recorded
+            ? clone(recorded)
+            : emptyTestRun(script, assistiveTechnology, script.operatingSystem)];
+        return script;
+    });
+}
+
+/**
+ * The single assistive technology a saved script is for, or an empty string.
+ *
+ * Scripts hold their technology in a list because that is the editor's working
+ * surface and the saved file's spelling; everything downstream wants the one
+ * value.
+ */
+export function testAssistiveTechnology(test: FunctionalTest): string {
+    const technologies = Array.isArray(test.assistiveTechnologies) ? test.assistiveTechnologies : [];
+    return technologies.length > 0 ? String(technologies[0] ?? '').trim() : '';
+}
+
+/** The script's name as the tester sees it: "01 Place a hold - NVDA". */
+export function testDisplayName(test: FunctionalTest): string {
+    return formatUseCaseName(test.testNumber, test.name, testAssistiveTechnology(test));
 }
 
 /** Every comment recorded across all performances of this functional test. */

@@ -3,11 +3,10 @@ import { defaults } from '../config/defaults.js';
 import {
     buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore, stepScore
 } from '../domain/evaluation.js';
-import { buildTestReport } from '../domain/functional-test.js';
+import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
-    formatAssistiveTechnology, formatOverallRating, formatReportTimestamp, formatScore,
-    formatUseCaseName
+    formatAssistiveTechnology, formatOverallRating, formatReportTimestamp, formatScore
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -199,9 +198,9 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(contentsEntry(
             group.assistiveTechnology, assistiveTechnologyBookmark(groupIndex), false
         ));
-        group.pairings.forEach(({ test, position }, pairingIndex) => {
+        group.pairings.forEach(({ test }, pairingIndex) => {
             children.push(contentsEntry(
-                formatUseCaseName(position, String(test.name || '')),
+                testDisplayName(test),
                 useCaseBookmark(groupIndex, pairingIndex),
                 true
             ));
@@ -267,21 +266,20 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(bookmarkedHeading(
             group.assistiveTechnology, HeadingLevel.HEADING_2, assistiveTechnologyBookmark(groupIndex)
         ));
-        group.pairings.forEach(({ test, run, position }, pairingIndex) => {
+        group.pairings.forEach(({ test, run }, pairingIndex) => {
             appendFunctionalTest(
                 test, run, group.assistiveTechnology,
-                useCaseBookmark(groupIndex, pairingIndex), position
+                useCaseBookmark(groupIndex, pairingIndex)
             );
         });
     });
 
     function appendFunctionalTest(
-        test: FunctionalTest, run: TestRun, assistiveTechnology: string,
-        anchor: string, position: number
+        test: FunctionalTest, run: TestRun, assistiveTechnology: string, anchor: string
     ): void {
         const report = buildTestReport(test, run);
         const score = runScore(run);
-        const useCaseName = formatUseCaseName(position, String(report.name || ''));
+        const useCaseName = testDisplayName(test);
 
         children.push(bookmarkedHeading(useCaseName, HeadingLevel.HEADING_3, anchor));
         children.push(makeTable([], [

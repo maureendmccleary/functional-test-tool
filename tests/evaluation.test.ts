@@ -11,12 +11,23 @@ function issue(score: string): Issue {
 }
 
 /**
+ * Any score at or above 1 marks a run performed, whatever its value: the
+ * reported score is recomputed from the issues, not read back from here.
+ */
+const PERFORMED = 5;
+
+/**
  * A test with one run per entry of `runIssues`, each run named for its
  * assistive technology and carrying a single step holding those issues.
+ *
+ * The runs count as performed. Use `unperformed` for the other case.
  */
-function testWithRuns(name: string, runIssues: Record<string, Issue[]>): FunctionalTest {
+function testWithRuns(
+    name: string, runIssues: Record<string, Issue[]>, score = PERFORMED
+): FunctionalTest {
     return {
         name,
+        testNumber: 1,
         goal: '',
         startLocation: '',
         operatingSystem: 'Windows',
@@ -26,11 +37,16 @@ function testWithRuns(name: string, runIssues: Record<string, Issue[]>): Functio
         runs: Object.entries(runIssues).map(([assistiveTechnology, issues]) => ({
             assistiveTechnology,
             operatingSystem: 'Windows',
-            score: -1,
+            score,
             comments: [],
             steps: [{ issues }]
         }))
     };
+}
+
+/** The same, with no score picked yet, which is how a script starts life. */
+function unperformed(name: string, runIssues: Record<string, Issue[]>): FunctionalTest {
+    return testWithRuns(name, runIssues, -1);
 }
 
 function evaluationOf(tests: FunctionalTest[]): Evaluation {
@@ -73,32 +89,52 @@ describe('groupRunsByAssistiveTechnology', () => {
         expect(groups[1].pairings).toHaveLength(1);
     });
 
-    test('omits an assistive technology that was never performed', () => {
+    test('omits an assistive technology with no run recorded against it', () => {
         const subject = testWithRuns('one', { NVDA: [] });
         subject.assistiveTechnologies = ['NVDA', 'JAWS'];
         const groups = groupRunsByAssistiveTechnology(evaluationOf([subject]));
         expect(groups.map((group) => group.assistiveTechnology)).toEqual(['NVDA']);
     });
 
-    test('numbers each test by its place in the evaluation, not in the group', () => {
-        const evaluation = evaluationOf([
+    test('includes a run nobody has scored yet', () => {
+        // The detailed section lists it as "Not rated". Leaving it out would
+        // hide the work still outstanding.
+        const groups = groupRunsByAssistiveTechnology(evaluationOf([unperformed('one', { NVDA: [] })]));
+        expect(groups[0].pairings).toHaveLength(1);
+    });
+
+    test('each pairing carries its own script, whose number is its own', () => {
+        const tests = [
             testWithRuns('one', { NVDA: [] }),
             testWithRuns('two', { JAWS: [] }),
             testWithRuns('three', { NVDA: [], JAWS: [] })
-        ]);
-        const groups = groupRunsByAssistiveTechnology(evaluation);
-        const positionsFor = (at: string) => groups
+        ];
+        tests.forEach((test, index) => { test.testNumber = index + 1; });
+        const groups = groupRunsByAssistiveTechnology(evaluationOf(tests));
+        const numbersFor = (at: string) => groups
             .find((group) => group.assistiveTechnology === at)!
-            .pairings.map((pairing) => pairing.position);
-        // "three" is third in the evaluation, so it is 3 under both ATs even
-        // though it is only the second use case listed under JAWS.
-        expect(positionsFor('NVDA')).toEqual([1, 3]);
-        expect(positionsFor('JAWS')).toEqual([2, 3]);
+            .pairings.map((pairing) => pairing.test.testNumber);
+        // "three" is numbered 3 under both technologies even though it is only
+        // the second use case listed under JAWS.
+        expect(numbersFor('NVDA')).toEqual([1, 3]);
+        expect(numbersFor('JAWS')).toEqual([2, 3]);
     });
 
     test('skips runs with no assistive technology recorded', () => {
         const evaluation = evaluationOf([testWithRuns('one', { '': [], NVDA: [] })]);
         expect(groupRunsByAssistiveTechnology(evaluation)).toHaveLength(1);
+    });
+});
+
+describe('runScore and unperformed runs', () => {
+    test('a run with no score picked reports -1, not a clean pass', () => {
+        const [test] = [unperformed('one', { NVDA: [] })];
+        expect(runScore(test.runs[0])).toBe(-1);
+    });
+
+    test('a performed run with no issues reports 5', () => {
+        const [test] = [testWithRuns('one', { NVDA: [] })];
+        expect(runScore(test.runs[0])).toBe(5);
     });
 });
 
@@ -161,6 +197,19 @@ describe('buildScorecard', () => {
         const scorecard = buildScorecard(evaluation);
         expect(scorecard.countsByScore.get(5)).toBe(2);
         expect(scorecard.overallRating).toBe(1.5);
+    });
+
+    test('leaves out runs nobody has scored yet', () => {
+        // A written but unperformed evaluation must not report every script as
+        // a 5 just because no issues have been recorded against it.
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [issue('2')] }),
+            unperformed('two', { NVDA: [], JAWS: [] })
+        ]);
+        const scorecard = buildScorecard(evaluation);
+        expect(scorecard.totalRuns).toBe(1);
+        expect(scorecard.countsByScore.get(2)).toBe(1);
+        expect(scorecard.countsByScore.get(5)).toBe(0);
     });
 
     test('reports -1 when no rating has been assigned', () => {

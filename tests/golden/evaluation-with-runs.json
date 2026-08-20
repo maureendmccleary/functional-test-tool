@@ -44,8 +44,7 @@
       "startLocation": "https://catalogue.example.org",
       "operatingSystem": "Windows",
       "assistiveTechnologies": [
-        "NVDA",
-        "JAWS"
+        "NVDA"
       ],
       "runs": [
         {
@@ -121,7 +120,53 @@
           ],
           "assistiveTechnology": "NVDA",
           "operatingSystem": "Windows"
+        }
+      ],
+      "testNumber": 1
+    },
+    {
+      "steps": [
+        {
+          "instructions": "Open the catalogue home page and confirm the \"Search the catalogue\" landmark is reachable.",
+          "issues": []
         },
+        {
+          "instructions": "Enter \"tide pools\" in the search field and submit the search.",
+          "issues": []
+        },
+        {
+          "instructions": "Confirm the results heading announces how many titles matched.",
+          "issues": []
+        },
+        {
+          "instructions": "Filter the results to \"Available now\" using the Availability checkboxes.",
+          "issues": []
+        },
+        {
+          "instructions": "Open the first result and review the title detail page.",
+          "issues": []
+        },
+        {
+          "instructions": "Activate \"Place hold\" and confirm the hold was placed.",
+          "issues": []
+        }
+      ],
+      "stepCount": 6,
+      "name": "Search the catalogue and place a hold",
+      "goal": "Find a title and place a hold on it.",
+      "operator": "Standard User",
+      "application": "Chrome",
+      "score": 1,
+      "comments": [
+        "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
+        "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
+      ],
+      "startLocation": "https://catalogue.example.org",
+      "operatingSystem": "Windows",
+      "assistiveTechnologies": [
+        "JAWS"
+      ],
+      "runs": [
         {
           "score": 1,
           "comments": [
@@ -185,7 +230,8 @@
           "assistiveTechnology": "JAWS",
           "operatingSystem": "Windows"
         }
-      ]
+      ],
+      "testNumber": 1
     },
     {
       "steps": [
@@ -239,7 +285,8 @@
           "assistiveTechnology": "NVDA",
           "operatingSystem": "Windows"
         }
-      ]
+      ],
+      "testNumber": 2
     },
     {
       "steps": [
@@ -335,7 +382,8 @@
           "assistiveTechnology": "NVDA",
           "operatingSystem": "Windows"
         }
-      ]
+      ],
+      "testNumber": 3
     }
   ],
   "score": 0,

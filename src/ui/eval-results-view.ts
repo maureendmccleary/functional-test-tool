@@ -3,10 +3,10 @@ import {
     buildScorecard, findSummary, groupRunsByAssistiveTechnology
 } from '../domain/evaluation.js';
 import { buildOverallCommentsText } from '../domain/summary.js';
-import { buildTestReport } from '../domain/functional-test.js';
+import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatAssistiveTechnology,
-    formatOverallRating, formatUseCaseName
+    formatOverallRating
 } from '../domain/report-format.js';
 import { catalogueVersion, renderEvalResultsDocx } from '../io/docx-report.js';
 import { getEvaluation } from '../state/store.js';
@@ -179,10 +179,10 @@ function renderDetailedResults(): void {
         atHeading.textContent = group.assistiveTechnology;
         parentDiv.appendChild(atHeading);
 
-        group.pairings.forEach(({ test, run, position }) => {
+        group.pairings.forEach(({ test, run }) => {
             const resultsDiv = document.createElement("div");
             createResultsTable(buildTestReport(test, run), resultsDiv, {
-                title: formatUseCaseName(position, test.name),
+                title: testDisplayName(test),
                 headingLevel: 4
             });
             parentDiv.appendChild(resultsDiv);

@@ -1,6 +1,6 @@
 import type { Evaluation } from '../types.js';
 import { issuesText } from './scoring.js';
-import { getTestComments } from './functional-test.js';
+import { getTestComments, testDisplayName } from './functional-test.js';
 
 /**
  * Severity headings, in order, for scores 1 through 4.
@@ -43,11 +43,18 @@ export function splitSummaryComments(commentSummary: string): string[] {
     return commentsWithoutBanners.split("\n\n");
 }
 
-/** The evaluation-wide comment block: every functional test, numbered, with its comments. */
+/**
+ * The evaluation-wide comment block: every functional test with its comments.
+ *
+ * Each block is headed by the script's full name, which already carries its
+ * number and assistive technology. A separate running count used to head them;
+ * it would now disagree with the number in the name, and could not tell the
+ * copies of one script apart.
+ */
 export function buildOverallCommentsText(evaluation: Evaluation): string {
     let commentsText = "";
-    evaluation.tests.forEach((test, ucIndex) => {
-        commentsText += `${ucIndex + 1}. ${test.name}\n\n`;
+    evaluation.tests.forEach((test) => {
+        commentsText += `${testDisplayName(test)}\n\n`;
         const testComments = getTestComments(test);
         if (testComments.length === 0) {
             commentsText += "No issues.";

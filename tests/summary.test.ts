@@ -138,18 +138,20 @@ describe('saveGeneralComments', () => {
 });
 
 describe('buildOverallCommentsText', () => {
-    test('numbers each functional test and lists its comments', () => {
+    test('heads each functional test with its full name and lists its comments', () => {
         const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
         const text = buildOverallCommentsText(evaluation);
-        expect(text.startsWith('1. Search the catalogue and place a hold\n\n')).toBe(true);
+        expect(text.startsWith('01 Search the catalogue and place a hold - NVDA\n\n')).toBe(true);
         expect(text.endsWith('\n\n')).toBe(true);
-        expect(text.split('\n\n').filter((line) => /^\d+\. /.test(line))).toHaveLength(3);
+        // Four scripts: the first was performed with two assistive technologies.
+        expect(text.split('\n\n').filter((line) => /^\d\d /.test(line))).toHaveLength(4);
     });
 
     test('says "No issues." for a functional test with no comments', () => {
         const evaluation = {
-            tests: [{ name: 'Empty', runs: [] } as unknown as FunctionalTest], score: 0
+            tests: [{ name: 'Empty', testNumber: 1, runs: [] } as unknown as FunctionalTest],
+            score: 0
         } satisfies Evaluation;
-        expect(buildOverallCommentsText(evaluation)).toBe('1. Empty\n\nNo issues.\n\n');
+        expect(buildOverallCommentsText(evaluation)).toBe('01 Empty\n\nNo issues.\n\n');
     });
 });

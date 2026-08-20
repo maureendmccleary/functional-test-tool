@@ -2,6 +2,7 @@ import type {
     AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, TestRun
 } from '../types.js';
 import { issuesMap, minimumScore } from './scoring.js';
+import { isPerformed } from './test-run.js';
 
 /**
  * Evaluation-wide queries used to assemble the report.
@@ -19,15 +20,6 @@ const HIGHEST_SCORE = 5;
 export interface RunPairing {
     test: FunctionalTest;
     run: TestRun;
-    /**
-     * The test's 1-based position in the evaluation, which the report prints
-     * as the use case number.
-     *
-     * Taken from the evaluation, not from the position within the group, so a
-     * script keeps the same number under every assistive technology it was
-     * performed with.
-     */
-    position: number;
 }
 
 /** Every run recorded against one assistive technology, in evaluation order. */
@@ -82,19 +74,20 @@ export function collectAssistiveTechnologies(tests: FunctionalTest[]): string[] 
 /**
  * The evaluation's runs bundled by assistive technology.
  *
- * Only ATs with at least one recorded run appear: the report's detailed
- * section has nothing to show for an AT that was assigned but never performed.
+ * Unperformed runs are included: every script carries one from the moment it is
+ * created, and the detailed section listing them as "Not rated" is how the
+ * report shows what is still outstanding. Only the scorecard leaves them out.
  */
 export function groupRunsByAssistiveTechnology(evaluation: Evaluation): AssistiveTechnologyGroup[] {
     const groups = new Map<string, RunPairing[]>();
 
-    (evaluation.tests || []).forEach((test, testIndex) => {
+    (evaluation.tests || []).forEach((test) => {
         (test.runs || []).forEach((run) => {
             const name = cleanName(run.assistiveTechnology);
             if (name === '') {
                 return;
             }
-            const pairing = { test, run, position: testIndex + 1 };
+            const pairing = { test, run };
             const pairings = groups.get(name);
             if (pairings) {
                 pairings.push(pairing);
@@ -110,14 +103,16 @@ export function groupRunsByAssistiveTechnology(evaluation: Evaluation): Assistiv
 }
 
 /**
- * The score a run is reported at.
+ * The score a run is reported at, or -1 when it has not been performed.
  *
- * Derived from the issues rather than read from `run.score`, which is only
- * written while the perform dialog is open and is stale in files whose issues
- * were edited afterwards.
+ * The value is derived from the issues rather than read from `run.score`, which
+ * goes stale in files whose issues were edited after the score was picked.
+ * `run.score` is still consulted for one thing: whether a score was ever picked
+ * at all. Without that, a script nobody has opened yet is indistinguishable
+ * from a clean pass and would report as a 5.
  */
 export function runScore(run: TestRun): number {
-    return minimumScore(issuesMap(run));
+    return isPerformed(run) ? minimumScore(issuesMap(run)) : -1;
 }
 
 /**
@@ -151,7 +146,13 @@ export function findSummary(
         .find((summary) => summary.assistiveTechnology === assistiveTechnology);
 }
 
-/** Counts every recorded run by score and averages the per-AT overall ratings. */
+/**
+ * Counts every performed run by score and averages the per-AT overall ratings.
+ *
+ * Runs nobody has scored yet are left out entirely rather than counted at their
+ * derived score: an evaluation that has been written but not yet performed
+ * would otherwise report every script as a 5.
+ */
 export function buildScorecard(evaluation: Evaluation): Scorecard {
     const countsByScore = new Map<number, number>();
     for (let score = LOWEST_SCORE; score <= HIGHEST_SCORE; score++) {
@@ -161,8 +162,11 @@ export function buildScorecard(evaluation: Evaluation): Scorecard {
     let totalRuns = 0;
     (evaluation.tests || []).forEach((test) => {
         (test.runs || []).forEach((run) => {
-            totalRuns++;
             const score = runScore(run);
+            if (score < LOWEST_SCORE) {
+                return;
+            }
+            totalRuns++;
             countsByScore.set(score, (countsByScore.get(score) || 0) + 1);
         });
     });
