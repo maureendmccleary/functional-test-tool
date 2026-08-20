@@ -5,7 +5,7 @@ DOM behavior they cannot reach: dialog wiring, focus moves, listener order, and
 the File System Access API.
 
 **Run this whole checklist before releasing**, and after any change that
-touches a dialog, focus handling, or the file pickers.
+touches a dialog, a screen change, focus handling, or the file pickers.
 
 ## Setup
 
@@ -33,16 +33,68 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 ## 1. Load an evaluation
 
 - [ ] **Load Evaluation File...** opens the picker; choose `/tmp/smoke.json`
-- [ ] "Select a Functional Test" fills with three names, "Search the catalogue
-      and place a hold" first
-- [ ] **View Evaluation Results**, **Save Evaluation File**, **Edit Functional
-      Test**, and **Perform** all become enabled
+- [ ] "Select a Functional Test" fills with **four** entries, each named number,
+      name, then assistive technology:
+      <br>`01 Search the catalogue and place a hold - NVDA`
+      <br>`01 Search the catalogue and place a hold - JAWS`
+      <br>`02 Renew a borrowed item - NVDA`
+      <br>`03 Update notification preferences - NVDA`
+      <br>*(the file holds three scripts; the first was performed with two
+      assistive technologies, so loading it splits that one in two)*
+- [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation File**,
+      **Edit Functional Test**, and **Perform** all become enabled
 - [ ] "Evaluation data loaded!" is announced (it appears ~100 ms after the picker
       closes -- the delay is deliberate, see `../ARCHITECTURE.md`)
 
-## 2. Edit a functional test
+## 2. The evaluation screen
 
-- [ ] Select "Renew a borrowed item", then **Edit Functional Test**
+- [ ] **Edit Evaluation** shows the evaluation screen, focus lands on its
+      "Evaluation" heading, and the landing screen is no longer visible
+- [ ] Workspace, Asset and Evaluation show the loaded values, and its list of
+      functional tests matches the landing screen's
+- [ ] **Add Test** opens the functional test editor with 5 blank steps already
+      present and focus in the Name field
+- [ ] **Back** in the editor warns that the unsaved test will be discarded;
+      confirming returns to the evaluation screen with the list unchanged
+- [ ] **Delete Functional Test** on `01 ... - JAWS` asks first; cancelling
+      leaves it in place
+- [ ] Confirming removes **only** that entry -- `01 ... - NVDA` is still there,
+      with its own issues -- and announces that it was deleted
+- [ ] The remaining entries keep their numbers: deleting `02` leaves `01` and
+      `03` named as they were, gap and all
+- [ ] Delete every functional test: **Delete Functional Test**, **Edit
+      Functional Test** and **Perform** all become disabled
+- [ ] Reload `/tmp/smoke.json` to carry on
+- [ ] **Save** on the evaluation screen returns to the landing screen; the
+      functional test list is there with Edit and Perform, and there is no
+      **New Functional Test** button
+- [ ] **New Evaluation** with unsaved changes warns before discarding them;
+      cancelling keeps the loaded evaluation intact
+- [ ] **New Evaluation** immediately after loading a file does **not** warn --
+      nothing has been changed yet
+
+## 3. Author a functional test
+
+- [ ] **Edit Evaluation** -> **Add Test**, fill in Name and Goal, and check
+      **NVDA**, **JAWS** and **ZoomText**
+- [ ] **Save** stays in the editor and announces which functional tests were
+      created: the one it saved as, then the two more, each named
+      `NN name - technology`
+- [ ] Only the technology the editor is now on stays checked
+- [ ] **Back** returns to the evaluation screen with all three in the list,
+      together and in order, and no prompt about discarding
+- [ ] Edit one of the three, check a fourth technology, and **Save**: one more
+      functional test appears, and the one edited keeps its own issues
+- [ ] Edit it again, uncheck its own technology, and **Save**: nothing is
+      deleted -- unchecking never throws away recorded work
+- [ ] **Save** with the Name empty refuses, says so, and puts focus in the Name
+      field
+- [ ] **Save** with no assistive technology checked refuses, says so, and puts
+      focus on the **Assistive Technology** button
+
+## 4. Edit a functional test
+
+- [ ] Select `02 Renew a borrowed item - NVDA`, then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
 - [ ] The **Assistive Technology** button expands its group, and the checked
@@ -58,35 +110,39 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the **Assistive Technology** button
 - [ ] Reopen the editor several times, then press Escape inside the group once:
       it collapses once, with no repeated announcement
-- [ ] **New Functional Test** opens the editor with 5 blank steps already
-      present, and focus in the Name field
-- [ ] Typing into one of those 5 steps leaves the other four empty -- they are
-      separate steps, not one step shown five times
+- [ ] Typing into one of the 5 blank steps of a new test leaves the other four
+      empty -- they are separate steps, not one step shown five times
 - [ ] Editing a step's instructions and clicking away keeps the new text
+- [ ] Editing Start Location and Operating System, then leaving the editor and
+      reopening it, keeps the new values
 - [ ] **New Step** opens the step-number dialog; **Add Step** inserts a step at
       the chosen position and renumbers the ones after it
 - [ ] Delete a step: the step disappears, the remaining steps renumber, and
       "Step N was successfully deleted!" is announced
 - [ ] Edit a step's text on a test that already has recorded issues, then reopen
       **Perform**: the issues are still attached to that step
-- [ ] **Save** writes the file and announces "Functional Test saved successfully."
-      ~500 ms after the picker closes
+- [ ] **Save** does **not** open a file picker: it completes the script in
+      memory and reports what it created. The file is written from **Save
+      Evaluation File** on the landing screen
 
-## 3. Perform a functional test
+## 5. Perform a functional test
 
-- [ ] Select "Search the catalogue and place a hold", then **Perform**
+- [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**
 - [ ] Every step shows its instructions, its recorded issues, and an **Add Issue**
       button
-- [ ] Changing **Assistive Technology Type** between NVDA and JAWS switches to
-      that AT's recorded results (both have runs saved, with different issues);
-      switching back restores the first set
-- [ ] Add a third AT to this test in the editor, reopen **Perform**, and select
-      it: empty issue lists and a score of `Not Rated (-1)`, with the NVDA and
-      JAWS data still intact
+- [ ] Assistive Technology reads as **text**, showing NVDA. There is no
+      technology to choose: the script is written for one
+- [ ] Close it, select the `- JAWS` entry, **Perform**: the same steps with the
+      JAWS results, which differ from the NVDA ones
+- [ ] Perform a functional test nobody has scored yet: Score reads
+      `Not Rated (-1)` on opening, and stays there until you pick one
+- [ ] Adding an issue does **not** change the Score on its own -- the score is
+      the tester's, and picking one is what marks the run performed
+- [ ] Pick a score, close the dialog, reopen it: the score you picked comes back
 - [ ] Adding a step in the editor and reopening **Perform** shows the new step
       with an empty issue list
 
-## 4. Issues
+## 6. Issues
 
 - [ ] **Add Issue** on a step opens the issue dialog with that step's issues in
       the table
@@ -106,7 +162,7 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       prompts to discard; cancelling the prompt keeps the dialog open
 - [ ] Reopening the dialog on a step shows a table matching that step exactly
 
-## 5. Summary and scoring
+## 7. Summary and scoring
 
 - [ ] **View Summary** -> **Generate Summary** fills General Comments with only
       the severities that have issues, under the banners `Stoppers:`,
@@ -114,11 +170,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(the last two have no colon -- that is current behavior, see
       `../ARCHITECTURE.md`)*
 - [ ] The Score field updates to the most severe issue present
+      <br>*(Generate Summary is the one place other than the score control that
+      writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
 - [ ] **View Results** shows the results table with the issues grouped by severity
 
-## 6. Evaluation results and report
+## 8. Evaluation results and report
 
 - [ ] **View Evaluation Results** opens the results dialog. Its sections are, in
       order: Use Case Results Summary (Scorecard, Assistive Technologies Used),
@@ -131,6 +189,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       **not** the literal word "undefined"
 - [ ] Detailed Use Case Results groups by assistive technology: the AT is a
       heading, and each numbered use case is a heading under it
+- [ ] A functional test nobody has performed still appears there, marked
+      "Not rated", so what is outstanding is visible
 - [ ] **View Overall Comments** -> **Generate Overall Comments** -> **Save**
       <br>*(these comments are no longer displayed in the dialog or the report;
       see the note in `../ARCHITECTURE.md`)*
@@ -153,8 +213,12 @@ Open that document and check:
       into the document
 - [ ] The Table of Contents lists each assistive technology with its use cases
       indented under it, and clicking an entry jumps to that heading
-- [ ] The Scorecard's total counts **runs**, not scripts: three use cases
-      performed with two ATs each totals six
+- [ ] The Scorecard's total counts **performed runs**, not scripts: three use
+      cases performed with two ATs each totals six, and a functional test nobody
+      has scored is not counted at all
+- [ ] Add a functional test for a new assistive technology and generate the
+      report without performing it: the Scorecard total does not move, and it
+      does not appear as a 5
 - [ ] Overall Rating is the average of the ratings entered above, to one decimal
       place, and reads "Not rated" when none were set
 - [ ] Significant Issues lists each assistive technology with its rating and the
@@ -162,9 +226,11 @@ Open that document and check:
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
 - [ ] Each use case has **two** tables: its metadata, then its steps
-- [ ] Use case names are numbered from 01, in evaluation order, in the contents,
-      the heading and the metadata table's Name row. The same script keeps the
+- [ ] Use case names read number, name, then assistive technology --
+      `01 Search the catalogue and place a hold - NVDA` -- in the contents, the
+      heading and the metadata table's Name row, and the same script keeps the
       same number under every assistive technology
+- [ ] A use case nobody has scored reads "Not rated" rather than scoring 5
 - [ ] The step table's columns are Step #, Main Success Case, Score, Issues
       Encountered, in that order
 - [ ] A step with no issues scores 5; a step with issues scores the average of
@@ -183,7 +249,7 @@ Open that document and check:
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
       wording is deliberate output, see ARCHITECTURE.md
 
-## 7. Save and diff
+## 9. Save and diff
 
 - [ ] **Save Evaluation File** over `/tmp/smoke.json`
 - [ ] With no edits made in this session, the saved file matches the golden:

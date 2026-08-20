@@ -51,8 +51,16 @@ and many identifiers still carry `UC` (`evalUCs`, `performedUCs`, `selectUC`). K
 `UC` spellings where they are part of the file format or existing element ids; use
 "functional test" in new code and prose.
 
-Issues and scores live on a **run** (one per assistive-technology/OS pair), not on the
-functional test, so one script can be performed against several ATs with separate results.
+A functional test is a script written for **one** assistive technology and carries exactly
+one **run**, which is where its issues and score live. A script the author writes for three
+technologies becomes three functional tests, sharing a `testNumber` and named
+`01 Place a hold - NVDA` and so on. `splitByAssistiveTechnology` makes the copies, both when
+the editor saves and when an older file is loaded.
+
+A run's `score` is `-1` until the tester picks one, and that is the only thing that marks it
+performed: a run with no issues is otherwise indistinguishable from one nobody has opened.
+Unperformed runs are left out of the scorecard. Do not write the score anywhere except the
+Perform dialog's score control.
 
 ### Deliberate oddities — do not "fix" in passing
 
@@ -63,6 +71,8 @@ tested commit.
 - `currentTestIndex` in the store is `string | number`; array indexing coerces.
 - `ui/issue-dialog.ts` and `ui/perform-view.ts` import each other; the cycle is safe
   because both sides only call hoisted declarations at event time.
+- An editor input's `name` attribute is the model property it writes. Naming one for a
+  spelling only `domain/migration.ts` should know writes a field nothing reads.
 - `requireEl` throws, `findEl` returns null — pick the one matching what the original
   code did at that call site.
 - Read `event.currentTarget` *before* the first `await`; file pickers clear it.

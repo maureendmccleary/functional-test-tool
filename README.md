@@ -4,6 +4,9 @@ Functional Accessibility Testing Tool — author functional tests, perform them
 against a given assistive technology and operating system, record and score
 issues, and export an evaluation report.
 
+A script assigned several assistive technologies becomes one functional test per
+technology, so no technology an evaluation covers is left untested.
+
 ## Development
 
 Requires Node 20 LTS (18.13+ works; the CI runs 20).
