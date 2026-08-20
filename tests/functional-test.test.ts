@@ -236,6 +236,36 @@ describe('addAssistiveTechnologyCopies', () => {
             .toBe('Use NVDA browse mode to reach the search field.');
     });
 
+    test('brings an unperformed run into line with its script operating system', () => {
+        // One script, one run, so the operating system chosen for the script is
+        // the one the run was performed under and the one the report prints.
+        const tests = [script(1, 'VoiceOver')];
+        tests[0].operatingSystem = 'macOS';
+
+        addAssistiveTechnologyCopies(tests, 0);
+
+        expect(tests[0].runs[0].operatingSystem).toBe('macOS');
+    });
+
+    test('leaves a performed run on the operating system it was performed under', () => {
+        const tests = [script(1, 'NVDA', 2)];
+        tests[0].operatingSystem = 'macOS';
+
+        addAssistiveTechnologyCopies(tests, 0);
+
+        expect(tests[0].runs[0].operatingSystem).toBe('Windows');
+    });
+
+    test('gives each new copy the script operating system', () => {
+        const tests = [script(1, 'NVDA')];
+        tests[0].operatingSystem = 'Windows 11';
+        tests[0].assistiveTechnologies = ['NVDA', 'JAWS'];
+
+        const added = addAssistiveTechnologyCopies(tests, 0);
+
+        expect(added[0].runs[0].operatingSystem).toBe('Windows 11');
+    });
+
     test('adds a copy for a technology checked after the script was written', () => {
         const tests = [script(1, 'NVDA', 3)];
         tests[0].assistiveTechnologies = ['NVDA', 'JAWS'];

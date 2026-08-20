@@ -82,6 +82,14 @@ them recognisable as the same script performed three ways; `formatUseCaseName`
 composes the name the tester sees from the number, the name and the technology,
 as in `01 Place a hold - NVDA`.
 
+The operating system belongs to the script the same way the assistive
+technology does, so one script performed with NVDA on Windows and another with
+VoiceOver on macOS keep separate results. Saving a script brings its run's
+operating system into line with it — otherwise editing the field would never
+reach the report, which reads it from the run. A run that has already been
+performed keeps the operating system it was performed under: that is a record
+of the conditions of the test, not a field to be rewritten afterwards.
+
 `testNumber` is assigned once and never reassigned. Deleting a copy leaves a gap
 in the numbering on purpose: the number is part of a name that may already have
 been reported on, and renumbering would silently rename other scripts.

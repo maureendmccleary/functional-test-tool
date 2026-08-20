@@ -1,7 +1,7 @@
 import type { TestReport, TestRun, FunctionalTest } from '../types.js';
 import { collectAssistiveTechnologies } from './evaluation.js';
 import { formatUseCaseName } from './report-format.js';
-import { emptyTestRun } from './test-run.js';
+import { emptyTestRun, isPerformed } from './test-run.js';
 
 /**
  * How many blank steps a functional test created from the editor starts with.
@@ -124,6 +124,12 @@ export function testDisplayName(test: FunctionalTest): string {
  * Copies are only ever added. Unchecking a technology leaves the script already
  * written for it alone, results and all: throwing away recorded work is what
  * Delete is for, and it asks first.
+ *
+ * Each run's operating system is brought into line with its script's, so that
+ * editing the field reaches the report. A run that has already been performed
+ * keeps the operating system it was performed under: that is a record of the
+ * conditions of the test, and editing the script afterwards must not rewrite
+ * it.
  */
 export function addAssistiveTechnologyCopies(
     tests: FunctionalTest[], index: number
@@ -135,6 +141,13 @@ export function addAssistiveTechnologyCopies(
     const runs = Array.isArray(test.runs) ? test.runs : [];
     const own = runs.length > 0 ? String(runs[0].assistiveTechnology ?? '').trim() : '';
     const copies = splitByAssistiveTechnology(test);
+
+    copies.forEach((copy) => {
+        const run = copy.runs[0];
+        if (!isPerformed(run)) {
+            run.operatingSystem = copy.operatingSystem;
+        }
+    });
 
     const kept = copies.find((copy) => testAssistiveTechnology(copy) === own) || copies[0];
     tests[index] = kept;

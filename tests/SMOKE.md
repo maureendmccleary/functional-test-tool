@@ -93,6 +93,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       created, and the other copies keep the wording they had
 - [ ] Edit one of the three, check a fourth technology, and **Save**: one more
       functional test appears, and the one edited keeps its own issues
+- [ ] Change one copy's **Operating System**, **Save**, then generate the
+      report: that use case's Operating System row shows the new value while
+      its siblings keep theirs
+- [ ] Do the same on a use case that has already been scored: it keeps the
+      operating system it was performed under
 - [ ] Edit it again, uncheck its own technology, and **Save**: nothing is
       deleted -- unchecking never throws away recorded work
 - [ ] **Save** with the Name empty refuses, says so, and puts focus in the Name
