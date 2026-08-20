@@ -1,3 +1,4 @@
+import { testDisplayName } from '../domain/functional-test.js';
 import { normalizeEvaluation } from '../domain/migration.js';
 import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
 import { getEvaluation, setEvaluation } from '../state/store.js';
@@ -13,9 +14,13 @@ import { showStatusMessage } from './status.js';
 const LOAD_ANNOUNCE_DELAY_MS = 100;
 const SAVE_ANNOUNCE_DELAY_MS = 500;
 
-/** Status region for each control that can trigger a save. */
+/**
+ * Status region for each control that can trigger a file save.
+ *
+ * The functional test editor's Save is not one of them: it completes the script
+ * and its copies in memory, and the file is written from the evaluation screen.
+ */
 const SAVE_STATUS_TARGETS: Record<string, { elementId: string; message: string }> = {
-    'test-save': { elementId: 'test-editor-msg', message: 'Functional Test saved successfully.' },
     'perform-save': { elementId: 'perform-msg', message: 'Functional Test data saved!' }
 };
 const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg', message: 'Evaluation data saved.' };
@@ -72,6 +77,17 @@ function populateEvaluationDetails(): void {
 }
 
 /**
+ * Refills the list of functional tests from the loaded evaluation.
+ *
+ * Called wherever the list can change -- loading, saving a script, deleting one
+ * -- because nothing redraws on its own. Option values stay the index into
+ * `evaluation.tests`, which is what the Edit and Perform buttons read back.
+ */
+export function refreshTestList(): void {
+    fillListbox(getEvaluation().tests.map(testDisplayName), 'select-test');
+}
+
+/**
  * Prompts for an evaluation file, loads it, and enables the controls it
  * unlocks. Cancelling the dialog leaves the loaded evaluation untouched.
  */
@@ -96,8 +112,8 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
         return;
     }
 
-    fillListbox(evaluation.tests.map((test) => test.name), 'select-test');
     setEvaluation(evaluation);
+    refreshTestList();
     populateEvaluationDetails();
 
     requireEl('eval-view-results').removeAttribute('disabled');

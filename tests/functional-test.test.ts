@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import type { TestRun, FunctionalTest } from '../src/types.js';
 import {
-    DEFAULT_NEW_TEST_STEPS, buildTestReport, emptyFunctionalTest, getTestComments, nextTestNumber,
-    splitByAssistiveTechnology, testAssistiveTechnology, testDisplayName
+    DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, buildTestReport, emptyFunctionalTest,
+    getTestComments, nextTestNumber, splitByAssistiveTechnology, testAssistiveTechnology,
+    testDisplayName
 } from '../src/domain/functional-test.js';
 import { emptyTestRun, ensureTestRunStepCount, isPerformed } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -171,6 +172,82 @@ describe('ensureTestRunStepCount', () => {
         } as unknown as TestRun;
         ensureTestRunStepCount(subject, run);
         expect(run.steps).toEqual([{ issues: [] }]);
+    });
+});
+
+describe('addAssistiveTechnologyCopies', () => {
+    /** A script as it stands after being saved once, with a run of its own. */
+    function script(testNumber: number, assistiveTechnology: string, score = -1): FunctionalTest {
+        return {
+            ...emptyFunctionalTest(1, testNumber),
+            name: 'Place a hold',
+            assistiveTechnologies: [assistiveTechnology],
+            runs: [{
+                assistiveTechnology, operatingSystem: 'Windows', score, comments: [],
+                steps: [{ issues: [] }]
+            }]
+        };
+    }
+
+    test('turns a draft into one script per technology assigned', () => {
+        const draft = { ...emptyFunctionalTest(1, 1), name: 'Place a hold' };
+        draft.assistiveTechnologies = ['NVDA', 'JAWS', 'ZoomText'];
+        const tests = [draft];
+
+        const added = addAssistiveTechnologyCopies(tests, 0);
+
+        expect(tests.map(testDisplayName)).toEqual([
+            '01 Place a hold - NVDA', '01 Place a hold - JAWS', '01 Place a hold - ZoomText'
+        ]);
+        expect(added.map(testDisplayName))
+            .toEqual(['01 Place a hold - JAWS', '01 Place a hold - ZoomText']);
+    });
+
+    test('inserts the copies next to the script they came from', () => {
+        const draft = { ...emptyFunctionalTest(1, 2), name: 'Renew' };
+        draft.assistiveTechnologies = ['NVDA', 'JAWS'];
+        const tests = [script(1, 'NVDA'), draft, script(3, 'NVDA')];
+
+        addAssistiveTechnologyCopies(tests, 1);
+
+        expect(tests.map(testDisplayName)).toEqual([
+            '01 Place a hold - NVDA', '02 Renew - NVDA', '02 Renew - JAWS',
+            '03 Place a hold - NVDA'
+        ]);
+    });
+
+    test('adds a copy for a technology checked after the script was written', () => {
+        const tests = [script(1, 'NVDA', 3)];
+        tests[0].assistiveTechnologies = ['NVDA', 'JAWS'];
+
+        const added = addAssistiveTechnologyCopies(tests, 0);
+
+        expect(added.map(testDisplayName)).toEqual(['01 Place a hold - JAWS']);
+        // The script keeps the run it already had; the new copy starts unperformed.
+        expect(tests[0].runs[0].score).toBe(3);
+        expect(tests[1].runs[0].score).toBe(-1);
+    });
+
+    test('leaves the checked technology alone when a sibling already covers it', () => {
+        const tests = [script(1, 'NVDA'), script(1, 'JAWS')];
+        tests[0].assistiveTechnologies = ['NVDA', 'JAWS'];
+
+        expect(addAssistiveTechnologyCopies(tests, 0)).toEqual([]);
+        expect(tests).toHaveLength(2);
+    });
+
+    test('never removes the script written for a technology since unchecked', () => {
+        // Unchecking must not throw away recorded work; that is what Delete is
+        // for, and Delete asks first.
+        const tests = [script(1, 'NVDA', 2)];
+        tests[0].assistiveTechnologies = ['JAWS'];
+
+        const added = addAssistiveTechnologyCopies(tests, 0);
+
+        expect(tests.map(testDisplayName))
+            .toEqual(['01 Place a hold - NVDA', '01 Place a hold - JAWS']);
+        expect(added).toHaveLength(1);
+        expect(tests[0].runs[0].score).toBe(2);
     });
 });
 

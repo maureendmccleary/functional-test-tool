@@ -2,7 +2,8 @@ import { defaults } from './config/defaults.js';
 import { fillCheckboxMenu } from './ui/controls.js';
 import { requireEl } from './ui/dom.js';
 import {
-    addFormEvents, editTestButtonClicked, newStepButtonClick, newTestButtonClicked
+    addFormEvents, editTestButtonClicked, newStepButtonClick, newTestButtonClicked,
+    saveTestButtonClicked
 } from './ui/editor-view.js';
 import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
 import {
@@ -23,9 +24,9 @@ function initialize(): void {
     addFormEvents();
     addEvaluationDetailEvents();
 
-    const ucFileSave = requireEl("test-save");
-    ucFileSave.addEventListener('click', saveFileButtonClick);
-    ucFileSave.removeAttribute("disabled");
+    const testSave = requireEl("test-save");
+    testSave.addEventListener('click', saveTestButtonClicked);
+    testSave.removeAttribute("disabled");
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
     requireEl("new-step-btn").addEventListener('click', newStepButtonClick);

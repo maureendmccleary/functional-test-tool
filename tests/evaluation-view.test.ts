@@ -108,10 +108,10 @@ describe('saving', () => {
     test('a cancelled dialog reports nothing', async () => {
         vi.mocked(picker.saveEvaluation).mockRejectedValue(cancellation());
 
-        await expect(saveFileButtonClick(clickEvent('test-save'))).resolves.toBeUndefined();
+        await expect(saveFileButtonClick(clickEvent('perform-save'))).resolves.toBeUndefined();
 
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
-        expect(documentStub.getElementById('test-editor-msg')!.textContent).toBe('');
+        expect(documentStub.getElementById('perform-msg')!.textContent).toBe('');
     });
 
     test('a write failure is reported in the right region', async () => {
@@ -127,13 +127,13 @@ describe('saving', () => {
     test('the status goes to the region belonging to the control that was used', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
-        await saveFileButtonClick(clickEvent('test-save'));
+        await saveFileButtonClick(clickEvent('perform-save'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
         // Read before the first await: once the picker opens, dispatch is over
         // and event.currentTarget is null.
-        expect(documentStub.getElementById('test-editor-msg')!.textContent)
-            .toBe('Functional Test saved successfully.');
+        expect(documentStub.getElementById('perform-msg')!.textContent)
+            .toBe('Functional Test data saved!');
         expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
     });
 

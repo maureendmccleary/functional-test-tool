@@ -2,12 +2,21 @@ import type { FunctionalTest } from '../types.js';
 import { AT_ALIAS_MAP, normalizeOperatingSystem } from '../domain/migration.js';
 import { collectSelectedValues, normalizeSelectionValues } from '../domain/selection-utils.js';
 import {
-    DEFAULT_NEW_TEST_STEPS, emptyFunctionalTest, getTestComments
+    DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest, getTestComments,
+    nextTestNumber, testDisplayName
 } from '../domain/functional-test.js';
-import { getCurrentTest, getEvaluation, setCurrentTestIndex } from '../state/store.js';
+import {
+    getCurrentTest, getCurrentTestIndex, getEvaluation, setCurrentTestIndex
+} from '../state/store.js';
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
+import { refreshTestList } from './evaluation-view.js';
+import { showStatusMessage } from './status.js';
 import { getStepId, getStepNumber } from './step-ids.js';
+
+/** Shown when Save cannot complete the script. */
+const NAME_REQUIRED = 'Enter a name for the functional test before saving.';
+const TECHNOLOGY_REQUIRED = 'Choose at least one assistive technology before saving.';
 
 function createStepLabelForEditor(stepNumber: number): HTMLElement {
     const newStepLabel = document.createElement('LABEL');
@@ -166,18 +175,6 @@ export function populateEditor(): void {
     requireEl<HTMLInputElement>("test-edit-operator").value = test.operator || "";
     requireEl<HTMLInputElement>("test-edit-application").value = test.application || "";
     requireEl<HTMLInputElement>("test-edit-operating-system").value = normalizeOperatingSystem(test.operatingSystem);
-    const atMenu = requireEl("test-edit-at-menu");
-    const atOptions = atMenu.querySelectorAll("label");
-    const existingAts = normalizeSelectionValues(test.assistiveTechnologies || [], AT_ALIAS_MAP);
-    test.assistiveTechnologies = existingAts;
-
-    for (let j = 0; j < atOptions.length; j++) {
-        const checkbox = atOptions[j].querySelector<HTMLInputElement>("input[type='checkbox']");
-        if (!checkbox) {
-            continue;
-        }
-        checkbox.checked = existingAts.some((value) => value === checkbox.value || value === atOptions[j].textContent?.trim());
-    }
     redrawSteps(test);
     const summaryList = requireEl("summary-list");
     while (summaryList.firstChild) {
@@ -198,6 +195,64 @@ export function populateEditor(): void {
     }
 }
 
+/**
+ * Ticks the checkbox of every assistive technology assigned to the test.
+ *
+ * Redrawn on its own after a save, because completing a script leaves the
+ * editor on the copy for one technology and the others must no longer look
+ * checked.
+ */
+function showAssistiveTechnologies(test: FunctionalTest): void {
+    const atMenu = requireEl("test-edit-at-menu");
+    const atOptions = atMenu.querySelectorAll("label");
+    const existingAts = normalizeSelectionValues(test.assistiveTechnologies || [], AT_ALIAS_MAP);
+    test.assistiveTechnologies = existingAts;
+
+    for (let j = 0; j < atOptions.length; j++) {
+        const checkbox = atOptions[j].querySelector<HTMLInputElement>("input[type='checkbox']");
+        if (!checkbox) {
+            continue;
+        }
+        checkbox.checked = existingAts.some((value) => value === checkbox.value || value === atOptions[j].textContent?.trim());
+    }
+}
+
+/**
+ * Completes the script: one functional test for each assistive technology.
+ *
+ * This is where a script written once becomes the several tests that have to be
+ * performed, which is the whole point of assigning more than one technology.
+ * The editor stays where it is and reports what was created; the evaluation is
+ * written to a file from the evaluation screen, not here.
+ */
+export function saveTestButtonClicked(e: Event): void {
+    e.preventDefault();
+    const tests = getEvaluation().tests;
+    const index = Number(getCurrentTestIndex());
+    const test = tests[index];
+
+    if ((test.name || "").trim() === "") {
+        showStatusMessage("test-editor-msg", NAME_REQUIRED, 0);
+        requireEl("test-edit-name").focus();
+        return;
+    }
+    if (test.assistiveTechnologies.length === 0) {
+        showStatusMessage("test-editor-msg", TECHNOLOGY_REQUIRED, 0);
+        requireEl("test-edit-at-btn").focus();
+        return;
+    }
+
+    const added = addAssistiveTechnologyCopies(tests, index);
+    refreshTestList();
+    showAssistiveTechnologies(tests[index]);
+
+    const saved = `Saved as ${testDisplayName(tests[index])}.`;
+    const copies = added.length === 0
+        ? ""
+        : ` Created ${added.length} more: ${added.map(testDisplayName).join(", ")}.`;
+    showStatusMessage("test-editor-msg", `${saved}${copies}`, 0);
+}
+
 /** Reveals the editor form and its New Step control. */
 function activateEditorForm(): void {
     requireEl('test-editor-form').classList.remove('inactive');
@@ -212,12 +267,20 @@ export function editTestButtonClicked(): void {
     populateEditor();
 }
 
-/** Appends a test with the default blank steps and opens the editor on it. */
+/**
+ * Appends a test with the default blank steps and opens the editor on it.
+ *
+ * It is numbered past every script already in the evaluation rather than by its
+ * position, so deleting a script never gives a later one a number that has
+ * already been reported on.
+ */
 export function newTestButtonClicked(): void {
     activateEditorForm();
     const evaluation = getEvaluation();
     setCurrentTestIndex(evaluation.tests.length);
-    evaluation.tests.push(emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS));
+    evaluation.tests.push(
+        emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS, nextTestNumber(evaluation.tests))
+    );
     populateEditor();
     requireEl("test-edit-name").focus();
 }

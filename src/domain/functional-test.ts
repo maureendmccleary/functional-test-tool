@@ -111,6 +111,42 @@ export function testDisplayName(test: FunctionalTest): string {
     return formatUseCaseName(test.testNumber, test.name, testAssistiveTechnology(test));
 }
 
+/**
+ * Makes sure the evaluation holds a script for every assistive technology
+ * assigned to the one at `index`, and returns the scripts that had to be added.
+ *
+ * The script at `index` is replaced by the copy for the technology it already
+ * represents, keeping its recorded run; the copies for the technologies it does
+ * not yet have are inserted straight after it, so the copies of one script stay
+ * together in the list. A newly drafted script has no technology of its own
+ * yet, and becomes the copy for the first one assigned to it.
+ *
+ * Copies are only ever added. Unchecking a technology leaves the script already
+ * written for it alone, results and all: throwing away recorded work is what
+ * Delete is for, and it asks first.
+ */
+export function addAssistiveTechnologyCopies(
+    tests: FunctionalTest[], index: number
+): FunctionalTest[] {
+    const test = tests[index];
+    // The technology the script already stands for is the one on its run, not
+    // the one ticked in the editor: unticking it must not hand the script's
+    // recorded results to a different technology.
+    const runs = Array.isArray(test.runs) ? test.runs : [];
+    const own = runs.length > 0 ? String(runs[0].assistiveTechnology ?? '').trim() : '';
+    const copies = splitByAssistiveTechnology(test);
+
+    const kept = copies.find((copy) => testAssistiveTechnology(copy) === own) || copies[0];
+    tests[index] = kept;
+
+    const alreadyWritten = new Set(tests
+        .filter((other) => other.testNumber === kept.testNumber)
+        .map(testAssistiveTechnology));
+    const added = copies.filter((copy) => !alreadyWritten.has(testAssistiveTechnology(copy)));
+    tests.splice(index + 1, 0, ...added);
+    return added;
+}
+
 /** Every comment recorded across all performances of this functional test. */
 export function getTestComments(test: FunctionalTest): string[] {
     if (!Array.isArray(test.runs)) {
