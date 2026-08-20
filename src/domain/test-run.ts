@@ -39,12 +39,3 @@ export function ensureTestRunStepCount(test: FunctionalTest, run: TestRun): void
     }
     run.steps.length = test.steps.length;
 }
-
-/** Creates the runs array as a side effect when it is missing. */
-export function findTestRunIndex(test: FunctionalTest, assistiveTechnology: string, operatingSystem: string): number {
-    if (!Array.isArray(test.runs)) {
-        test.runs = [];
-    }
-    return test.runs.findIndex((run) => run.assistiveTechnology === assistiveTechnology
-            && run.operatingSystem === operatingSystem);
-}

@@ -4,9 +4,7 @@ import {
     DEFAULT_NEW_TEST_STEPS, buildTestReport, emptyFunctionalTest, getTestComments, nextTestNumber,
     splitByAssistiveTechnology, testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
-import {
-    emptyTestRun, ensureTestRunStepCount, findTestRunIndex
-} from '../src/domain/test-run.js';
+import { emptyTestRun, ensureTestRunStepCount, isPerformed } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
 import { loadFixture } from './helpers/fixtures.js';
 
@@ -176,19 +174,15 @@ describe('ensureTestRunStepCount', () => {
     });
 });
 
-describe('findTestRunIndex', () => {
-    test('matches on both ats and operatingSystem', () => {
-        const subject = {
-            runs: [{ assistiveTechnology: 'NVDA', operatingSystem: 'Windows' }, { assistiveTechnology: 'JAWS', operatingSystem: 'Windows' }]
-        } as unknown as FunctionalTest;
-        expect(findTestRunIndex(subject, 'JAWS', 'Windows')).toBe(1);
-        expect(findTestRunIndex(subject, 'JAWS', 'macOS')).toBe(-1);
+describe('isPerformed', () => {
+    test('is false until a score is picked', () => {
+        expect(isPerformed({ score: -1 } as TestRun)).toBe(false);
+        expect(isPerformed({} as TestRun)).toBe(false);
     });
 
-    test('creates the array as a side effect when it is missing', () => {
-        const subject = {} as FunctionalTest;
-        expect(findTestRunIndex(subject, 'NVDA', 'Windows')).toBe(-1);
-        expect(subject.runs).toEqual([]);
+    test('is true for any score a tester can assign', () => {
+        expect(isPerformed({ score: 1 } as TestRun)).toBe(true);
+        expect(isPerformed({ score: 5 } as TestRun)).toBe(true);
     });
 });
 

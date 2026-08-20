@@ -1,6 +1,5 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
-import { issuesMap, minimumScore } from '../domain/scoring.js';
 import {
     getCurrentIssue, getCurrentRun, getCurrentStep, getCurrentTest,
     setCurrentIssue, setCurrentStep
@@ -317,7 +316,9 @@ export function addIssueButtonClick(e: Event): void {
 }
 
 // Runs whenever the add-issue dialog closes (X button, Escape key, or programmatic close), so the
-// step buttons and score always reflect the current data regardless of how the dialog was dismissed.
+// step buttons and issue lists always reflect the current data regardless of how the dialog was
+// dismissed. The score is deliberately left alone: it is the tester's, and recomputing it here
+// would overwrite their choice and mark an untouched run as performed.
 export function onAddIssueDialogClosed(): void {
     const run = getCurrentRun();
     updateAddIssueButtons();
@@ -335,7 +336,4 @@ export function onAddIssueDialogClosed(): void {
         }
         (requireEl(resultId) as HTMLElement & { value: string }).value = issueAggregate;
     });
-    const score = requireEl<HTMLSelectElement>("perform-score");
-    score.value = String(minimumScore(issuesMap(run)));
-    run.score = parseInt(score.value, 10);
 }
