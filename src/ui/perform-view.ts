@@ -4,7 +4,7 @@ import { testAssistiveTechnology } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { emptyTestRun, ensureTestRunStepCount } from '../domain/test-run.js';
 import {
-    getCurrentRun, getCurrentTest, setCurrentRunIndex, setCurrentTestIndex
+    getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
@@ -95,6 +95,7 @@ export function openTestRun(): void {
  */
 export function scoreChanged(): void {
     getCurrentRun().score = parseInt(requireEl<HTMLSelectElement>("perform-score").value, 10);
+    markEvaluationChanged();
 }
 
 function createStepLabelForPerform(stepNumber: number): HTMLElement {

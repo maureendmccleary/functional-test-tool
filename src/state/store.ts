@@ -30,6 +30,16 @@ let currentStep = 0;
 let currentIssue = 0;
 let currentRunIndex = -1;
 
+/**
+ * Whether the evaluation has changed since it was last written to a file.
+ *
+ * Set by the handlers that knowingly change the evaluation rather than by the
+ * store itself: everything mutates the evaluation in place, so there is no one
+ * place a write passes through. It exists so that starting a new evaluation can
+ * warn before discarding work, and it errs towards not warning.
+ */
+let unsavedChanges = false;
+
 /** The evaluation currently loaded. */
 export function getEvaluation(): Evaluation {
     return evaluation;
@@ -38,6 +48,22 @@ export function getEvaluation(): Evaluation {
 /** Replaces the loaded evaluation, discarding any previous one. */
 export function setEvaluation(value: Evaluation): void {
     evaluation = value;
+    unsavedChanges = false;
+}
+
+/** True when the evaluation holds changes that have not been written to a file. */
+export function hasUnsavedChanges(): boolean {
+    return unsavedChanges;
+}
+
+/** Records that the evaluation has been changed. */
+export function markEvaluationChanged(): void {
+    unsavedChanges = true;
+}
+
+/** Records that the evaluation has been written to a file. */
+export function markEvaluationSaved(): void {
+    unsavedChanges = false;
 }
 
 /** Index of the test being edited or performed. */

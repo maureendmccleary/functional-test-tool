@@ -6,17 +6,28 @@ import {
     nextTestNumber, testDisplayName
 } from '../domain/functional-test.js';
 import {
-    getCurrentTest, getCurrentTestIndex, getEvaluation, setCurrentTestIndex
+    getCurrentTest, getCurrentTestIndex, getEvaluation, markEvaluationChanged, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
 import { refreshTestList } from './evaluation-view.js';
+import { type ScreenName, showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
 import { getStepId, getStepNumber } from './step-ids.js';
 
 /** Shown when Save cannot complete the script. */
 const NAME_REQUIRED = 'Enter a name for the functional test before saving.';
 const TECHNOLOGY_REQUIRED = 'Choose at least one assistive technology before saving.';
+const DISCARD_DRAFT =
+    'This functional test has not been saved and will be discarded. Leave anyway?';
+
+/**
+ * The screen the editor returns to, set by whoever opened it.
+ *
+ * Edit comes from the landing screen and Add Test from the evaluation screen,
+ * and each has to go back where it came from.
+ */
+let returnScreen: ScreenName = 'landing';
 
 function createStepLabelForEditor(stepNumber: number): HTMLElement {
     const newStepLabel = document.createElement('LABEL');
@@ -84,6 +95,7 @@ export function deleteStepButtonClicked(e: Event): void {
     const test = getCurrentTest();
     const i = getStepNumber(stepId);
     test.steps.splice(i, 1);
+    markEvaluationChanged();
     redrawSteps(test);
     requireEl("test-editor-msg").innerHTML = "";
     requireEl("test-editor-msg").innerHTML = `Step ${(i + 1)} was successfully deleted!`;
@@ -116,6 +128,7 @@ export function blurFormField(e: Event): void {
     } else {
         (test as unknown as Record<string, unknown>)[target.name] = target.value;
     }
+    markEvaluationChanged();
 }
 
 /** Writes the checked assistive technologies back to the test, by field name as above. */
@@ -126,6 +139,7 @@ export function changeFormField(e: Event): void {
         `input[type="checkbox"][name="${target.name}"]:checked`
     );
     (test as unknown as Record<string, unknown>)[target.name] = collectSelectedValues(checkedElements);
+    markEvaluationChanged();
 }
 
 /**
@@ -243,6 +257,7 @@ export function saveTestButtonClicked(e: Event): void {
     }
 
     const added = addAssistiveTechnologyCopies(tests, index);
+    markEvaluationChanged();
     refreshTestList();
     showAssistiveTechnologies(tests[index]);
 
@@ -253,15 +268,42 @@ export function saveTestButtonClicked(e: Event): void {
     showStatusMessage("test-editor-msg", `${saved}${copies}`, 0);
 }
 
-/** Reveals the editor form and its New Step control. */
-function activateEditorForm(): void {
-    requireEl('test-editor-form').classList.remove('inactive');
-    requireEl("new-step-btn").classList.remove("inactive");
+/** Shows the editor, remembering where to go back to. */
+function openTestEditor(from: ScreenName): void {
+    returnScreen = from;
+    showScreen('test');
+}
+
+/** True for a script that has never been saved, so has no run of its own yet. */
+function isUnsavedDraft(test: FunctionalTest | undefined): boolean {
+    return test !== undefined && (!Array.isArray(test.runs) || test.runs.length === 0);
+}
+
+/**
+ * Leaves the editor for the screen it was opened from.
+ *
+ * A script that was never saved is dropped on the way out. It has no assistive
+ * technology and so no place in the evaluation, and leaving it behind would put
+ * a nameless entry in every list of functional tests.
+ */
+export function backButtonClicked(e: Event): void {
+    e.preventDefault();
+    const tests = getEvaluation().tests;
+    const index = Number(getCurrentTestIndex());
+
+    if (isUnsavedDraft(tests[index])) {
+        if (!window.confirm(DISCARD_DRAFT)) {
+            return;
+        }
+        tests.splice(index, 1);
+        refreshTestList();
+    }
+    showScreen(returnScreen);
 }
 
 /** Opens the editor on the test chosen in the list. */
 export function editTestButtonClicked(): void {
-    activateEditorForm();
+    openTestEditor('landing');
     const selectUC = requireEl<HTMLSelectElement>("select-test");
     setCurrentTestIndex(selectUC.value);
     populateEditor();
@@ -274,8 +316,8 @@ export function editTestButtonClicked(): void {
  * position, so deleting a script never gives a later one a number that has
  * already been reported on.
  */
-export function newTestButtonClicked(): void {
-    activateEditorForm();
+export function newTestButtonClicked(from: ScreenName = 'landing'): void {
+    openTestEditor(from);
     const evaluation = getEvaluation();
     setCurrentTestIndex(evaluation.tests.length);
     evaluation.tests.push(
@@ -292,6 +334,7 @@ export function addStepButtonClicked(): void {
     const newStep = { instructions: "", issues: [] };
     const i = Number(requireEl<HTMLSelectElement>("step-number").value);
     test.steps.splice(i, 0, newStep);
+    markEvaluationChanged();
     redrawSteps(test);
     requireEl(getStepId(i)).focus();
 }

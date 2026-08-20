@@ -1,7 +1,7 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import {
-    getCurrentIssue, getCurrentRun, getCurrentStep, getCurrentTest,
+    getCurrentIssue, getCurrentRun, getCurrentStep, getCurrentTest, markEvaluationChanged,
     setCurrentIssue, setCurrentStep
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
@@ -200,6 +200,7 @@ export function saveIssueButtonClick(e: Event): void {
     newIssue.score = requireEl<HTMLSelectElement>("add-issue-score").value;
     insertIssueTable(newIssue);
     run.steps[currentStep].issues.push(newIssue);
+    markEvaluationChanged();
     updateIssueList();
     requireEl("add-issue-msg").innerHTML = "";
     requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
@@ -226,6 +227,7 @@ export function editSaveIssueButtonClick(e: Event): void {
     row.cells[2].innerText = newIssue.findingURL;
     row.cells[3].innerText = newIssue.score;
     run.steps[currentStep].issues[currentIssue - 1] = newIssue;
+    markEvaluationChanged();
     updateIssueList();
     requireEl("add-issue-msg").innerHTML = "";
     requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
@@ -268,6 +270,7 @@ export function deleteIssue(e: Event): void {
         issueTable.rows[i].cells[0].innerHTML = String(i);
     }
     run.steps[currentStep].issues.splice(rowIndex - 1, 1);
+    markEvaluationChanged();
     updateIssueList();
 }
 

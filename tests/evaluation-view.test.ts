@@ -17,9 +17,9 @@ const picker = await import('../src/io/file-picker.js');
 const { loadEvalButtonClicked, saveFileButtonClick } = await import('../src/ui/evaluation-view.js');
 
 const ELEMENT_IDS = [
-    'select-test', 'eval-view-results', 'eval-save-file', 'edit-test',
-    'perform-test', 'evaluation-msg', 'test-editor-msg', 'perform-msg',
-    'eval-workspace', 'eval-asset', 'eval-name'
+    'select-test', 'eval-select-test', 'eval-edit', 'eval-view-results', 'eval-save-file',
+    'edit-test', 'perform-test', 'eval-delete-test', 'evaluation-msg', 'test-editor-msg',
+    'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */

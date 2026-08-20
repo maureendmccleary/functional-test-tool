@@ -9,7 +9,7 @@ import {
     formatOverallRating
 } from '../domain/report-format.js';
 import { catalogueVersion, renderEvalResultsDocx } from '../io/docx-report.js';
-import { getEvaluation } from '../state/store.js';
+import { getEvaluation, markEvaluationChanged } from '../state/store.js';
 import {
     appendNewlines, createDataTable, createLabelValueTable, createUnorderedList, fillListbox
 } from './controls.js';
@@ -86,11 +86,13 @@ export function renderAssistiveTechnologySummaries(): void {
         rating.value = String(summary.overallRating);
         rating.addEventListener("change", () => {
             summary.overallRating = parseInt(rating.value, 10);
+            markEvaluationChanged();
         });
         issues.addEventListener("blur", () => {
             summary.significantIssues = issues.value.split("\n\n")
                 .map((issue) => issue.trim())
                 .filter((issue) => issue !== "");
+            markEvaluationChanged();
         });
     });
 }
@@ -223,6 +225,7 @@ export function overallCommentsSaveClicked(e: Event): void {
         .map(comment => comment.trim())
         .filter(comment => comment !== "");
 
+    markEvaluationChanged();
     renderEvalResults();
 }
 

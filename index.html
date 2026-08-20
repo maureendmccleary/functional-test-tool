@@ -14,12 +14,31 @@
 <body>
   <form id="evaluation-form">
     <div>
-      <h1>Functional Accessibility Testing Tool</h1>
+      <h1 id="landing-heading" tabindex="-1">Functional Accessibility Testing Tool</h1>
       <div role="group" aria-label="Evaluation File Actions">
         <button type="button" id="eval-file-load">Load Evaluation File...</button>
+        <button type="button" id="eval-new">New Evaluation</button>
+        <button type="button" id="eval-edit" disabled>Edit Evaluation</button>
         <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
         <button type="button" id="eval-save-file" disabled>Save Evaluation File</button>
       </div>
+      <br><br>
+      <label for="select-test">Select a Functional Test: </label>
+      <select name="select-test" id="select-test"></select>
+      <br><br>
+      <div role="group" aria-label="Functional Test Actions">
+        <button id="edit-test" type="button" disabled>Edit Functional Test</button>
+        <button id="perform-test" type="button" disabled>Perform</button>
+      </div>
+      <br><br>
+      <p id="evaluation-msg" role="status" aria-live="assertive"></p>
+    </div>
+  </form>
+  <form id="evaluation-editor-form" class="inactive" name="evaluationEditor">
+    <div>
+      <h1 id="evaluation-editor-heading" tabindex="-1">Evaluation</h1>
+      <br><br>
+      <p id="evaluation-editor-msg" role="status" aria-live="assertive"></p>
       <br><br>
       <div role="group" aria-labelledby="evaluation-details-heading">
         <h2 id="evaluation-details-heading">Evaluation Details</h2>
@@ -33,22 +52,24 @@
         <input name="name" type="text" id="eval-name">
       </div>
       <br><br>
-      <label for="select-test">Select a Functional Test: </label>
-      <select name="select-test" id="select-test"></select>
+      <h2 id="evaluation-tests-heading">Functional Tests</h2>
+      <label for="eval-select-test">Select a Functional Test: </label>
+      <select name="eval-select-test" id="eval-select-test"></select>
       <br><br>
       <div role="group" aria-label="Functional Test Actions">
-        <button id="edit-test" type="button" disabled>Edit Functional Test</button>
-        <button id="perform-test" type="button" disabled>Perform</button>
-        <button id="new-test" type="button">New Functional Test</button>
+        <button id="eval-add-test" type="button">Add Test</button>
+        <button id="eval-delete-test" type="button" disabled>Delete Functional Test</button>
       </div>
       <br><br>
-      <p id="evaluation-msg" role="status" aria-live="assertive"></p>
+      <button id="eval-editor-save" type="button">Save</button>
+      <br><br>
     </div>
   </form>
   <form id="test-editor-form" class="inactive" name="testEditor">
     <button type="button" disabled id="test-save">Save</button>
+    <button type="button" id="test-editor-back">Back</button>
     <div role="group" id="test-edit" aria-labelledby="test-header-edit">
-      <h1>Functional Test Editor</h1>
+      <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
       <br><br>
       <p id="test-editor-msg" role="status" aria-live="assertive"></p>
       <br><br>

@@ -1,7 +1,9 @@
 import { testDisplayName } from '../domain/functional-test.js';
 import { normalizeEvaluation } from '../domain/migration.js';
 import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
-import { getEvaluation, setEvaluation } from '../state/store.js';
+import {
+    getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
+} from '../state/store.js';
 import { fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
 import { showStatusMessage } from './status.js';
@@ -60,6 +62,7 @@ function evaluationDetailChanged(e: Event): void {
     const field = e.target as HTMLInputElement;
     const property = EVALUATION_DETAIL_FIELDS[field.id as keyof typeof EVALUATION_DETAIL_FIELDS];
     getEvaluation()[property] = field.value;
+    markEvaluationChanged();
 }
 
 /** Wires the evaluation detail inputs. Called once at startup. */
@@ -70,21 +73,40 @@ export function addEvaluationDetailEvents(): void {
 }
 
 /** Shows the loaded evaluation's workspace, asset and name. */
-function populateEvaluationDetails(): void {
+export function populateEvaluationDetails(): void {
     for (const [elementId, property] of Object.entries(EVALUATION_DETAIL_FIELDS)) {
         requireEl<HTMLInputElement>(elementId).value = getEvaluation()[property] || '';
     }
 }
 
+/** Every list of functional tests. Both are refilled together so they agree. */
+const TEST_LIST_IDS = ['select-test', 'eval-select-test'];
+
+/** Controls that need a functional test to act on. */
+const TEST_CONTROL_IDS = ['edit-test', 'perform-test', 'eval-delete-test'];
+
+/** Controls that need an evaluation, whether loaded from a file or newly started. */
+const EVALUATION_CONTROL_IDS = ['eval-edit', 'eval-view-results', 'eval-save-file'];
+
 /**
- * Refills the list of functional tests from the loaded evaluation.
+ * Refills every list of functional tests from the loaded evaluation.
  *
  * Called wherever the list can change -- loading, saving a script, deleting one
  * -- because nothing redraws on its own. Option values stay the index into
- * `evaluation.tests`, which is what the Edit and Perform buttons read back.
+ * `evaluation.tests`, which is what the Edit, Perform and Delete buttons read
+ * back.
  */
 export function refreshTestList(): void {
-    fillListbox(getEvaluation().tests.map(testDisplayName), 'select-test');
+    const names = getEvaluation().tests.map(testDisplayName);
+    TEST_LIST_IDS.forEach((elementId) => fillListbox(names, elementId));
+    TEST_CONTROL_IDS.forEach((elementId) => {
+        requireEl<HTMLButtonElement>(elementId).disabled = names.length === 0;
+    });
+}
+
+/** Unlocks the controls that need an evaluation to work on. */
+export function enableEvaluationControls(): void {
+    EVALUATION_CONTROL_IDS.forEach((elementId) => requireEl(elementId).removeAttribute('disabled'));
 }
 
 /**
@@ -115,11 +137,7 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
     setEvaluation(evaluation);
     refreshTestList();
     populateEvaluationDetails();
-
-    requireEl('eval-view-results').removeAttribute('disabled');
-    requireEl('eval-save-file').removeAttribute('disabled');
-    requireEl('edit-test').removeAttribute('disabled');
-    requireEl('perform-test').removeAttribute('disabled');
+    enableEvaluationControls();
 
     const evalMsg = requireEl('evaluation-msg');
     evalMsg.textContent = '';
@@ -156,5 +174,6 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         return;
     }
 
+    markEvaluationSaved();
     announce(status.elementId, status.message, SAVE_ANNOUNCE_DELAY_MS);
 }
