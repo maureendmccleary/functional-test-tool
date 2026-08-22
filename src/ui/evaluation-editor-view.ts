@@ -101,6 +101,8 @@ export function deleteTestButtonClicked(e: Event): void {
 export function saveEvaluationButtonClicked(e: Event): void {
     e.preventDefault();
     refreshTestList();
+    // The details may have been edited here, and the landing screen shows them.
+    populateEvaluationDetails();
     showScreen('landing');
     showStatusMessage('evaluation-msg', 'Evaluation ready to perform.');
 }
@@ -116,5 +118,6 @@ export function saveEvaluationButtonClicked(e: Event): void {
 export function backEvaluationButtonClicked(e: Event): void {
     e.preventDefault();
     refreshTestList();
+    populateEvaluationDetails();
     showScreen('landing');
 }

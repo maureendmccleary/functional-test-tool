@@ -15,7 +15,7 @@ import {
     addEvaluationDetailEvents, loadEvalButtonClicked, saveFileButtonClick
 } from './ui/evaluation-view.js';
 import { confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed } from './ui/issue-dialog.js';
-import { refreshTestList } from './ui/evaluation-view.js';
+import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { performButtonClick } from './ui/perform-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
@@ -37,6 +37,7 @@ function initialize(): void {
     addFormEvents();
     addEvaluationDetailEvents();
     refreshTestList();
+    populateEvaluationDetails();
 
     const testSave = requireEl("test-save");
     testSave.addEventListener('click', saveTestButtonClicked);

@@ -43,10 +43,20 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>`03 Update notification preferences - NVDA`
       <br>*(the file holds three scripts; the first was performed with two
       assistive technologies, so loading it splits that one in two)*
+- [ ] You stay on the landing screen, and its Evaluation Details show
+      "Riverbend Public Library", "Library Catalogue" and
+      "Q3 2026 Accessibility Evaluation" as text, not as editable fields
 - [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation File**,
-      **Edit Functional Test**, and **Perform** all become enabled
-- [ ] "Evaluation data loaded!" is announced (it appears ~100 ms after the picker
-      closes -- the delay is deliberate, see `../ARCHITECTURE.md`)
+      **Edit Functional Test**, and **Perform** all become enabled, alongside
+      **New Evaluation**
+- [ ] "Q3 2026 Accessibility Evaluation loaded successfully. 4 functional tests."
+      is announced (it appears ~100 ms after the picker closes -- the delay is
+      deliberate, see `../ARCHITECTURE.md`)
+- [ ] Load `tests/fixtures/evaluation-legacy.json`, which carries no cover: the
+      details read "Not set" rather than keeping the previous evaluation's, and
+      the announcement falls back to "Evaluation loaded successfully."
+- [ ] **Edit Evaluation**, change the Evaluation name, then **Save**: the
+      landing screen's details show the new name
 
 ## 2. The evaluation screen
 

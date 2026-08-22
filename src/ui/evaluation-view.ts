@@ -1,4 +1,5 @@
 import { testDisplayName } from '../domain/functional-test.js';
+import type { Evaluation } from '../types.js';
 import { normalizeEvaluation } from '../domain/migration.js';
 import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
 import {
@@ -46,7 +47,7 @@ function announce(elementId: string, message: string, delayMs: number): void {
 }
 
 /**
- * The evaluation fields shown on the main screen, by element id.
+ * The evaluation fields edited on the evaluation screen, by element id.
  *
  * The name matches the property on `Evaluation`, so one handler serves all
  * three, the way the test editor's blur handler serves its form.
@@ -56,6 +57,21 @@ const EVALUATION_DETAIL_FIELDS = {
     'eval-asset': 'asset',
     'eval-name': 'name'
 } as const;
+
+/**
+ * The same three, shown as text on the landing screen.
+ *
+ * The tester needs to see which evaluation is open without going to the screen
+ * where it is edited, so they are read-only there.
+ */
+const LANDING_DETAIL_FIELDS = {
+    'landing-workspace': 'workspace',
+    'landing-asset': 'asset',
+    'landing-name': 'name'
+} as const;
+
+/** Shown in place of a detail the evaluation has not been given. */
+const DETAIL_UNSET = 'Not set';
 
 /** Writes an edited evaluation detail back to the loaded evaluation. */
 function evaluationDetailChanged(e: Event): void {
@@ -72,11 +88,36 @@ export function addEvaluationDetailEvents(): void {
     }
 }
 
-/** Shows the loaded evaluation's workspace, asset and name. */
+/**
+ * Shows the loaded evaluation's workspace, asset and name wherever they appear:
+ * the fields that edit them, and the landing screen's read-only copy.
+ *
+ * Called on every route that changes them or arrives at a screen showing them,
+ * because nothing redraws on its own.
+ */
 export function populateEvaluationDetails(): void {
+    const evaluation = getEvaluation();
     for (const [elementId, property] of Object.entries(EVALUATION_DETAIL_FIELDS)) {
-        requireEl<HTMLInputElement>(elementId).value = getEvaluation()[property] || '';
+        requireEl<HTMLInputElement>(elementId).value = evaluation[property] || '';
     }
+    for (const [elementId, property] of Object.entries(LANDING_DETAIL_FIELDS)) {
+        const value = (evaluation[property] || '').trim();
+        requireEl(elementId).textContent = value === '' ? DETAIL_UNSET : value;
+    }
+}
+
+/**
+ * How a load is announced: the evaluation by name, and how much of it arrived.
+ *
+ * Naming it is the confirmation that the right file opened, which a count on
+ * its own does not give.
+ */
+export function loadedMessage(evaluation: Evaluation): string {
+    const count = evaluation.tests.length;
+    const tests = count === 1 ? '1 functional test' : `${count} functional tests`;
+    const name = (evaluation.name || '').trim();
+    const subject = name === '' ? 'Evaluation' : name;
+    return `${subject} loaded successfully. ${tests}.`;
 }
 
 /** Every list of functional tests. Both are refilled together so they agree. */
@@ -141,9 +182,7 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
 
     const evalMsg = requireEl('evaluation-msg');
     evalMsg.textContent = '';
-    const summary = evaluation.tests.length === 1
-        ? 'Evaluation data loaded! 1 functional test.'
-        : `Evaluation data loaded! ${evaluation.tests.length} functional tests.`;
+    const summary = loadedMessage(evaluation);
     setTimeout(() => { evalMsg.textContent = summary; }, LOAD_ANNOUNCE_DELAY_MS);
 }
 

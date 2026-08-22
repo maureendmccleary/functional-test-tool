@@ -48,7 +48,11 @@ changed.
 
 - **Landing** — load or save the evaluation file, view the results, start or
   edit an evaluation, and choose a functional test to Edit or Perform. This is
-  the tester's screen.
+  the tester's screen. It shows the evaluation's workspace, asset and name as
+  read-only text: the tester needs to know which evaluation is open without
+  going to the screen where those are edited. `populateEvaluationDetails` fills
+  both the text and the fields, so every route that changes them calls the one
+  function.
 - **Evaluation** — the evaluation's own details (workspace, asset, name) and its
   list of functional tests, with Add Test, Edit and Delete. This is where an
   evaluation is put together. Edit is there because the copies made for each

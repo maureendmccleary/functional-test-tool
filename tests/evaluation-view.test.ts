@@ -20,7 +20,8 @@ const ELEMENT_IDS = [
     'select-test', 'eval-select-test', 'eval-edit', 'eval-view-results', 'eval-save-file',
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
-    'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name'
+    'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
+    'landing-workspace', 'landing-asset', 'landing-name'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -91,7 +92,7 @@ describe('loading', () => {
         vi.runAllTimers();
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
-            .toBe('Evaluation data loaded! 2 functional tests.');
+            .toBe('Evaluation loaded successfully. 2 functional tests.');
     });
 
     test('the count is singular for one test', async () => {
@@ -101,7 +102,7 @@ describe('loading', () => {
         vi.runAllTimers();
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
-            .toBe('Evaluation data loaded! 1 functional test.');
+            .toBe('Evaluation loaded successfully. 1 functional test.');
     });
 
     test('fills in the workspace, asset and evaluation name', async () => {
@@ -119,6 +120,45 @@ describe('loading', () => {
         expect(documentStub.getElementById('eval-asset')!.value).toBe('Library Catalogue');
         expect(documentStub.getElementById('eval-name')!.value)
             .toBe('Q3 2026 Accessibility Evaluation');
+    });
+
+    test('names the evaluation in the announcement', async () => {
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            name: 'Q3 2026 Accessibility Evaluation',
+            evalUCs: [{ name: 'One', steps: [] }, { name: 'Two', steps: [] }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toBe('Q3 2026 Accessibility Evaluation loaded successfully. 2 functional tests.');
+    });
+
+    test('shows the details on the landing screen as text', async () => {
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            workspace: 'Riverbend Public Library',
+            asset: 'Library Catalogue',
+            name: 'Q3 2026 Accessibility Evaluation',
+            evalUCs: [{ name: 'One', steps: [] }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('landing-workspace')!.textContent)
+            .toBe('Riverbend Public Library');
+        expect(documentStub.getElementById('landing-asset')!.textContent)
+            .toBe('Library Catalogue');
+        expect(documentStub.getElementById('landing-name')!.textContent)
+            .toBe('Q3 2026 Accessibility Evaluation');
+    });
+
+    test('reads "Not set" for a detail the file does not carry', async () => {
+        vi.mocked(picker.loadFile).mockResolvedValue({ evalUCs: [{ name: 'One', steps: [] }] });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('landing-workspace')!.textContent).toBe('Not set');
     });
 
     test('clears the details left by a previous evaluation', async () => {
