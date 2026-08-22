@@ -238,7 +238,10 @@ Open that document and check:
       issues typed into the dialog
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
-- [ ] Each use case has **two** tables: its metadata, then its steps
+- [ ] Each use case has **two** tables, under the headings "Overall Information"
+      and "Main Success Case" -- not one merged table. Click into the steps
+      table and confirm Word reports it as its own table, with the metadata
+      above it in a separate one
 - [ ] Use case names read number, name, then assistive technology --
       `01 Search the catalogue and place a hold - NVDA` -- in the contents, the
       heading and the metadata table's Name row, and the same script keeps the

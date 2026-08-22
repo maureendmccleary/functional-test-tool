@@ -2,6 +2,7 @@ import type { TestReport } from '../types.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
+import { createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
 
 /** The three most severe issue descriptions, or the recorded comments if any. */
@@ -52,17 +53,30 @@ export function createResultsTable(
     test: TestReport, resultsDiv: HTMLElement, options: ResultsTableOptions = {}
 ): HTMLElement {
     const headingLevel = options.headingLevel ?? 2;
+    const sectionLevel = Math.min(headingLevel + 1, 6);
     const testName = document.createElement(`h${headingLevel}`);
     testName.textContent = options.title ?? `Detailed Results: ${test.name}`;
     resultsDiv.appendChild(testName);
-    const p2 = document.createElement("p");
-    p2.innerHTML = `Assistive Technology: ${test.assistiveTechnology}<br>`;
-    p2.innerHTML += `Goal: ${test.goal}<br>`;
-    p2.innerHTML += `Operator: ${test.operator || ""}<br>`;
-    p2.innerHTML += `Start Location: ${test.startLocation}<br>`;
-    p2.innerHTML += `Operating System: ${test.operatingSystem}<br>`;
-    p2.innerHTML += `Application: ${test.application || ""}<br><br>`;
-    resultsDiv.appendChild(p2);
+
+    // A table with row headings, matching the report: read as a run of "Goal:
+    // ..." lines in a paragraph, a screen reader user has to hold each label in
+    // their head to know what the value after it belongs to. The use case's
+    // name is the heading above, so it is not repeated as a row.
+    const overallHeading = document.createElement(`h${sectionLevel}`);
+    overallHeading.textContent = "Overall Information";
+    resultsDiv.appendChild(overallHeading);
+    resultsDiv.appendChild(createLabelValueTable([
+        ["Assistive Technology", test.assistiveTechnology],
+        ["Goal", test.goal],
+        ["Operator", test.operator || ""],
+        ["Start Location", test.startLocation],
+        ["Operating System", test.operatingSystem],
+        ["Application", test.application || ""]
+    ]));
+
+    const stepsHeading = document.createElement(`h${sectionLevel}`);
+    stepsHeading.textContent = "Main Success Case";
+    resultsDiv.appendChild(stepsHeading);
     const resultsTable = document.createElement("table");
     const rowHeading = resultsTable.insertRow(-1);
     const stepNumberCol = document.createElement("th");
@@ -109,7 +123,7 @@ export function createResultsTable(
         descriptionCell = "";
     });
     resultsDiv.appendChild(resultsTable);
-    const summaryHeading = document.createElement(`h${Math.min(headingLevel + 1, 6)}`);
+    const summaryHeading = document.createElement(`h${sectionLevel}`);
     summaryHeading.textContent = `Problem Summary (${test.assistiveTechnology})`;
     resultsDiv.appendChild(summaryHeading);
     const p1 = document.createElement("p");

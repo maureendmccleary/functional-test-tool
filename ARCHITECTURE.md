@@ -178,11 +178,17 @@ at bookmarks on the assistive technology and use case headings, so they work as
 soon as the file opens. **The document contains no fields at all** -- adding one
 anywhere brings the prompt back.
 
-Each use case carries two tables, deliberately not one. The first is its
-metadata, where the field names are **row** headings; the second is the steps,
-where "Main Success Case" and "Issues Encountered" are **column** headings.
-Merging them would leave a screen reader reading values with no heading to
-attach them to.
+Each use case carries two tables, deliberately not one, under the headings
+"Overall Information" and "Main Success Case". The first is its metadata, where
+the field names are **row** headings; the second is the steps, where "Main
+Success Case" and "Issues Encountered" are **column** headings. Merged, a screen
+reader reads the metadata with the step table's column headings attached to it.
+
+**The heading between them is what keeps them apart.** Word renders two `<w:tbl>`
+elements with no block-level content between them as a single table, so pushing
+the two tables back to back merged them however separate they looked in the
+source. Anything block-level between them will do; the headings are there
+anyway, so they do the job.
 
 OOXML has no per-cell equivalent of `<th>`, so headings are recorded two ways:
 `w:tblHeader` marks a repeating header row, and `w:tblLook` records which of the

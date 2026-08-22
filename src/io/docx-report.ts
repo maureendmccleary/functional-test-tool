@@ -282,6 +282,13 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         const useCaseName = testDisplayName(test);
 
         children.push(bookmarkedHeading(useCaseName, HeadingLevel.HEADING_3, anchor));
+
+        // The heading between the two tables is load bearing, not decoration.
+        // Word renders two <w:tbl> elements with no block-level content between
+        // them as a single table, which merged the use case's details into its
+        // steps and left a screen reader reading the details with the step
+        // table's column headings attached to them.
+        children.push(heading('Overall Information', HeadingLevel.HEADING_4));
         children.push(makeTable([], [
             ['Name', useCaseName],
             ['Goal', String(report.goal || '')],
@@ -291,6 +298,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Application', String(report.application || '')]
         ], true));
 
+        children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
         const stepRows = report.steps.map((step, stepIndex) => {
             const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));
             return [
