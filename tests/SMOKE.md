@@ -240,7 +240,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 Open that document and check:
 
 - [ ] The cover shows the workspace, then the asset and evaluation name joined
-      with a dash, then the date and time the file was generated
+      with a dash, then the date and time the file was generated -- from
+      `/tmp/smoke.json` that reads "Riverbend Public Library", then
+      "Library Catalogue - Q3 2026 Accessibility Evaluation" 
 - [ ] Word opens the document with **no prompt of any kind** -- no offer to
       update fields, no macro or security bar. A prompt means a field crept back
       into the document

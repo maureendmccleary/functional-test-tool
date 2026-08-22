@@ -1,4 +1,7 @@
 {
+  "workspace": "Riverbend Public Library",
+  "asset": "Library Catalogue",
+  "name": "Q3 2026 Accessibility Evaluation",
   "comments": [
     "Two tasks cannot be completed with a screen reader: placing a hold, and changing the reminder timing.",
     "Status messages across the catalogue are either not announced or disappear before they can be read."
@@ -425,9 +428,6 @@
     }
   ],
   "score": 0,
-  "workspace": "",
-  "asset": "",
-  "name": "",
   "assistiveTechnologySummaries": [
     {
       "assistiveTechnology": "NVDA",
