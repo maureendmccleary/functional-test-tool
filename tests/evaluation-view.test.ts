@@ -103,6 +103,33 @@ describe('loading', () => {
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('Evaluation data loaded! 1 functional test.');
     });
+
+    test('fills in the workspace, asset and evaluation name', async () => {
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            workspace: 'Riverbend Public Library',
+            asset: 'Library Catalogue',
+            name: 'Q3 2026 Accessibility Evaluation',
+            evalUCs: [{ name: 'One', steps: [] }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('eval-workspace')!.value)
+            .toBe('Riverbend Public Library');
+        expect(documentStub.getElementById('eval-asset')!.value).toBe('Library Catalogue');
+        expect(documentStub.getElementById('eval-name')!.value)
+            .toBe('Q3 2026 Accessibility Evaluation');
+    });
+
+    test('clears the details left by a previous evaluation', async () => {
+        // A file with no cover identity must not inherit the last one's.
+        documentStub.getElementById('eval-workspace')!.value = 'Stale Workspace';
+        vi.mocked(picker.loadFile).mockResolvedValue({ evalUCs: [{ name: 'One', steps: [] }] });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('eval-workspace')!.value).toBe('');
+    });
 });
 
 describe('saving', () => {
