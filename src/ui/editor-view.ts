@@ -189,6 +189,7 @@ export function populateEditor(): void {
     requireEl<HTMLInputElement>("test-edit-operator").value = test.operator || "";
     requireEl<HTMLInputElement>("test-edit-application").value = test.application || "";
     requireEl<HTMLInputElement>("test-edit-operating-system").value = normalizeOperatingSystem(test.operatingSystem);
+    showAssistiveTechnologies(test);
     redrawSteps(test);
     const summaryList = requireEl("summary-list");
     while (summaryList.firstChild) {
