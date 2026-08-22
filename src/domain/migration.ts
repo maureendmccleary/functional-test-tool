@@ -133,8 +133,13 @@ function normalizeTest(raw: RawRecord): FunctionalTest {
         raw.extensions = [];
     }
     (raw.extensions as Extension[]).forEach((extension) => {
+        // Coerced rather than blanked: whatever a hand-edited file put here was
+        // meant to be read by the tester.
         if (typeof extension.instructions !== 'string') {
-            extension.instructions = '';
+            extension.instructions = extension.instructions === undefined
+                || extension.instructions === null
+                ? ''
+                : String(extension.instructions);
         }
     });
 

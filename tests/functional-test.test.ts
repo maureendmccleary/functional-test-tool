@@ -387,6 +387,48 @@ describe('buildTestReport', () => {
     });
 });
 
+describe('buildTestReport and extensions', () => {
+    test('pairs each extension with the issues recorded against it', () => {
+        const subject = {
+            name: 'x', goal: '', startLocation: '', operatingSystem: '', comments: [],
+            steps: [{ instructions: 'step one', issues: [] }],
+            extensions: [
+                { instructions: 'Credentials: tester / hunter2' },
+                { instructions: 'Trigger the timeout' }
+            ]
+        } as unknown as FunctionalTest;
+        const run = {
+            steps: [{ issues: [] }],
+            extensions: [
+                { issues: [] },
+                { issues: [{ description: 'no warning', findingURL: '', score: '2' }] }
+            ]
+        } as unknown as TestRun;
+
+        const report = buildTestReport(subject, run);
+
+        expect(report.extensions.map((e) => e.instructions))
+            .toEqual(['Credentials: tester / hunter2', 'Trigger the timeout']);
+        expect(report.extensions[1].issues).toHaveLength(1);
+    });
+
+    test('an extension added after the run appears with no issues', () => {
+        const subject = {
+            steps: [], extensions: [{ instructions: 'added later' }]
+        } as unknown as FunctionalTest;
+        const run = { steps: [], extensions: [] } as unknown as TestRun;
+
+        expect(buildTestReport(subject, run).extensions[0].issues).toEqual([]);
+    });
+
+    test('a test written before extensions existed reports none', () => {
+        const subject = { steps: [] } as unknown as FunctionalTest;
+        const run = { steps: [] } as unknown as TestRun;
+
+        expect(buildTestReport(subject, run).extensions).toEqual([]);
+    });
+});
+
 describe('getTestComments', () => {
     test('returns an empty array when runs is not an array', () => {
         expect(getTestComments({} as FunctionalTest)).toEqual([]);

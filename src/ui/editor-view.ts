@@ -13,7 +13,7 @@ import { requireEl, requireForm } from './dom.js';
 import { refreshTestList } from './evaluation-view.js';
 import { type ScreenName, showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
-import { getStepId, getStepNumber } from './step-ids.js';
+import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
 
 /** Shown when Save cannot complete the script. */
 const NAME_REQUIRED = 'Enter a name for the functional test before saving.';
@@ -72,6 +72,93 @@ function addStepToEditor(stepNumber: number): HTMLElement {
     return stepDiv;
 }
 
+/**
+ * One extension: its instructions and a delete button.
+ *
+ * Numbered from 1 in the label, which is the number a step's own wording refers
+ * to. Extensions are appended rather than inserted at a chosen position, unlike
+ * steps: inserting one would renumber the extensions after it and silently
+ * point every step that mentions them at the wrong one.
+ */
+function addExtensionToEditor(index: number): HTMLElement {
+    const test = getCurrentTest();
+    const extensionDiv = document.createElement("DIV");
+    extensionDiv.setAttribute("id", `extension-div[${index}]`);
+
+    const label = document.createElement("LABEL");
+    label.setAttribute("style", "vertical-align:top");
+    label.textContent = `Extension ${index + 1} `;
+    label.setAttribute("id", `extension-label[${index}]`);
+    label.setAttribute("for", getExtensionId(index));
+
+    const instructions = document.createElement("textarea");
+    instructions.setAttribute("id", getExtensionId(index));
+    instructions.setAttribute("class", "step-contents");
+    instructions.setAttribute("name", "extensions");
+    instructions.value = test.extensions[index].instructions;
+    instructions.addEventListener('blur', blurFormField);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.setAttribute("id", `extension-delete[${index}]`);
+    deleteBtn.setAttribute("aria-label", "delete");
+    const deleteIcon = document.createElement("span");
+    deleteIcon.classList.add("fa", "fa-trash");
+    deleteBtn.appendChild(deleteIcon);
+    deleteBtn.addEventListener("click", deleteExtensionButtonClicked);
+    deleteBtn.setAttribute("aria-labelledby", `${deleteBtn.id} ${label.id}`);
+
+    appendNewlines(extensionDiv);
+    extensionDiv.appendChild(label);
+    extensionDiv.appendChild(instructions);
+    extensionDiv.appendChild(deleteBtn);
+    appendNewlines(extensionDiv);
+    return extensionDiv;
+}
+
+/** Replaces the rendered extension list with a fresh one built from the model. */
+function redrawExtensions(test: FunctionalTest): void {
+    const parent = requireEl("extension-list");
+    parent.innerHTML = "";
+    (test.extensions || []).forEach((extension, index) => {
+        parent.appendChild(addExtensionToEditor(index));
+    });
+}
+
+/**
+ * Removes an extension, after warning that the ones after it are renumbered.
+ *
+ * The warning is the point: steps refer to extensions by number in their own
+ * wording, and nothing can rewrite that wording automatically.
+ */
+export function deleteExtensionButtonClicked(e: Event): void {
+    const test = getCurrentTest();
+    const index = getStepNumber((e.target as HTMLElement).id);
+    const later = test.extensions.length - index - 1;
+    const warning = later > 0
+        ? `Delete extension ${index + 1}? The ${later} after it are renumbered, and any step that refers to them by number will need updating.`
+        : `Delete extension ${index + 1}? Anything recorded against it will be lost.`;
+    if (!window.confirm(warning)) {
+        return;
+    }
+
+    test.extensions.splice(index, 1);
+    markEvaluationChanged();
+    redrawExtensions(test);
+    showStatusMessage("test-editor-msg", `Extension ${index + 1} was deleted.`);
+    requireEl("new-extension-btn").focus();
+}
+
+/** Appends a blank extension and puts focus in it. */
+export function newExtensionButtonClicked(e: Event): void {
+    e.preventDefault();
+    const test = getCurrentTest();
+    test.extensions.push({ instructions: "" });
+    markEvaluationChanged();
+    redrawExtensions(test);
+    requireEl(getExtensionId(test.extensions.length - 1)).focus();
+}
+
 /** Builds the editable step list for a test. */
 export function renderSteps(test: FunctionalTest): HTMLElement {
     const stepParentDiv = document.createElement("div");
@@ -123,6 +210,8 @@ export function blurFormField(e: Event): void {
     if (target.name === "steps") {
         // In place: rebuilding the step would drop its recorded issues.
         test.steps[stepNumber].instructions = target.value;
+    } else if (target.name === "extensions") {
+        test.extensions[stepNumber].instructions = target.value;
     } else if (target.name === "results") {
         test.steps[stepNumber].results = target.value;
     } else {
@@ -191,6 +280,7 @@ export function populateEditor(): void {
     requireEl<HTMLInputElement>("test-edit-operating-system").value = normalizeOperatingSystem(test.operatingSystem);
     showAssistiveTechnologies(test);
     redrawSteps(test);
+    redrawExtensions(test);
     const summaryList = requireEl("summary-list");
     while (summaryList.firstChild) {
         summaryList.removeChild(summaryList.firstChild);

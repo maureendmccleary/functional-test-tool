@@ -82,6 +82,21 @@ them recognisable as the same script performed three ways; `formatUseCaseName`
 composes the name the tester sees from the number, the name and the technology,
 as in `01 Place a hold - NVDA`.
 
+A functional test also carries **extensions**: deviations from the main success
+path, holding what a step needs to refer to — credentials to sign in with, an
+error condition to trigger. They are numbered from 1 within the test, which is
+the number a step's own wording points at ("Login credentials are located in
+extension 1"), and they store no link back to that step. Nothing has to be kept
+in sync when steps move, and nothing can dangle.
+
+Extensions record issues exactly as steps do, through the same positional
+pairing: `run.extensions[i]` belongs to `test.extensions[i]`, kept in step by
+`ensureTestRunShape`. Their issues count towards the score like any other, so a
+stopper found in an extension takes the use case to 1. **Deleting an extension
+renumbers the ones after it**, which no code can follow into the prose of a step
+that mentions them, so the editor warns before doing it and only ever appends
+new ones.
+
 The operating system belongs to the script the same way the assistive
 technology does, so one script performed with NVDA on Windows and another with
 VoiceOver on macOS keep separate results. Saving a script brings its run's
@@ -179,7 +194,8 @@ soon as the file opens. **The document contains no fields at all** -- adding one
 anywhere brings the prompt back.
 
 Each use case carries two tables, deliberately not one, under the headings
-"Overall Information" and "Main Success Case". The first is its metadata, where
+"Overall Information" and "Main Success Case", plus a third headed "Extensions"
+when it has any. The first is its metadata, where
 the field names are **row** headings; the second is the steps, where "Main
 Success Case" and "Issues Encountered" are **column** headings. Merged, a screen
 reader reads the metadata with the step table's column headings attached to it.

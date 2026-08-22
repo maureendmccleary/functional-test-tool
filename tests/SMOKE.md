@@ -138,6 +138,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       memory and reports what it created. The file is written from **Save
       Evaluation File** on the landing screen
 
+## 4a. Extensions
+
+- [ ] **New Extension** in the editor appends a numbered extension and puts
+      focus in it; type credentials into extension 1
+- [ ] Reference it from a step: "Login credentials are located in extension 1"
+- [ ] **Save**, leave the editor, reopen it: both the step and the extension
+      come back as typed
+- [ ] Deleting an extension that has others after it warns that they will be
+      renumbered; cancelling leaves it in place
+- [ ] Deleting the last extension warns only that its issues will be lost
+
 ## 5. Perform a functional test
 
 - [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**
@@ -154,6 +165,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Pick a score, close the dialog, reopen it: the score you picked comes back
 - [ ] Adding a step in the editor and reopening **Perform** shows the new step
       with an empty issue list
+- [ ] Extensions appear after the steps, headed "Extension 1" and so on, each
+      with its own **Add Issue** button
+- [ ] Recording an issue against an extension lists it under that extension and
+      **not** under any step, and relabels that extension's button alone
+- [ ] A stopper recorded against an extension takes the use case's score to 1,
+      the same as one recorded against a step
+- [ ] A test with no extensions shows no extension blocks at all
 
 ## 6. Issues
 
@@ -238,6 +256,10 @@ Open that document and check:
       issues typed into the dialog
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
+- [ ] A use case with extensions has a third table under an "Extensions"
+      heading, after Main Success Case, with the columns Extension #,
+      Extension, Score, Issues Encountered
+- [ ] A use case with no extensions has no "Extensions" heading or table
 - [ ] Each use case has **two** tables, under the headings "Overall Information"
       and "Main Success Case" -- not one merged table. Click into the steps
       table and confirm Word reports it as its own table, with the metadata

@@ -57,6 +57,12 @@ technologies becomes three functional tests, sharing a `testNumber` and named
 `01 Place a hold - NVDA` and so on. `splitByAssistiveTechnology` makes the copies, both when
 the editor saves and when an older file is loaded.
 
+A test also carries **extensions** -- deviations from the main success path, numbered from 1
+within the test and referred to by that number in a step's own wording. They record issues
+and score exactly as steps do, through the same positional pairing against the run
+(`run.extensions[i]` belongs to `test.extensions[i]`). They are only ever appended, because
+deleting one renumbers the rest and no code can follow that into a step's prose.
+
 A run's `score` is `-1` until the tester picks one, and that is the only thing that marks it
 performed: a run with no issues is otherwise indistinguishable from one nobody has opened.
 Unperformed runs are left out of the scorecard. Do not write the score anywhere except the

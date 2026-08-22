@@ -212,6 +212,36 @@ describe('script numbers', () => {
     });
 });
 
+describe('extensions', () => {
+    test('default to an empty list in a file that predates them', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-legacy'));
+        expect(evaluation.tests.every((test) => Array.isArray(test.extensions))).toBe(true);
+        expect(evaluation.tests[0].extensions).toEqual([]);
+        expect(evaluation.tests[0].runs[0].extensions).toEqual([]);
+    });
+
+    test('are kept, with their instructions coerced to a string', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [{
+                name: 'one', ats: ['NVDA'],
+                extensions: [{ instructions: 'Credentials below' }, { instructions: 42 }, {}]
+            }]
+        });
+        expect(evaluation.tests[0].extensions.map((e) => e.instructions))
+            .toEqual(['Credentials below', '42', '']);
+    });
+
+    test('a run gains a record for every extension of its test', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [{
+                name: 'one', ats: ['NVDA'],
+                extensions: [{ instructions: 'a' }, { instructions: 'b' }]
+            }]
+        });
+        expect(evaluation.tests[0].runs[0].extensions).toEqual([{ issues: [] }, { issues: [] }]);
+    });
+});
+
 describe('report identity fields', () => {
     test('are empty strings in a file saved before they existed', () => {
         const evaluation = normalizeEvaluation(loadFixture('evaluation-legacy'));
