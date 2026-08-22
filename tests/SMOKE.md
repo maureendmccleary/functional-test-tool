@@ -17,8 +17,10 @@ npm run dev        # dev server, source as written
 npm run build && npm run preview   # the built output
 ```
 
-Open it in **Chrome or Edge**. Firefox and Safari do not implement `showOpenFilePicker`/`showSaveFilePicker`, so loading and saving will
-fail there; that is a known limitation, not a regression.
+Open it in **Chrome**. That is the browser this app is tested in, and the one
+every check below assumes. Loading and saving go through the File System Access
+API, which only Chromium browsers implement; anywhere else the app says so
+rather than failing silently, which is a known limitation and not a regression.
 
 Keep the devtools console open for the entire run. **An uncaught exception is a
 failure even if the visible result looks right** -- this app updates the DOM by

@@ -132,7 +132,7 @@ describe('scoring a real evaluation', () => {
         // One run per script, and the search script was split in two.
         expect(counts).toEqual([
             [2, 3, 2, 1],   // search, NVDA
-            [0, 3, 2, 1],   // search, JAWS -- the blocking issues do not occur
+            [0, 3, 3, 1],   // search, JAWS -- no stoppers, but one issue in an extension
             [0, 0, 0, 0],   // renew, no issues found
             [1, 3, 1, 0]    // preferences, NVDA
         ]);
