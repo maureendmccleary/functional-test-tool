@@ -5,16 +5,16 @@ import {
     getTestComments, nextTestNumber, splitByAssistiveTechnology, testAssistiveTechnology,
     testDisplayName
 } from '../src/domain/functional-test.js';
-import { emptyTestRun, ensureTestRunStepCount, isPerformed } from '../src/domain/test-run.js';
+import { emptyTestRun, ensureTestRunShape, isPerformed } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 describe('emptyFunctionalTest', () => {
     test('has every key the editor form writes to', () => {
         expect(emptyFunctionalTest()).toEqual({
-            steps: [], comments: [], operatingSystem: '', assistiveTechnologies: [], name: '',
-            testNumber: 1, startLocation: '', goal: '', operator: '', application: '', score: -1,
-            runs: []
+            steps: [], extensions: [], comments: [], operatingSystem: '',
+            assistiveTechnologies: [], name: '', testNumber: 1, startLocation: '', goal: '',
+            operator: '', application: '', score: -1, runs: []
         });
     });
 
@@ -124,7 +124,7 @@ describe('splitByAssistiveTechnology', () => {
         const subject = draft(['NVDA', 'JAWS']);
         subject.runs = [{
             assistiveTechnology: 'JAWS', operatingSystem: 'Windows', score: 2, comments: ['kept'],
-            steps: [{ issues: [] }, { issues: [] }]
+            steps: [{ issues: [] }, { issues: [] }], extensions: []
         }];
         const [nvda, jaws] = splitByAssistiveTechnology(subject);
         expect(jaws.runs[0].comments).toEqual(['kept']);
@@ -145,21 +145,27 @@ describe('splitByAssistiveTechnology', () => {
     });
 });
 
-test('emptyTestRun mirrors the functional test step count', () => {
-    const subject = { steps: [{}, {}, {}] } as unknown as FunctionalTest;
+test('emptyTestRun mirrors the functional test step and extension counts', () => {
+    const subject = { steps: [{}, {}, {}], extensions: [{}] } as unknown as FunctionalTest;
     expect(emptyTestRun(subject, 'NVDA', 'Windows')).toEqual({
         assistiveTechnology: 'NVDA', operatingSystem: 'Windows', score: -1, comments: [],
-        steps: [{ issues: [] }, { issues: [] }, { issues: [] }]
+        steps: [{ issues: [] }, { issues: [] }, { issues: [] }],
+        extensions: [{ issues: [] }]
     });
 });
 
-describe('ensureTestRunStepCount', () => {
+test('emptyTestRun copes with a test written before extensions existed', () => {
+    const subject = { steps: [{}] } as unknown as FunctionalTest;
+    expect(emptyTestRun(subject, 'NVDA', 'Windows').extensions).toEqual([]);
+});
+
+describe('ensureTestRunShape', () => {
     test('pads with empty issue lists when steps were added', () => {
         const subject = { steps: [{}, {}, {}] } as unknown as FunctionalTest;
         const run = {
             steps: [{ issues: [{ description: 'kept', findingURL: '', score: '1' }] }]
         } as unknown as TestRun;
-        ensureTestRunStepCount(subject, run);
+        ensureTestRunShape(subject, run);
         expect(run.steps).toHaveLength(3);
         expect(run.steps[0].issues).toHaveLength(1);
         expect(run.steps[1]).toEqual({ issues: [] });
@@ -170,7 +176,7 @@ describe('ensureTestRunStepCount', () => {
         const run = {
             steps: [{ issues: [] }, { issues: [{ description: 'discarded', findingURL: '', score: '1' }] }]
         } as unknown as TestRun;
-        ensureTestRunStepCount(subject, run);
+        ensureTestRunShape(subject, run);
         expect(run.steps).toEqual([{ issues: [] }]);
     });
 });
@@ -184,7 +190,7 @@ describe('addAssistiveTechnologyCopies', () => {
             assistiveTechnologies: [assistiveTechnology],
             runs: [{
                 assistiveTechnology, operatingSystem: 'Windows', score, comments: [],
-                steps: [{ issues: [] }]
+                steps: [{ issues: [] }], extensions: []
             }]
         };
     }
@@ -310,6 +316,31 @@ describe('isPerformed', () => {
     test('is true for any score a tester can assign', () => {
         expect(isPerformed({ score: 1 } as TestRun)).toBe(true);
         expect(isPerformed({ score: 5 } as TestRun)).toBe(true);
+    });
+});
+
+describe('ensureTestRunShape and extensions', () => {
+    test('pads and truncates extensions the same way as steps', () => {
+        const subject = { steps: [], extensions: [{}, {}] } as unknown as FunctionalTest;
+        const run = {
+            steps: [],
+            extensions: [{ issues: [{ description: 'kept', findingURL: '', score: '2' }] }]
+        } as unknown as TestRun;
+
+        ensureTestRunShape(subject, run);
+
+        expect(run.extensions).toHaveLength(2);
+        expect(run.extensions[0].issues).toHaveLength(1);
+        expect(run.extensions[1].issues).toEqual([]);
+    });
+
+    test('creates the extensions list for a run saved before extensions existed', () => {
+        const subject = { steps: [], extensions: [{}] } as unknown as FunctionalTest;
+        const run = { steps: [] } as unknown as TestRun;
+
+        ensureTestRunShape(subject, run);
+
+        expect(run.extensions).toEqual([{ issues: [] }]);
     });
 });
 

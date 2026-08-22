@@ -1,4 +1,5 @@
-import type { TestReport } from '../types.js';
+import type { Issue, TestReport } from '../types.js';
+import { stepScore } from '../domain/evaluation.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
@@ -31,6 +32,47 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
         topIssue.innerHTML = sortedIssues[count];
         topIssues.appendChild(topIssue);
     }
+}
+
+/**
+ * One numbered table of steps or extensions, under its own heading.
+ *
+ * Steps and extensions are shown the same way and differ only in their column
+ * headings, so they share this. The "•" prefixes are deliberate output, not
+ * commentary: they are how the issue list has always read in this table.
+ */
+function appendResultsSection(
+    resultsDiv: HTMLElement, sectionLevel: number, title: string,
+    columnHeadings: string[], entries: Array<{ instructions: string; issues: Issue[] }>
+): void {
+    const sectionHeading = document.createElement(`h${sectionLevel}`);
+    sectionHeading.textContent = title;
+    resultsDiv.appendChild(sectionHeading);
+
+    const table = document.createElement("table");
+    const headingRow = table.insertRow(-1);
+    columnHeadings.forEach((columnHeading) => {
+        const heading = document.createElement("th");
+        heading.setAttribute("scope", "col");
+        heading.textContent = columnHeading;
+        headingRow.appendChild(heading);
+    });
+
+    entries.forEach((entry, index) => {
+        const issues = entry.issues || [];
+        const row = table.insertRow(-1);
+        row.insertCell(0).innerHTML = String(index + 1);
+        const instructions = row.insertCell(1);
+        instructions.innerHTML = entry.instructions;
+        instructions.setAttribute("style", "text-align: center");
+        row.insertCell(2).innerHTML = String(stepScore({ issues }));
+        const issueCell = row.insertCell(3);
+        issueCell.innerHTML = issues.length === 0
+            ? "•No issues"
+            : issues.map((issue) => "•" + issue.description).join("<br>") + "<br>";
+        issueCell.setAttribute("style", "text-align: center");
+    });
+    resultsDiv.appendChild(table);
 }
 
 /** How a results table is titled and what heading level it sits at. */
@@ -74,55 +116,19 @@ export function createResultsTable(
         ["Application", test.application || ""]
     ]));
 
-    const stepsHeading = document.createElement(`h${sectionLevel}`);
-    stepsHeading.textContent = "Main Success Case";
-    resultsDiv.appendChild(stepsHeading);
-    const resultsTable = document.createElement("table");
-    const rowHeading = resultsTable.insertRow(-1);
-    const stepNumberCol = document.createElement("th");
-    stepNumberCol.setAttribute('scope', 'col');
-    stepNumberCol.innerHTML = "#";
-    rowHeading.appendChild(stepNumberCol);
-    const stepCol = document.createElement("th");
-    stepCol.setAttribute('scope', 'col');
-    stepCol.innerHTML = "Main Success Case";
-    rowHeading.appendChild(stepCol);
-    const scoreCol = document.createElement("th");
-    scoreCol.setAttribute('scope', 'col');
-    scoreCol.innerHTML = "Score";
-    rowHeading.appendChild(scoreCol);
-    const issueCol = document.createElement("th");
-    issueCol.setAttribute('scope', 'col');
-    issueCol.innerHTML = "Issues Encountered";
-    rowHeading.appendChild(issueCol);
-    let descriptionCell = "";
-    let scoreTotal = 0;
-    test.steps.forEach((step, index) => {
-        const row = resultsTable.insertRow(-1);
-        const cell1 = row.insertCell(0);
-        const cell2 = row.insertCell(1);
-        const cell3 = row.insertCell(2);
-        const cell4 = row.insertCell(3);
-        cell1.innerHTML = String(index + 1);
-        cell2.innerHTML = step.instructions;
-        cell2.setAttribute("style", "text-align: center");
-        step.issues.forEach((issue) => {
-            scoreTotal += parseInt(issue.score);
-            descriptionCell += "•" + issue.description + "<br>";
-        });
-        if (!step.issues || step.issues.length === 0) {
-            cell3.innerHTML = "5";
-            descriptionCell = "•No issues";
-        }
-        else {
-            cell3.innerHTML = String(Math.floor(scoreTotal / step.issues.length));
-        }
-        cell4.innerHTML = descriptionCell;
-        cell4.setAttribute("style", "text-align: center");
-        scoreTotal = 0;
-        descriptionCell = "";
-    });
-    resultsDiv.appendChild(resultsTable);
+    appendResultsSection(
+        resultsDiv, sectionLevel, "Main Success Case",
+        ["Step #", "Main Success Case", "Score", "Issues Encountered"], test.steps
+    );
+
+    // Only when there are any: an empty Extensions heading and table would say
+    // the use case has deviations it does not have.
+    if (test.extensions && test.extensions.length > 0) {
+        appendResultsSection(
+            resultsDiv, sectionLevel, "Extensions",
+            ["Extension #", "Extension", "Score", "Issues Encountered"], test.extensions
+        );
+    }
     const summaryHeading = document.createElement(`h${sectionLevel}`);
     summaryHeading.textContent = `Problem Summary (${test.assistiveTechnology})`;
     resultsDiv.appendChild(summaryHeading);

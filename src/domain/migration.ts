@@ -1,5 +1,6 @@
 import type {
-    AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, Step, TestRun
+    AssistiveTechnologySummary, Evaluation, Extension, FunctionalTest, Issue, Step, TestRun,
+    TestRunStep
 } from '../types.js';
 import { collectAssistiveTechnologies } from './evaluation.js';
 import { splitByAssistiveTechnology } from './functional-test.js';
@@ -89,7 +90,9 @@ export function migrateLegacyTestRun(test: FunctionalTest): void {
         comments: Array.isArray(test.comments) ? test.comments.slice() : [],
         steps: test.steps.map((step) => ({
             issues: Array.isArray(step.issues) ? step.issues.slice() : []
-        }))
+        })),
+        // Files this old predate extensions, so there is nothing to carry over.
+        extensions: []
     };
     test.runs.push(run);
 }
@@ -126,6 +129,15 @@ function normalizeTest(raw: RawRecord): FunctionalTest {
         }
     });
 
+    if (!Array.isArray(raw.extensions)) {
+        raw.extensions = [];
+    }
+    (raw.extensions as Extension[]).forEach((extension) => {
+        if (typeof extension.instructions !== 'string') {
+            extension.instructions = '';
+        }
+    });
+
     const test = raw as unknown as FunctionalTest;
     migrateLegacyTestRun(test);
     return test;
@@ -144,8 +156,17 @@ function normalizeRun(raw: RawRecord): TestRun {
     if (!Array.isArray(raw.comments)) {
         raw.comments = [];
     }
-    if (!Array.isArray(raw.steps)) {
-        raw.steps = [];
+    for (const field of ['steps', 'extensions'] as const) {
+        if (!Array.isArray(raw[field])) {
+            raw[field] = [];
+        }
+        // issuesMap walks these directly, so a record missing its list would
+        // throw rather than read as "nothing recorded here".
+        (raw[field] as TestRunStep[]).forEach((record) => {
+            if (!Array.isArray(record.issues)) {
+                record.issues = [];
+            }
+        });
     }
     return raw as unknown as TestRun;
 }

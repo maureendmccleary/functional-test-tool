@@ -119,9 +119,11 @@
             }
           ],
           "assistiveTechnology": "NVDA",
-          "operatingSystem": "Windows"
+          "operatingSystem": "Windows",
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 1
     },
     {
@@ -228,9 +230,11 @@
             }
           ],
           "assistiveTechnology": "JAWS",
-          "operatingSystem": "Windows"
+          "operatingSystem": "Windows",
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 1
     },
     {
@@ -283,9 +287,11 @@
             }
           ],
           "assistiveTechnology": "NVDA",
-          "operatingSystem": "Windows"
+          "operatingSystem": "Windows",
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 2
     },
     {
@@ -380,9 +386,11 @@
             }
           ],
           "assistiveTechnology": "NVDA",
-          "operatingSystem": "Windows"
+          "operatingSystem": "Windows",
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 3
     }
   ],

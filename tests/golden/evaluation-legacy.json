@@ -162,9 +162,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 1
     },
     {
@@ -214,9 +216,11 @@
             {
               "issues": []
             }
-          ]
+          ],
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 2
     },
     {
@@ -336,9 +340,11 @@
                 }
               ]
             }
-          ]
+          ],
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 3
     }
   ],

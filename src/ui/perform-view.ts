@@ -2,7 +2,7 @@ import type { FunctionalTest } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import { testAssistiveTechnology } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
-import { emptyTestRun, ensureTestRunStepCount } from '../domain/test-run.js';
+import { emptyTestRun, ensureTestRunShape } from '../domain/test-run.js';
 import {
     getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
@@ -80,7 +80,7 @@ export function openTestRun(): void {
     if (test.runs.length === 0) {
         test.runs.push(emptyTestRun(test, testAssistiveTechnology(test), getSelectedOperatingSystem()));
     }
-    ensureTestRunStepCount(test, test.runs[0]);
+    ensureTestRunShape(test, test.runs[0]);
     setCurrentRunIndex(0);
     populateIssuesList();
     updateAddIssueButtons();

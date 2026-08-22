@@ -312,6 +312,26 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
         ));
 
+        // Numbered from 1 within the use case, which is how a step refers to
+        // one: "Login credentials are located in extension 1".
+        const extensions = report.extensions || [];
+        if (extensions.length > 0) {
+            children.push(heading('Extensions', HeadingLevel.HEADING_4));
+            children.push(makeTable(
+                ['Extension #', 'Extension', 'Score', 'Issues Encountered'],
+                extensions.map((extension, extensionIndex) => {
+                    const issueLines = (extension.issues || [])
+                        .map((issue) => String(issue.description || ''));
+                    return [
+                        String(extensionIndex + 1),
+                        String(extension.instructions || ''),
+                        String(stepScore({ issues: extension.issues || [] })),
+                        issueLines.length > 0 ? issueLines : ['No issues']
+                    ];
+                })
+            ));
+        }
+
         children.push(text(`Score: ${formatScore(score)}`, { bold: true }));
 
         children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));

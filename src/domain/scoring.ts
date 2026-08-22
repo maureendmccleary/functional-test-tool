@@ -6,16 +6,20 @@ const SEVERITIES = [1, 2, 3, 4];
 /**
  * Buckets every issue by severity, deduplicating descriptions within a bucket.
  *
- * The map always holds exactly keys 1..4.
+ * The map always holds exactly keys 1..4. Issues found in an extension count
+ * alongside those found in a step: a problem is a problem wherever the tester
+ * hit it, so a stopper in an extension takes the use case to 1 the same way.
  */
 export function issuesMap(test: IssueBearing): Map<number, Set<string>> {
     const allIssues = new Map<number, Set<string>>();
     for (const severity of SEVERITIES) {
         allIssues.set(severity, new Set<string>());
     }
-    for (const step of test.steps) {
-        for (const issue of step.issues) {
-            insertIssue(allIssues, issue);
+    for (const section of [test.steps, test.extensions || []]) {
+        for (const entry of section) {
+            for (const issue of entry.issues) {
+                insertIssue(allIssues, issue);
+            }
         }
     }
     return allIssues;
