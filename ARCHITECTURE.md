@@ -229,6 +229,11 @@ and strong fills of one score differ by as little as 1.29:1, far below the 3:1
 that would let a fill carry the meaning alone, so the bold is what makes the row
 findable rather than decoration.
 
+Which row the key marks is settled by `scoreKeyRows`, not in the document
+builder, for the same reason: it is a question about the data, and a test can
+ask it. A score outside 1..5 marks nothing, which is what an unperformed run
+gets.
+
 Text is given an explicit colour **only** where the report sets a background.
 Word's "auto" adapts text to the reader's theme, which is right for ordinary
 paragraphs and wrong on a cell whose fill is a fixed pale colour: a dark theme

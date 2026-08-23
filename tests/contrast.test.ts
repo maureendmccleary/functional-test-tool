@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreRowStyle
+    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreKeyRows, scoreRowStyle
 } from '../src/domain/report-format.js';
 
 /**
@@ -80,6 +80,34 @@ describe('the score key', () => {
             scoreRowStyle(score, false).fill, scoreRowStyle(score, true).fill
         ]);
         expect(new Set(fills).size).toBe(fills.length);
+    });
+});
+
+describe('which row the score key marks', () => {
+    for (const { score, label } of SCORE_LABELS) {
+        test(`a use case scoring ${score} marks "${label}" and nothing else`, () => {
+            const marked = scoreKeyRows(score).filter((row) => row.bold);
+            expect(marked).toHaveLength(1);
+            expect(marked[0].score).toBe(score);
+        });
+    }
+
+    test('an unperformed use case marks no row at all', () => {
+        // runScore returns -1 for a run nobody has scored. Marking a row would
+        // claim a result the tester never gave.
+        expect(scoreKeyRows(-1).some((row) => row.bold)).toBe(false);
+    });
+
+    test('the rows read from best to worst', () => {
+        expect(scoreKeyRows(3).map((row) => row.score)).toEqual([5, 4, 3, 2, 1]);
+    });
+
+    test('the marked row is filled more strongly than when it is not marked', () => {
+        for (const { score } of SCORE_LABELS) {
+            const marked = scoreKeyRows(score).find((row) => row.score === score)!;
+            const unmarked = scoreKeyRows(-1).find((row) => row.score === score)!;
+            expect(marked.fill).not.toBe(unmarked.fill);
+        }
     });
 });
 

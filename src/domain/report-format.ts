@@ -101,6 +101,25 @@ export function scoreRowStyle(score: number, achieved: boolean): { fill: string;
     return { fill: achieved ? fills.achieved : fills.plain, bold: achieved };
 }
 
+/**
+ * The five rows of the score key, in the order the report prints them, with the
+ * one this use case reached marked.
+ *
+ * Which row is marked is a question about the data, not about how the document
+ * looks, so it is settled here where a test can ask it. A score outside 1..5
+ * marks nothing, which is what an unperformed run gets: `runScore` returns -1
+ * for it, and no row should claim it was reached.
+ */
+export function scoreKeyRows(
+    achievedScore: number
+): Array<{ score: number; label: string; fill: string; bold: boolean }> {
+    return SCORE_LABELS.map((entry) => ({
+        score: entry.score,
+        label: entry.label,
+        ...scoreRowStyle(entry.score, entry.score === achievedScore)
+    }));
+}
+
 /** The label for a score, or an empty string when it is not one of the five. */
 export function scoreLabel(score: number): string {
     return SCORE_LABELS.find((entry) => entry.score === score)?.label || '';

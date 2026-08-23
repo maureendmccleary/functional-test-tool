@@ -295,13 +295,13 @@ Open that document and check:
       and "Issues Encountered"
 - [ ] The Scorecard reads the same way: each number is announced with the label
       beside it
-- [ ] Each use case ends with the five score labels, the one it scored filled in
-      a stronger colour and bold
-      <br>*(the contrast of every label against its fill is asserted by
-      `contrast.test.ts`; what needs an eye here is only that the right row is
-      the filled one)*
-- [ ] Open the report with Word in a dark theme: the filled rows and the table
-      headings still read as dark text on their pale fills
+- [ ] Open the report with Word in a **dark theme**: the filled score rows and
+      the table headings still read as dark text on their pale fills
+      <br>*(the only colour check left by hand. `contrast.test.ts` asserts the
+      contrast of every label against its fill, and that the row marked is the
+      one the use case scored, so neither needs an eye. What no test here can
+      reach is whether Word honours the explicit text colour in its own dark
+      theme.)*
 - [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
       wording is deliberate output, see ARCHITECTURE.md

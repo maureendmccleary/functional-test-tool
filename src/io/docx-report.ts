@@ -7,7 +7,7 @@ import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, SCORING_KEY_PARAGRAPHS,
     SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatAssistiveTechnology, formatOverallRating,
-    formatReportTimestamp, formatScore, scoreRowStyle
+    formatReportTimestamp, formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -332,17 +332,12 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
         // The five scores, with the one this use case reached filled in.
         children.push(new Table({
-            rows: SCORE_LABELS.map((entry) => {
-                const style = scoreRowStyle(entry.score, entry.score === score);
-                return new TableRow({
-                    children: [new TableCell({
-                        children: [text(entry.label, {
-                            bold: style.bold, color: REPORT_TEXT_COLOR
-                        })],
-                        shading: { type: ShadingType.CLEAR, fill: style.fill, color: 'auto' }
-                    })]
-                });
-            }),
+            rows: scoreKeyRows(score).map((row) => new TableRow({
+                children: [new TableCell({
+                    children: [text(row.label, { bold: row.bold, color: REPORT_TEXT_COLOR })],
+                    shading: { type: ShadingType.CLEAR, fill: row.fill, color: 'auto' }
+                })]
+            })),
             width: { size: 100, type: WidthType.PERCENTAGE }
         }));
     }
