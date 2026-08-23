@@ -1,4 +1,7 @@
 {
+  "workspace": "Riverbend Public Library",
+  "asset": "Library Catalogue",
+  "name": "Q3 2026 Accessibility Evaluation",
   "comments": [
     "Two tasks cannot be completed with a screen reader: placing a hold, and changing the reminder timing.",
     "Status messages across the catalogue are either not announced or disappear before they can be read."
@@ -27,8 +30,13 @@
           "issues": []
         },
         {
-          "instructions": "Activate \"Place hold\" and confirm the hold was placed.",
+          "instructions": "Activate \"Place hold\" and confirm the hold was placed. To check the hold limit error, see extension 1.",
           "issues": []
+        }
+      ],
+      "extensions": [
+        {
+          "instructions": "Place a hold on a title that already has ten holds outstanding, so the \"hold limit reached\" error is shown."
         }
       ],
       "stepCount": 6,
@@ -118,6 +126,11 @@
               ]
             }
           ],
+          "extensions": [
+            {
+              "issues": []
+            }
+          ],
           "assistiveTechnology": "NVDA",
           "operatingSystem": "Windows"
         }
@@ -147,8 +160,13 @@
           "issues": []
         },
         {
-          "instructions": "Activate \"Place hold\" and confirm the hold was placed.",
+          "instructions": "Activate \"Place hold\" and confirm the hold was placed. To check the hold limit error, see extension 1.",
           "issues": []
+        }
+      ],
+      "extensions": [
+        {
+          "instructions": "Place a hold on a title that already has ten holds outstanding, so the \"hold limit reached\" error is shown."
         }
       ],
       "stepCount": 6,
@@ -227,6 +245,17 @@
               ]
             }
           ],
+          "extensions": [
+            {
+              "issues": [
+                {
+                  "description": "The \"hold limit reached\" error is announced only as \"error\", with the explanation rendered in a tooltip JAWS never reaches.",
+                  "findingURL": "https://findings.example.org/error-messages",
+                  "score": "3"
+                }
+              ]
+            }
+          ],
           "assistiveTechnology": "JAWS",
           "operatingSystem": "Windows"
         }
@@ -236,7 +265,7 @@
     {
       "steps": [
         {
-          "instructions": "Sign in and open \"My account\".",
+          "instructions": "Sign in and open \"My account\". Login credentials are located in extension 1.",
           "issues": []
         },
         {
@@ -250,6 +279,11 @@
         {
           "instructions": "Confirm the new due date is shown for that item.",
           "issues": []
+        }
+      ],
+      "extensions": [
+        {
+          "instructions": "Borrower account for signing in: username \"tester\", password \"hunter2\". The account has three items on loan, one of them due tomorrow."
         }
       ],
       "stepCount": 4,
@@ -278,6 +312,11 @@
             {
               "issues": []
             },
+            {
+              "issues": []
+            }
+          ],
+          "extensions": [
             {
               "issues": []
             }
@@ -380,16 +419,15 @@
             }
           ],
           "assistiveTechnology": "NVDA",
-          "operatingSystem": "Windows"
+          "operatingSystem": "Windows",
+          "extensions": []
         }
       ],
+      "extensions": [],
       "testNumber": 3
     }
   ],
   "score": 0,
-  "workspace": "",
-  "asset": "",
-  "name": "",
   "assistiveTechnologySummaries": [
     {
       "assistiveTechnology": "NVDA",

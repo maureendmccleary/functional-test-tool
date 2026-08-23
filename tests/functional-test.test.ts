@@ -5,16 +5,16 @@ import {
     getTestComments, nextTestNumber, splitByAssistiveTechnology, testAssistiveTechnology,
     testDisplayName
 } from '../src/domain/functional-test.js';
-import { emptyTestRun, ensureTestRunStepCount, isPerformed } from '../src/domain/test-run.js';
+import { emptyTestRun, ensureTestRunShape, isPerformed } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 describe('emptyFunctionalTest', () => {
     test('has every key the editor form writes to', () => {
         expect(emptyFunctionalTest()).toEqual({
-            steps: [], comments: [], operatingSystem: '', assistiveTechnologies: [], name: '',
-            testNumber: 1, startLocation: '', goal: '', operator: '', application: '', score: -1,
-            runs: []
+            steps: [], extensions: [], comments: [], operatingSystem: '',
+            assistiveTechnologies: [], name: '', testNumber: 1, startLocation: '', goal: '',
+            operator: '', application: '', score: -1, runs: []
         });
     });
 
@@ -124,7 +124,7 @@ describe('splitByAssistiveTechnology', () => {
         const subject = draft(['NVDA', 'JAWS']);
         subject.runs = [{
             assistiveTechnology: 'JAWS', operatingSystem: 'Windows', score: 2, comments: ['kept'],
-            steps: [{ issues: [] }, { issues: [] }]
+            steps: [{ issues: [] }, { issues: [] }], extensions: []
         }];
         const [nvda, jaws] = splitByAssistiveTechnology(subject);
         expect(jaws.runs[0].comments).toEqual(['kept']);
@@ -145,21 +145,27 @@ describe('splitByAssistiveTechnology', () => {
     });
 });
 
-test('emptyTestRun mirrors the functional test step count', () => {
-    const subject = { steps: [{}, {}, {}] } as unknown as FunctionalTest;
+test('emptyTestRun mirrors the functional test step and extension counts', () => {
+    const subject = { steps: [{}, {}, {}], extensions: [{}] } as unknown as FunctionalTest;
     expect(emptyTestRun(subject, 'NVDA', 'Windows')).toEqual({
         assistiveTechnology: 'NVDA', operatingSystem: 'Windows', score: -1, comments: [],
-        steps: [{ issues: [] }, { issues: [] }, { issues: [] }]
+        steps: [{ issues: [] }, { issues: [] }, { issues: [] }],
+        extensions: [{ issues: [] }]
     });
 });
 
-describe('ensureTestRunStepCount', () => {
+test('emptyTestRun copes with a test written before extensions existed', () => {
+    const subject = { steps: [{}] } as unknown as FunctionalTest;
+    expect(emptyTestRun(subject, 'NVDA', 'Windows').extensions).toEqual([]);
+});
+
+describe('ensureTestRunShape', () => {
     test('pads with empty issue lists when steps were added', () => {
         const subject = { steps: [{}, {}, {}] } as unknown as FunctionalTest;
         const run = {
             steps: [{ issues: [{ description: 'kept', findingURL: '', score: '1' }] }]
         } as unknown as TestRun;
-        ensureTestRunStepCount(subject, run);
+        ensureTestRunShape(subject, run);
         expect(run.steps).toHaveLength(3);
         expect(run.steps[0].issues).toHaveLength(1);
         expect(run.steps[1]).toEqual({ issues: [] });
@@ -170,7 +176,7 @@ describe('ensureTestRunStepCount', () => {
         const run = {
             steps: [{ issues: [] }, { issues: [{ description: 'discarded', findingURL: '', score: '1' }] }]
         } as unknown as TestRun;
-        ensureTestRunStepCount(subject, run);
+        ensureTestRunShape(subject, run);
         expect(run.steps).toEqual([{ issues: [] }]);
     });
 });
@@ -184,7 +190,7 @@ describe('addAssistiveTechnologyCopies', () => {
             assistiveTechnologies: [assistiveTechnology],
             runs: [{
                 assistiveTechnology, operatingSystem: 'Windows', score, comments: [],
-                steps: [{ issues: [] }]
+                steps: [{ issues: [] }], extensions: []
             }]
         };
     }
@@ -313,6 +319,31 @@ describe('isPerformed', () => {
     });
 });
 
+describe('ensureTestRunShape and extensions', () => {
+    test('pads and truncates extensions the same way as steps', () => {
+        const subject = { steps: [], extensions: [{}, {}] } as unknown as FunctionalTest;
+        const run = {
+            steps: [],
+            extensions: [{ issues: [{ description: 'kept', findingURL: '', score: '2' }] }]
+        } as unknown as TestRun;
+
+        ensureTestRunShape(subject, run);
+
+        expect(run.extensions).toHaveLength(2);
+        expect(run.extensions[0].issues).toHaveLength(1);
+        expect(run.extensions[1].issues).toEqual([]);
+    });
+
+    test('creates the extensions list for a run saved before extensions existed', () => {
+        const subject = { steps: [], extensions: [{}] } as unknown as FunctionalTest;
+        const run = { steps: [] } as unknown as TestRun;
+
+        ensureTestRunShape(subject, run);
+
+        expect(run.extensions).toEqual([{ issues: [] }]);
+    });
+});
+
 describe('buildTestReport', () => {
     const subject = {
         name: 'Checkout', goal: 'Buy a thing', operator: 'Screen reader user',
@@ -353,6 +384,48 @@ describe('buildTestReport', () => {
             steps: [{ issues: [] }, { issues: [] }, { issues: [] }, { issues: [] }]
         } as unknown as TestRun;
         expect(buildTestReport(subject, run).steps).toHaveLength(3);
+    });
+});
+
+describe('buildTestReport and extensions', () => {
+    test('pairs each extension with the issues recorded against it', () => {
+        const subject = {
+            name: 'x', goal: '', startLocation: '', operatingSystem: '', comments: [],
+            steps: [{ instructions: 'step one', issues: [] }],
+            extensions: [
+                { instructions: 'Credentials: tester / hunter2' },
+                { instructions: 'Trigger the timeout' }
+            ]
+        } as unknown as FunctionalTest;
+        const run = {
+            steps: [{ issues: [] }],
+            extensions: [
+                { issues: [] },
+                { issues: [{ description: 'no warning', findingURL: '', score: '2' }] }
+            ]
+        } as unknown as TestRun;
+
+        const report = buildTestReport(subject, run);
+
+        expect(report.extensions.map((e) => e.instructions))
+            .toEqual(['Credentials: tester / hunter2', 'Trigger the timeout']);
+        expect(report.extensions[1].issues).toHaveLength(1);
+    });
+
+    test('an extension added after the run appears with no issues', () => {
+        const subject = {
+            steps: [], extensions: [{ instructions: 'added later' }]
+        } as unknown as FunctionalTest;
+        const run = { steps: [], extensions: [] } as unknown as TestRun;
+
+        expect(buildTestReport(subject, run).extensions[0].issues).toEqual([]);
+    });
+
+    test('a test written before extensions existed reports none', () => {
+        const subject = { steps: [] } as unknown as FunctionalTest;
+        const run = { steps: [] } as unknown as TestRun;
+
+        expect(buildTestReport(subject, run).extensions).toEqual([]);
     });
 });
 

@@ -1,17 +1,19 @@
-import type { FunctionalTest } from '../types.js';
+import type { FunctionalTest, TestRunStep } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import { testAssistiveTechnology } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
-import { emptyTestRun, ensureTestRunStepCount } from '../domain/test-run.js';
+import { emptyTestRun, ensureTestRunShape } from '../domain/test-run.js';
 import {
     getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
-import { requireEl, requireForm } from './dom.js';
+import { findEl, requireEl, requireForm } from './dom.js';
 import { saveFileButtonClick } from './evaluation-view.js';
 import { addIssueButtonClick } from './issue-dialog.js';
 import { viewResultsButtonClicked } from './results-view.js';
-import { getStepLabelIdForPerform } from './step-ids.js';
+import {
+    getExtensionLabelIdForPerform, getIssueListId, getStepLabelIdForPerform
+} from './step-ids.js';
 import { viewSummaryButtonClicked } from './summary-dialog.js';
 
 /** The current test's operating system. */
@@ -19,17 +21,16 @@ export function getSelectedOperatingSystem(): string {
     return normalizeOperatingSystem(getCurrentTest().operatingSystem);
 }
 
-/** Redraws every step's issue list from the selected run. */
-export function populateIssuesList(): void {
-    const run = getCurrentRun();
-    run.steps.forEach((step, index) => {
-        const resultId = `perform-step-results[${index}]`;
-        const issueAggregateUl = requireEl(resultId);
+/** Redraws one list of recorded issues, a step's or an extension's. */
+function drawIssueLists(section: 'steps' | 'extensions', records: TestRunStep[]): void {
+    records.forEach((record, index) => {
+        const issueAggregateUl = requireEl(getIssueListId(section, index));
         while (issueAggregateUl.firstChild) {
             issueAggregateUl.removeChild(issueAggregateUl.firstChild);
         }
-        if (step.issues.length > 0) {
-            step.issues.forEach((issue) => {
+        const issues = record.issues || [];
+        if (issues.length > 0) {
+            issues.forEach((issue) => {
                 const issueDescLi = document.createElement("LI");
                 issueDescLi.innerHTML = issue.description;
                 issueAggregateUl.appendChild(issueDescLi);
@@ -43,25 +44,31 @@ export function populateIssuesList(): void {
     });
 }
 
-/** Relabels each step's button to reflect how many issues it holds. */
+/** Redraws every step's and extension's issue list from the selected run. */
+export function populateIssuesList(): void {
+    const run = getCurrentRun();
+    drawIssueLists('steps', run.steps);
+    drawIssueLists('extensions', run.extensions || []);
+}
+
+/** Relabels one set of buttons to reflect how many issues each holds. */
+function relabelIssueButtons(selector: string, records: TestRunStep[]): void {
+    requireEl('perform-dialog').querySelectorAll(selector).forEach((button, index) => {
+        const record = records[index];
+        const count = record && record.issues ? record.issues.length : 0;
+        if (count === 0) {
+            button.innerHTML = "Add Issue";
+            return;
+        }
+        button.innerHTML = "View " + count + (count === 1 ? " Issue" : " Issues");
+    });
+}
+
+/** Relabels each step's and extension's button to reflect how many issues it holds. */
 export function updateAddIssueButtons(): void {
     const run = getCurrentRun();
-    const dialog = requireEl('perform-dialog');
-    const addIssueButtons = dialog.querySelectorAll('button[id^="add-issue-btn"]');
-    addIssueButtons.forEach((button, index) => {
-        const step = run.steps[index];
-        if (step && step.issues && step.issues.length === 1) {
-            const issueStr = " Issue";
-            button.innerHTML = "View " + step.issues.length + issueStr;
-        }
-        else if (step && step.issues && step.issues.length > 1) {
-            const issueStr = " Issues";
-            button.innerHTML = "View " + step.issues.length + issueStr;
-        }
-        else {
-            button.innerHTML = "Add Issue";
-        }
-    });
+    relabelIssueButtons('button[id^="add-issue-btn"]', run.steps);
+    relabelIssueButtons('button[id^="add-extension-issue-btn"]', run.extensions || []);
 }
 
 /**
@@ -80,7 +87,7 @@ export function openTestRun(): void {
     if (test.runs.length === 0) {
         test.runs.push(emptyTestRun(test, testAssistiveTechnology(test), getSelectedOperatingSystem()));
     }
-    ensureTestRunStepCount(test, test.runs[0]);
+    ensureTestRunShape(test, test.runs[0]);
     setCurrentRunIndex(0);
     populateIssuesList();
     updateAddIssueButtons();
@@ -158,6 +165,65 @@ export function addStepToPerform(test: FunctionalTest, stepNumber: number): void
     appendNewlines(form);
 }
 
+/**
+ * Builds the extension blocks, replacing any left from the last test opened.
+ *
+ * They follow the steps and are laid out the same way, at the same heading
+ * level: an extension is not a step in the walkthrough, but the tester records
+ * issues against it in exactly the same way, and "Extension 1" against
+ * "Step 1" is what tells the two apart.
+ */
+function renderExtensionsForPerform(test: FunctionalTest): void {
+    const form = requireForm("performForm");
+    const existing = findEl("perform-extensions");
+    if (existing) {
+        existing.remove();
+    }
+
+    const extensions = Array.isArray(test.extensions) ? test.extensions : [];
+    if (extensions.length === 0) {
+        return;
+    }
+
+    const container = document.createElement("DIV");
+    container.setAttribute("id", "perform-extensions");
+    extensions.forEach((extension, index) => {
+        const extensionDiv = document.createElement("DIV");
+        extensionDiv.setAttribute("id", `extension-div[${index}]`);
+
+        const label = document.createElement("H3");
+        label.textContent = `Extension ${index + 1}`;
+        label.setAttribute("id", getExtensionLabelIdForPerform(index));
+
+        const instructions = document.createElement("P");
+        instructions.setAttribute("id", `perform-extension-contents[${index}]`);
+        instructions.textContent = extension.instructions;
+
+        const issuesHeading = document.createElement("H4");
+        issuesHeading.innerHTML = "Issues";
+
+        const results = document.createElement("UL");
+        results.setAttribute("id", getIssueListId('extensions', index));
+
+        const addIssueButton = document.createElement("BUTTON");
+        (addIssueButton as HTMLButtonElement).type = "button";
+        (addIssueButton as HTMLButtonElement).innerText = "Add Issue";
+        addIssueButton.setAttribute("id", `add-extension-issue-btn[${index}]`);
+        addIssueButton.setAttribute("aria-labelledby", `${addIssueButton.id} ${label.id}`);
+        addIssueButton.addEventListener('click', addIssueButtonClick);
+
+        extensionDiv.appendChild(label);
+        extensionDiv.appendChild(instructions);
+        extensionDiv.appendChild(issuesHeading);
+        extensionDiv.appendChild(results);
+        appendNewlines(extensionDiv);
+        extensionDiv.appendChild(addIssueButton);
+        container.appendChild(extensionDiv);
+        appendNewlines(container);
+    });
+    form.appendChild(container);
+}
+
 /** Fills the perform dialog for the current test and selects a run. */
 export function populatePerform(): void {
     const test = getCurrentTest();
@@ -198,6 +264,8 @@ export function populatePerform(): void {
             addStepToPerform(test, i);
         }
     }
+    renderExtensionsForPerform(test);
+
     const saveResultsButton = requireEl("perform-save");
     saveResultsButton.addEventListener("click", saveFileButtonClick);
     const viewResults = requireEl("view-test-results");

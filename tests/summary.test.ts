@@ -19,7 +19,8 @@ const SUMMARY_ELEMENT_IDS = ['general-comments', 'perform-score', 'summary-list'
 /** Points the store at a single run and installs a stub document. */
 function withTestRun(steps: TestRunStep[]) {
     const run: TestRun = {
-        assistiveTechnology: 'NVDA', operatingSystem: 'Windows', score: -1, comments: [], steps
+        assistiveTechnology: 'NVDA', operatingSystem: 'Windows', score: -1, comments: [], steps,
+        extensions: []
     };
     setEvaluation({
         tests: [{ name: 'Fixture', steps, runs: [run] } as unknown as FunctionalTest],

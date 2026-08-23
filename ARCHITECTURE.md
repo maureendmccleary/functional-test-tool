@@ -48,7 +48,11 @@ changed.
 
 - **Landing** — load or save the evaluation file, view the results, start or
   edit an evaluation, and choose a functional test to Edit or Perform. This is
-  the tester's screen.
+  the tester's screen. It shows the evaluation's workspace, asset and name as
+  read-only text: the tester needs to know which evaluation is open without
+  going to the screen where those are edited. `populateEvaluationDetails` fills
+  both the text and the fields, so every route that changes them calls the one
+  function.
 - **Evaluation** — the evaluation's own details (workspace, asset, name) and its
   list of functional tests, with Add Test, Edit and Delete. This is where an
   evaluation is put together. Edit is there because the copies made for each
@@ -81,6 +85,21 @@ files on load. The copies share the script's `testNumber`, which is what makes
 them recognisable as the same script performed three ways; `formatUseCaseName`
 composes the name the tester sees from the number, the name and the technology,
 as in `01 Place a hold - NVDA`.
+
+A functional test also carries **extensions**: deviations from the main success
+path, holding what a step needs to refer to — credentials to sign in with, an
+error condition to trigger. They are numbered from 1 within the test, which is
+the number a step's own wording points at ("Login credentials are located in
+extension 1"), and they store no link back to that step. Nothing has to be kept
+in sync when steps move, and nothing can dangle.
+
+Extensions record issues exactly as steps do, through the same positional
+pairing: `run.extensions[i]` belongs to `test.extensions[i]`, kept in step by
+`ensureTestRunShape`. Their issues count towards the score like any other, so a
+stopper found in an extension takes the use case to 1. **Deleting an extension
+renumbers the ones after it**, which no code can follow into the prose of a step
+that mentions them, so the editor warns before doing it and only ever appends
+new ones.
 
 The operating system belongs to the script the same way the assistive
 technology does, so one script performed with NVDA on Windows and another with
@@ -178,11 +197,18 @@ at bookmarks on the assistive technology and use case headings, so they work as
 soon as the file opens. **The document contains no fields at all** -- adding one
 anywhere brings the prompt back.
 
-Each use case carries two tables, deliberately not one. The first is its
-metadata, where the field names are **row** headings; the second is the steps,
-where "Main Success Case" and "Issues Encountered" are **column** headings.
-Merging them would leave a screen reader reading values with no heading to
-attach them to.
+Each use case carries two tables, deliberately not one, under the headings
+"Overall Information" and "Main Success Case", plus a third headed "Extensions"
+when it has any. The first is its metadata, where
+the field names are **row** headings; the second is the steps, where "Main
+Success Case" and "Issues Encountered" are **column** headings. Merged, a screen
+reader reads the metadata with the step table's column headings attached to it.
+
+**The heading between them is what keeps them apart.** Word renders two `<w:tbl>`
+elements with no block-level content between them as a single table, so pushing
+the two tables back to back merged them however separate they looked in the
+source. Anything block-level between them will do; the headings are there
+anyway, so they do the job.
 
 OOXML has no per-cell equivalent of `<th>`, so headings are recorded two ways:
 `w:tblHeader` marks a repeating header row, and `w:tblLook` records which of the

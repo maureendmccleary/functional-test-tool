@@ -21,6 +21,7 @@ export const DEFAULT_NEW_TEST_STEPS = 5;
 export function emptyFunctionalTest(stepCount = 0, testNumber = 1): FunctionalTest {
     return {
         steps: Array.from({ length: stepCount }, () => ({ instructions: "", issues: [] })),
+        extensions: [],
         comments: [],
         operatingSystem: "",
         assistiveTechnologies: [],
@@ -171,8 +172,9 @@ export function getTestComments(test: FunctionalTest): string[] {
 /**
  * Merges authoring text from the functional test with results from one performance.
  *
- * Step count comes from the functional test, not the performance, so steps added in
- * the editor after a run still appear -- with an empty issue list.
+ * Step and extension counts come from the functional test, not the performance,
+ * so either one added in the editor after a run still appears -- with an empty
+ * issue list.
  */
 export function buildTestReport(test: FunctionalTest, run: TestRun): TestReport {
     return {
@@ -188,6 +190,10 @@ export function buildTestReport(test: FunctionalTest, run: TestRun): TestReport 
         steps: test.steps.map((step, i) => ({
             instructions: step.instructions,
             issues: (run.steps[i] && run.steps[i].issues) || []
+        })),
+        extensions: (Array.isArray(test.extensions) ? test.extensions : []).map((extension, i) => ({
+            instructions: extension.instructions,
+            issues: (run.extensions && run.extensions[i] && run.extensions[i].issues) || []
         }))
     };
 }

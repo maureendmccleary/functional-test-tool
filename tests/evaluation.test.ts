@@ -28,6 +28,7 @@ function testWithRuns(
     return {
         name,
         testNumber: 1,
+        extensions: [],
         goal: '',
         startLocation: '',
         operatingSystem: 'Windows',
@@ -39,7 +40,8 @@ function testWithRuns(
             operatingSystem: 'Windows',
             score,
             comments: [],
-            steps: [{ issues }]
+            steps: [{ issues }],
+            extensions: []
         }))
     };
 }

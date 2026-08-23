@@ -282,6 +282,13 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         const useCaseName = testDisplayName(test);
 
         children.push(bookmarkedHeading(useCaseName, HeadingLevel.HEADING_3, anchor));
+
+        // The heading between the two tables is load bearing, not decoration.
+        // Word renders two <w:tbl> elements with no block-level content between
+        // them as a single table, which merged the use case's details into its
+        // steps and left a screen reader reading the details with the step
+        // table's column headings attached to them.
+        children.push(heading('Overall Information', HeadingLevel.HEADING_4));
         children.push(makeTable([], [
             ['Name', useCaseName],
             ['Goal', String(report.goal || '')],
@@ -291,6 +298,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Application', String(report.application || '')]
         ], true));
 
+        children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
         const stepRows = report.steps.map((step, stepIndex) => {
             const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));
             return [
@@ -303,6 +311,26 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(makeTable(
             ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
         ));
+
+        // Numbered from 1 within the use case, which is how a step refers to
+        // one: "Login credentials are located in extension 1".
+        const extensions = report.extensions || [];
+        if (extensions.length > 0) {
+            children.push(heading('Extensions', HeadingLevel.HEADING_4));
+            children.push(makeTable(
+                ['Extension #', 'Extension', 'Score', 'Issues Encountered'],
+                extensions.map((extension, extensionIndex) => {
+                    const issueLines = (extension.issues || [])
+                        .map((issue) => String(issue.description || ''));
+                    return [
+                        String(extensionIndex + 1),
+                        String(extension.instructions || ''),
+                        String(stepScore({ issues: extension.issues || [] })),
+                        issueLines.length > 0 ? issueLines : ['No issues']
+                    ];
+                })
+            ));
+        }
 
         children.push(text(`Score: ${formatScore(score)}`, { bold: true }));
 

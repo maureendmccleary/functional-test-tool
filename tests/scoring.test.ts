@@ -94,6 +94,32 @@ describe('issuesText', () => {
     });
 });
 
+describe('extensions', () => {
+    const issue = (score: string) => ({ description: `issue ${score}`, findingURL: '', score });
+
+    test('issues found in an extension are counted with the rest', () => {
+        const subject = {
+            steps: [{ issues: [issue('3')] }],
+            extensions: [{ issues: [issue('1')] }]
+        };
+        const map = issuesMap(subject);
+        expect(map.get(1)!.size).toBe(1);
+        expect(map.get(3)!.size).toBe(1);
+    });
+
+    test('a stopper in an extension takes the use case to 1', () => {
+        const subject = {
+            steps: [{ issues: [] }],
+            extensions: [{ issues: [issue('1')] }]
+        };
+        expect(minimumScore(issuesMap(subject))).toBe(1);
+    });
+
+    test('a test written before extensions existed still scores', () => {
+        expect(minimumScore(issuesMap({ steps: [{ issues: [issue('2')] }] }))).toBe(2);
+    });
+});
+
 describe('scoring a real evaluation', () => {
     const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
     const runs = evaluation.tests.flatMap((t) => t.runs);
@@ -106,7 +132,7 @@ describe('scoring a real evaluation', () => {
         // One run per script, and the search script was split in two.
         expect(counts).toEqual([
             [2, 3, 2, 1],   // search, NVDA
-            [0, 3, 2, 1],   // search, JAWS -- the blocking issues do not occur
+            [0, 3, 3, 1],   // search, JAWS -- no stoppers, but one issue in an extension
             [0, 0, 0, 0],   // renew, no issues found
             [1, 3, 1, 0]    // preferences, NVDA
         ]);

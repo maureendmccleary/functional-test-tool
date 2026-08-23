@@ -22,7 +22,27 @@ export interface Step {
     results?: string;
 }
 
-/** A step as recorded during one performance of a functional test. */
+/**
+ * A deviation from the main success path.
+ *
+ * Not a step: extensions are not walked in order. They hold what a step needs
+ * to refer to -- credentials to sign in with, an error condition to trigger --
+ * and the step's own wording points at one by number, as in "Login credentials
+ * are located in extension 1". So they are numbered per functional test and
+ * carry no link back to the step that mentions them; renumbering or deleting a
+ * step cannot leave one dangling.
+ */
+export interface Extension {
+    instructions: string;
+}
+
+/**
+ * A step, or an extension, as recorded during one performance.
+ *
+ * Extensions record issues exactly as steps do, so they share this shape and
+ * the same positional pairing: `run.steps[i]` belongs to `test.steps[i]`, and
+ * `run.extensions[i]` to `test.extensions[i]`.
+ */
 export interface TestRunStep {
     issues: Issue[];
 }
@@ -42,6 +62,8 @@ export interface TestRun {
     score: number;
     comments: string[];
     steps: TestRunStep[];
+    /** One record per extension of the test, paired by position. */
+    extensions: TestRunStep[];
 }
 
 /** A script to be performed: the steps to follow, plus every recorded run of them. */
@@ -79,6 +101,8 @@ export interface FunctionalTest {
     /** Absent in some legacy files, which migrateLegacyTestRun allows for. */
     score?: number;
     steps: Step[];
+    /** Deviations from the main success path, numbered from 1 as authored. */
+    extensions: Extension[];
     comments: string[];
     /** Exactly one, paired with the single entry in assistiveTechnologies. */
     runs: TestRun[];
@@ -131,14 +155,19 @@ export interface TestReport {
     score: number;
     comments: string[];
     steps: Array<{ instructions: string; issues: Issue[] }>;
+    extensions: Array<{ instructions: string; issues: Issue[] }>;
 }
 
 /**
  * Anything the scoring functions can total up. Both TestRun and TestReport
  * satisfy it, which is why issuesMap accepts either.
+ *
+ * Extensions are optional here only because the hand-built objects in the tests
+ * predate them; anything the app produces has the array.
  */
 export interface IssueBearing {
     steps: Array<{ issues: Issue[] }>;
+    extensions?: Array<{ issues: Issue[] }>;
 }
 
 /** An option in a <select>, as consumed by fillListbox. */

@@ -23,6 +23,13 @@
         <button type="button" id="eval-save-file" disabled>Save Evaluation File</button>
       </div>
       <br><br>
+      <div role="group" aria-labelledby="landing-details-heading">
+        <h2 id="landing-details-heading">Evaluation Details</h2>
+        <p>Workspace: <span id="landing-workspace"></span></p>
+        <p>Asset: <span id="landing-asset"></span></p>
+        <p>Evaluation: <span id="landing-name"></span></p>
+      </div>
+      <br><br>
       <label for="select-test">Select a Functional Test: </label>
       <select name="select-test" id="select-test"></select>
       <br><br>
@@ -122,6 +129,14 @@
 
     <div id="step-list">
     </div>
+
+    <h2 id="extensions-heading">Extensions</h2>
+    <p>Deviations from the main success path: credentials to sign in with, an error condition to
+      trigger. A step refers to one by number, as in "Login credentials are located in extension 1".
+    </p>
+    <div id="extension-list">
+    </div>
+    <button type="button" id="new-extension-btn">New Extension</button>
   </form>
   <button id="new-step-btn" class="inactive">New Step</button>
   <dialog id="new-step-dialog" aria-labelledby="add-step-heading">

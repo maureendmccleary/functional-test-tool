@@ -1,13 +1,13 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import {
-    getCurrentIssue, getCurrentRun, getCurrentStep, getCurrentTest, markEvaluationChanged,
-    setCurrentIssue, setCurrentStep
+    getCurrentIssue, getCurrentRecord, getCurrentSection, getCurrentStep, getCurrentTest,
+    markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
-import { updateAddIssueButtons } from './perform-view.js';
-import { getStepNumber } from './step-ids.js';
+import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
+import { getIssueListId, getStepNumber, isExtensionElementId } from './step-ids.js';
 
 /*
  * This module and perform-view import each other: perform-view builds the
@@ -86,25 +86,24 @@ export function validateIssueInputs(): boolean {
     return true;
 }
 
-/** Redraws the current step's issue list in the perform dialog. */
+/** Redraws the current step's or extension's issue list in the perform dialog. */
 export function updateIssueList(): void {
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
-    const issueList = requireEl(`perform-step-results[${currentStep}]`);
+    const issues = getCurrentRecord().issues;
+    const issueList = requireEl(getIssueListId(getCurrentSection(), getCurrentStep()));
 
     while (issueList.firstChild) {
         issueList.removeChild(issueList.firstChild);
     }
-    if (run.steps[currentStep].issues.length === 0) {
+    if (issues.length === 0) {
         const issueLI = document.createElement("LI");
         issueLI.innerHTML = "No issues";
         issueList.appendChild(issueLI);
 
     }
     else {
-        for (let i = 0; i < run.steps[currentStep].issues.length; i++) {
+        for (let i = 0; i < issues.length; i++) {
             const issueLI = document.createElement("LI");
-            issueLI.innerHTML = run.steps[currentStep].issues[i].description;
+            issueLI.innerHTML = issues[i].description;
             issueList.appendChild(issueLI);
         }
     }
@@ -146,10 +145,8 @@ export function insertIssueTable(newIssue: Issue): void {
 /** Rebuilds the table from the recorded issues, discarding what was there. */
 export function copyIssues2Table(issueTable: HTMLTableElement): void {
     clearTable(issueTable);
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
-    for (let i = 0; i < run.steps[currentStep].issues.length; i++) {
-        insertIssueTable(run.steps[currentStep].issues[i]);
+    for (let i = 0; i < getCurrentRecord().issues.length; i++) {
+        insertIssueTable(getCurrentRecord().issues[i]);
     }
 }
 
@@ -157,18 +154,16 @@ export function copyIssues2Table(issueTable: HTMLTableElement): void {
 export function updateIssueTable(): void {
     const issueTable = requireEl<HTMLTableElement>("add-issue-table");
     const rows = issueTable.rows;
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
-    if (run.steps[currentStep].issues.length === 0
+    if (getCurrentRecord().issues.length === 0
         && rows.length === 1) {
         return;
     }
     else
-        if (run.steps[currentStep].issues.length === 0) {
+        if (getCurrentRecord().issues.length === 0) {
             clearTable(issueTable);
             return;
         }
-        else if ((run.steps[currentStep].issues.length + 1) !== rows.length) {
+        else if ((getCurrentRecord().issues.length + 1) !== rows.length) {
             copyIssues2Table(issueTable);
             return;
         }
@@ -178,9 +173,9 @@ export function updateIssueTable(): void {
     for (let i = 0; i < rows.length - 1; i++) {
         const row = rows[i + 1];
         const cells = row.cells;
-        if (run.steps[currentStep].issues[i].description !== cells[1].innerHTML
-            || run.steps[currentStep].issues[i].findingURL !== cells[2].innerHTML
-            || run.steps[currentStep].issues[i].score !== cells[3].innerHTML) {
+        if (getCurrentRecord().issues[i].description !== cells[1].innerHTML
+            || getCurrentRecord().issues[i].findingURL !== cells[2].innerHTML
+            || getCurrentRecord().issues[i].score !== cells[3].innerHTML) {
             copyIssues2Table(issueTable);
         }
     }
@@ -193,19 +188,17 @@ export function saveIssueButtonClick(e: Event): void {
         return;
     }
     const newIssue = {} as Issue;
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
     newIssue.description = requireEl<HTMLInputElement>("add-issue-description").value;
     newIssue.findingURL = requireEl<HTMLInputElement>("add-issue-findingURL").value;
     newIssue.score = requireEl<HTMLSelectElement>("add-issue-score").value;
     insertIssueTable(newIssue);
-    run.steps[currentStep].issues.push(newIssue);
+    getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
     updateIssueList();
     requireEl("add-issue-msg").innerHTML = "";
     requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
     hideAddIssueControls();
-    setCurrentIssue(run.steps[currentStep].issues.length);
+    setCurrentIssue(getCurrentRecord().issues.length);
 }
 
 /** Validates and overwrites the issue currently being edited. */
@@ -215,8 +208,6 @@ export function editSaveIssueButtonClick(e: Event): void {
         return;
     }
     const newIssue = {} as Issue;
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
     const currentIssue = getCurrentIssue();
     newIssue.description = requireEl<HTMLInputElement>("add-issue-description").value;
     newIssue.findingURL = requireEl<HTMLInputElement>("add-issue-findingURL").value;
@@ -226,13 +217,13 @@ export function editSaveIssueButtonClick(e: Event): void {
     row.cells[1].innerText = newIssue.description;
     row.cells[2].innerText = newIssue.findingURL;
     row.cells[3].innerText = newIssue.score;
-    run.steps[currentStep].issues[currentIssue - 1] = newIssue;
+    getCurrentRecord().issues[currentIssue - 1] = newIssue;
     markEvaluationChanged();
     updateIssueList();
     requireEl("add-issue-msg").innerHTML = "";
     requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
     hideAddIssueControls();
-    setCurrentIssue(run.steps[currentStep].issues.length);
+    setCurrentIssue(getCurrentRecord().issues.length);
 }
 
 /** Loads the clicked row into the fields for editing. */
@@ -258,18 +249,16 @@ export function editIssue(e: Event): void {
 export function deleteIssue(e: Event): void {
     const button = e.target as HTMLElement;
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
-    const run = getCurrentRun();
-    const currentStep = getCurrentStep();
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;
     requireEl("add-issue-msg").innerHTML = "";
     requireEl("add-issue-msg").innerHTML = "Deleting issue " + rowIndex;
     issueTable.deleteRow(rowIndex);
-    setCurrentIssue(run.steps[currentStep].issues.length);
+    setCurrentIssue(getCurrentRecord().issues.length);
     for (let i = 1; i < issueTable.rows.length; i++) {
         issueTable.rows[i].cells[0].innerHTML = String(i);
     }
-    run.steps[currentStep].issues.splice(rowIndex - 1, 1);
+    getCurrentRecord().issues.splice(rowIndex - 1, 1);
     markEvaluationChanged();
     updateIssueList();
 }
@@ -297,23 +286,28 @@ export function addIssueButtonClick(e: Event): void {
     });
     const heading = requireEl("add-issue-dialog-title");
     requireEl("add-issue-msg").innerHTML = "";
-    setCurrentStep(getStepNumber((e.target as HTMLElement).id));
+    // Which button was pressed decides both the index and the list it indexes,
+    // so an issue found in extension 2 is not filed against step 2.
+    const buttonId = (e.target as HTMLElement).id;
+    setCurrentSection(isExtensionElementId(buttonId) ? 'extensions' : 'steps');
+    setCurrentStep(getStepNumber(buttonId));
+
     const currentStep = getCurrentStep();
     const test = getCurrentTest();
-    const run = getCurrentRun();
-    if (run.steps[currentStep].issues.length === 0) {
-        heading.innerHTML = "Add Issue Step " + (currentStep + 1);
-    }
-    else {
-        heading.innerHTML = "View Issue Step " + (currentStep + 1);
-    }
-    requireEl("add-issue-step-label").innerHTML = "Step " + String(currentStep + 1);
-    requireEl("add-issue-step").innerHTML = test.steps[currentStep].instructions;
+    const isExtension = getCurrentSection() === 'extensions';
+    const label = `${isExtension ? "Extension" : "Step"} ${currentStep + 1}`;
+    const source = isExtension ? test.extensions : test.steps;
+
+    heading.innerHTML = getCurrentRecord().issues.length === 0
+        ? `Add Issue ${label}`
+        : `View Issue ${label}`;
+    requireEl("add-issue-step-label").innerHTML = label;
+    requireEl("add-issue-step").innerHTML = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);
     updateIssueTable();
     const newIssue = requireEl("add-issue-dialog-new-issue");
     newIssue.addEventListener("click", newIssueButtonClick);
-    if (run.steps[currentStep].issues.length === 0) {
+    if (getCurrentRecord().issues.length === 0) {
         newIssueButtonClick();
     }
 }
@@ -323,20 +317,6 @@ export function addIssueButtonClick(e: Event): void {
 // dismissed. The score is deliberately left alone: it is the tester's, and recomputing it here
 // would overwrite their choice and mark an untouched run as performed.
 export function onAddIssueDialogClosed(): void {
-    const run = getCurrentRun();
     updateAddIssueButtons();
-    let issueAggregate: string;
-    run.steps.forEach((step, index) => {
-        const resultId = "perform-step-results[" + index + "]";
-        if (step.issues.length > 0) {
-            issueAggregate = "";
-            step.issues.forEach((issue) => {
-                issueAggregate += issue.description + "\n\n";
-            });
-        }
-        else {
-            issueAggregate = "No issues";
-        }
-        (requireEl(resultId) as HTMLElement & { value: string }).value = issueAggregate;
-    });
+    populateIssuesList();
 }

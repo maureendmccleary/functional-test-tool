@@ -1,4 +1,4 @@
-import type { TestRun, FunctionalTest } from '../types.js';
+import type { TestRun, TestRunStep, FunctionalTest } from '../types.js';
 
 /** The lowest score a tester can assign. Below it means no score was chosen. */
 const LOWEST_SCORE = 1;
@@ -16,26 +16,38 @@ export function isPerformed(run: TestRun): boolean {
     return typeof run.score === 'number' && run.score >= LOWEST_SCORE;
 }
 
-/** Creates an unscored run with one empty step per step of the test. */
+/** Creates an unscored run with an empty record per step and per extension. */
 export function emptyTestRun(test: FunctionalTest, assistiveTechnology: string, operatingSystem: string): TestRun {
     return {
         assistiveTechnology,
         operatingSystem: operatingSystem,
         score: -1,
         comments: [],
-        steps: test.steps.map(() => ({ issues: [] }))
+        steps: test.steps.map(() => ({ issues: [] })),
+        extensions: (Array.isArray(test.extensions) ? test.extensions : []).map(() => ({ issues: [] }))
     };
 }
 
-/**
- * Makes the performance's step count match the functional test's.
- *
- * Truncating discards any issues recorded against removed steps. That is
- * current behavior and is relied on when steps are deleted in the editor.
- */
-export function ensureTestRunStepCount(test: FunctionalTest, run: TestRun): void {
-    while (run.steps.length < test.steps.length) {
-        run.steps.push({ issues: [] });
+/** Pads or truncates a run's records to match what the test now has. */
+function matchLength(records: TestRunStep[], length: number): void {
+    while (records.length < length) {
+        records.push({ issues: [] });
     }
-    run.steps.length = test.steps.length;
+    records.length = length;
+}
+
+/**
+ * Makes the performance's records match the functional test's steps and
+ * extensions.
+ *
+ * Truncating discards any issues recorded against removed steps or extensions.
+ * That is current behavior and is relied on when either is deleted in the
+ * editor.
+ */
+export function ensureTestRunShape(test: FunctionalTest, run: TestRun): void {
+    if (!Array.isArray(run.extensions)) {
+        run.extensions = [];
+    }
+    matchLength(run.steps, test.steps.length);
+    matchLength(run.extensions, (Array.isArray(test.extensions) ? test.extensions : []).length);
 }

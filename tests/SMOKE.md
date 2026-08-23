@@ -17,8 +17,10 @@ npm run dev        # dev server, source as written
 npm run build && npm run preview   # the built output
 ```
 
-Open it in **Chrome or Edge**. Firefox and Safari do not implement `showOpenFilePicker`/`showSaveFilePicker`, so loading and saving will
-fail there; that is a known limitation, not a regression.
+Open it in **Chrome**. That is the browser this app is tested in, and the one
+every check below assumes. Loading and saving go through the File System Access
+API, which only Chromium browsers implement; anywhere else the app says so
+rather than failing silently, which is a known limitation and not a regression.
 
 Keep the devtools console open for the entire run. **An uncaught exception is a
 failure even if the visible result looks right** -- this app updates the DOM by
@@ -41,10 +43,20 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>`03 Update notification preferences - NVDA`
       <br>*(the file holds three scripts; the first was performed with two
       assistive technologies, so loading it splits that one in two)*
+- [ ] You stay on the landing screen, and its Evaluation Details show
+      "Riverbend Public Library", "Library Catalogue" and
+      "Q3 2026 Accessibility Evaluation" as text, not as editable fields
 - [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation File**,
-      **Edit Functional Test**, and **Perform** all become enabled
-- [ ] "Evaluation data loaded!" is announced (it appears ~100 ms after the picker
-      closes -- the delay is deliberate, see `../ARCHITECTURE.md`)
+      **Edit Functional Test**, and **Perform** all become enabled, alongside
+      **New Evaluation**
+- [ ] "Q3 2026 Accessibility Evaluation loaded successfully. 4 functional tests."
+      is announced (it appears ~100 ms after the picker closes -- the delay is
+      deliberate, see `../ARCHITECTURE.md`)
+- [ ] Load `tests/fixtures/evaluation-legacy.json`, which carries no cover: the
+      details read "Not set" rather than keeping the previous evaluation's, and
+      the announcement falls back to "Evaluation loaded successfully."
+- [ ] **Edit Evaluation**, change the Evaluation name, then **Save**: the
+      landing screen's details show the new name
 
 ## 2. The evaluation screen
 
@@ -138,6 +150,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       memory and reports what it created. The file is written from **Save
       Evaluation File** on the landing screen
 
+## 4a. Extensions
+
+- [ ] **New Extension** in the editor appends a numbered extension and puts
+      focus in it; type credentials into extension 1
+- [ ] Reference it from a step: "Login credentials are located in extension 1"
+- [ ] **Save**, leave the editor, reopen it: both the step and the extension
+      come back as typed
+- [ ] Deleting an extension that has others after it warns that they will be
+      renumbered; cancelling leaves it in place
+- [ ] Deleting the last extension warns only that its issues will be lost
+
 ## 5. Perform a functional test
 
 - [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**
@@ -154,6 +177,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Pick a score, close the dialog, reopen it: the score you picked comes back
 - [ ] Adding a step in the editor and reopening **Perform** shows the new step
       with an empty issue list
+- [ ] Extensions appear after the steps, headed "Extension 1" and so on, each
+      with its own **Add Issue** button
+- [ ] Recording an issue against an extension lists it under that extension and
+      **not** under any step, and relabels that extension's button alone
+- [ ] A stopper recorded against an extension takes the use case's score to 1,
+      the same as one recorded against a step
+- [ ] A test with no extensions shows no extension blocks at all
 
 ## 6. Issues
 
@@ -220,7 +250,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 Open that document and check:
 
 - [ ] The cover shows the workspace, then the asset and evaluation name joined
-      with a dash, then the date and time the file was generated
+      with a dash, then the date and time the file was generated -- from
+      `/tmp/smoke.json` that reads "Riverbend Public Library", then
+      "Library Catalogue - Q3 2026 Accessibility Evaluation" 
 - [ ] Word opens the document with **no prompt of any kind** -- no offer to
       update fields, no macro or security bar. A prompt means a field crept back
       into the document
@@ -238,7 +270,14 @@ Open that document and check:
       issues typed into the dialog
 - [ ] Detailed results are grouped by assistive technology first, with each
       use case under the AT it was performed with
-- [ ] Each use case has **two** tables: its metadata, then its steps
+- [ ] A use case with extensions has a third table under an "Extensions"
+      heading, after Main Success Case, with the columns Extension #,
+      Extension, Score, Issues Encountered
+- [ ] A use case with no extensions has no "Extensions" heading or table
+- [ ] Each use case has **two** tables, under the headings "Overall Information"
+      and "Main Success Case" -- not one merged table. Click into the steps
+      table and confirm Word reports it as its own table, with the metadata
+      above it in a separate one
 - [ ] Use case names read number, name, then assistive technology --
       `01 Search the catalogue and place a hold - NVDA` -- in the contents, the
       heading and the metadata table's Name row, and the same script keeps the

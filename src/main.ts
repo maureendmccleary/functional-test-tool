@@ -2,8 +2,8 @@ import { defaults } from './config/defaults.js';
 import { fillCheckboxMenu } from './ui/controls.js';
 import { requireEl } from './ui/dom.js';
 import {
-    addFormEvents, backButtonClicked, editTestButtonClicked, newStepButtonClick,
-    saveTestButtonClicked
+    addFormEvents, backButtonClicked, editTestButtonClicked, newExtensionButtonClicked,
+    newStepButtonClick, saveTestButtonClicked
 } from './ui/editor-view.js';
 import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
 import {
@@ -15,7 +15,7 @@ import {
     addEvaluationDetailEvents, loadEvalButtonClicked, saveFileButtonClick
 } from './ui/evaluation-view.js';
 import { confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed } from './ui/issue-dialog.js';
-import { refreshTestList } from './ui/evaluation-view.js';
+import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { performButtonClick } from './ui/perform-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
@@ -37,6 +37,7 @@ function initialize(): void {
     addFormEvents();
     addEvaluationDetailEvents();
     refreshTestList();
+    populateEvaluationDetails();
 
     const testSave = requireEl("test-save");
     testSave.addEventListener('click', saveTestButtonClicked);
@@ -45,6 +46,7 @@ function initialize(): void {
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
     requireEl("new-step-btn").addEventListener('click', newStepButtonClick);
+    requireEl("new-extension-btn").addEventListener('click', newExtensionButtonClicked);
 
     // No form here is ever meant to submit: every control has a click handler
     // and the data lives in the store. A submit reloads the page and silently

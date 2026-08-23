@@ -1,4 +1,4 @@
-import type { Evaluation, TestRun, FunctionalTest } from '../types.js';
+import type { Evaluation, TestRun, TestRunStep, FunctionalTest } from '../types.js';
 
 /**
  * The single owner of the application's mutable state.
@@ -27,6 +27,15 @@ let evaluation: Evaluation = {
  */
 let currentTestIndex: string | number = 0;
 let currentStep = 0;
+
+/**
+ * Which of the run's two lists the issue dialog is working on.
+ *
+ * Steps and extensions both record issues, and `currentStep` is the index
+ * within whichever of them is in play. Keeping the two apart here is what stops
+ * an issue found in extension 2 being filed against step 2.
+ */
+let currentSection: 'steps' | 'extensions' = 'steps';
 let currentIssue = 0;
 let currentRunIndex = -1;
 
@@ -76,14 +85,29 @@ export function setCurrentTestIndex(value: string | number): void {
     currentTestIndex = value;
 }
 
-/** Index of the step whose issues the issue dialog is showing. */
+/** Index, within the current section, of the record the issue dialog is showing. */
 export function getCurrentStep(): number {
     return currentStep;
 }
 
-/** Selects which step the issue dialog operates on. */
+/** Selects which step the issue dialog operates on, in the current section. */
 export function setCurrentStep(value: number): void {
     currentStep = value;
+}
+
+/** Whether the issue dialog is working on a step or on an extension. */
+export function getCurrentSection(): 'steps' | 'extensions' {
+    return currentSection;
+}
+
+/** Selects which of the run's lists the issue dialog operates on. */
+export function setCurrentSection(value: 'steps' | 'extensions'): void {
+    currentSection = value;
+}
+
+/** The run's record -- a step's or an extension's -- that holds the issues in play. */
+export function getCurrentRecord(): TestRunStep {
+    return getCurrentRun()[currentSection][currentStep];
 }
 
 /** Row index of the issue being edited, or the issue count when adding a new one. */
