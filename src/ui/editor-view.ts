@@ -1,6 +1,8 @@
 import type { FunctionalTest } from '../types.js';
 import { AT_ALIAS_MAP, normalizeOperatingSystem } from '../domain/migration.js';
-import { collectSelectedValues, normalizeSelectionValues } from '../domain/selection-utils.js';
+import {
+    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues
+} from '../domain/selection-utils.js';
 import {
     DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest, getTestComments,
     nextTestNumber, testDisplayName
@@ -232,6 +234,43 @@ export function changeFormField(e: Event): void {
 }
 
 /**
+ * How long a typed character stays part of the search before it starts a new
+ * one. The value a native listbox uses.
+ */
+const TYPE_AHEAD_RESET_MS = 500;
+
+/** What has been typed so far, and when the last character arrived. */
+let typeAhead = { query: '', at: 0 };
+
+/**
+ * Moves focus to the assistive technology matching what was just typed.
+ *
+ * The list runs to nearly thirty entries, so reaching Windows Narrator by Tab
+ * alone means passing everything before it. Space is left alone deliberately:
+ * it ticks the focused checkbox, and stealing it would break the control.
+ */
+function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): void {
+    if (e.key.length !== 1 || e.key === ' ' || e.ctrlKey || e.altKey || e.metaKey) {
+        return;
+    }
+
+    const now = Date.now();
+    typeAhead = {
+        query: (now - typeAhead.at > TYPE_AHEAD_RESET_MS ? '' : typeAhead.query) + e.key,
+        at: now
+    };
+
+    const checkboxes = [...atMenu.querySelectorAll<HTMLInputElement>("input[type='checkbox']")];
+    const labels = checkboxes.map((checkbox) => checkbox.value);
+    const from = checkboxes.indexOf(document.activeElement as HTMLInputElement);
+    const match = findTypeAheadIndex(labels, typeAhead.query, from === -1 ? 0 : from);
+    if (match !== -1) {
+        e.preventDefault();
+        checkboxes[match].focus();
+    }
+}
+
+/**
  * Wires the Assistive Technology disclosure button to the checkbox group it
  * shows and hides. Called once at startup, not from `populateEditor`, so the
  * Escape handler is not re-registered every time a test is opened.
@@ -242,11 +281,14 @@ function addAssistiveTechnologyDisclosureEvents(): void {
 
     atMenuBtn.addEventListener("click", toggleMenu);
     atMenu.addEventListener('keydown', (e) => {
-        if ((e as KeyboardEvent).key === "Escape") {
+        const event = e as KeyboardEvent;
+        if (event.key === "Escape") {
             atMenuBtn.setAttribute("aria-expanded", "false");
             atMenu.hidden = true;
             atMenuBtn.focus(); // Return focus to button
+            return;
         }
+        assistiveTechnologyTypeAhead(event, atMenu);
     });
 }
 

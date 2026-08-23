@@ -136,12 +136,6 @@ export function formatOverallRating(rating: number): string {
     return typeof rating === 'number' && rating >= 1 ? rating.toFixed(1) : 'Not rated';
 }
 
-/** An assistive technology with its catalogue version, when one is known. */
-export function formatAssistiveTechnology(name: string, version: string | undefined): string {
-    const trimmed = (version || '').trim();
-    return trimmed === '' ? name : `${name} ${trimmed}`;
-}
-
 /**
  * A use case name with its number and assistive technology, for example
  * "01 Review exit polls - NVDA".

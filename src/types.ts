@@ -176,11 +176,16 @@ export interface ListboxOption {
     label: string;
 }
 
-/** An entry in the os-types / at-types catalogues. */
+/**
+ * An entry in the os-types / at-types catalogues.
+ *
+ * No version: testing is always done with the current release, so pinning one
+ * here would only go stale. No platform list either, now that one entry covers
+ * a technology across every operating system it runs on and the scripter
+ * records the operating system on the test.
+ */
 export interface TypeCatalogEntry {
     'friendly-name': string;
-    version: string;
-    'os-types'?: string[];
 }
 
 /** The catalogues and score lists that populate the menus. */

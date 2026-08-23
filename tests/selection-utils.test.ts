@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { collectSelectedValues, normalizeSelectionValues } from '../src/domain/selection-utils.js';
+import {
+    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues
+} from '../src/domain/selection-utils.js';
 
 describe('normalizeSelectionValues', () => {
     test('removes duplicates', () => {
@@ -39,5 +41,46 @@ describe('collectSelectedValues', () => {
     test('tolerates null-ish input', () => {
         expect(collectSelectedValues(undefined)).toEqual([]);
         expect(collectSelectedValues([null, { checked: true, value: 'JAWS' }])).toEqual(['JAWS']);
+    });
+});
+
+describe('findTypeAheadIndex', () => {
+    const labels = [
+        'AssistiveTouch', 'JAWS', 'NVDA', 'Switch Control',
+        'Voice Control', 'VoiceOver', 'VoiceView', 'Zoom'
+    ];
+
+    test('one letter moves to the first entry starting with it', () => {
+        expect(findTypeAheadIndex(labels, 'j', 0)).toBe(1);
+    });
+
+    test('repeating the letter cycles through the entries sharing it', () => {
+        expect(findTypeAheadIndex(labels, 'v', 0)).toBe(4);
+        expect(findTypeAheadIndex(labels, 'vv', 4)).toBe(5);
+        expect(findTypeAheadIndex(labels, 'vvv', 5)).toBe(6);
+    });
+
+    test('cycling wraps round to the start', () => {
+        expect(findTypeAheadIndex(labels, 'vv', 6)).toBe(4);
+    });
+
+    test('a longer query narrows without skipping the current entry', () => {
+        // Already on VoiceOver, typing the whole word should stay put rather
+        // than jump to VoiceView.
+        expect(findTypeAheadIndex(labels, 'voiceo', 5)).toBe(5);
+        expect(findTypeAheadIndex(labels, 'voicev', 5)).toBe(6);
+    });
+
+    test('it ignores case', () => {
+        expect(findTypeAheadIndex(labels, 'ZO', 0)).toBe(7);
+    });
+
+    test('no match reports -1', () => {
+        expect(findTypeAheadIndex(labels, 'q', 0)).toBe(-1);
+        expect(findTypeAheadIndex(labels, '', 0)).toBe(-1);
+    });
+
+    test('it copes with an empty list', () => {
+        expect(findTypeAheadIndex([], 'a', 0)).toBe(-1);
     });
 });

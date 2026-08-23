@@ -1,13 +1,12 @@
 import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
-import { defaults } from '../config/defaults.js';
 import {
     buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore, stepScore
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, SCORING_KEY_PARAGRAPHS,
-    SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatAssistiveTechnology, formatOverallRating,
-    formatReportTimestamp, formatScore, scoreKeyRows
+    SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatOverallRating, formatReportTimestamp,
+    formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -38,16 +37,6 @@ function assistiveTechnologyBookmark(groupIndex: number): string {
 
 function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
     return `uc${groupIndex}_${pairingIndex}`;
-}
-
-/**
- * The version recorded in the catalogue for an assistive technology, if it is
- * listed. Exported for the results dialog, which lists the same versions.
- */
-export function catalogueVersion(assistiveTechnology: string): string | undefined {
-    const entry = Object.values(defaults['at-types'])
-        .find((candidate) => candidate['friendly-name'] === assistiveTechnology);
-    return entry?.version;
 }
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
@@ -220,11 +209,10 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
     if (groups.length > 0) {
+        // No versions: testing is always done with the current release.
         children.push(makeTable(
-            ['Assistive Technologies & Versions'],
-            groups.map((group) => [formatAssistiveTechnology(
-                group.assistiveTechnology, catalogueVersion(group.assistiveTechnology)
-            )])
+            ['Assistive Technologies'],
+            groups.map((group) => [group.assistiveTechnology])
         ));
     } else {
         children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));

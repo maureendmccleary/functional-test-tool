@@ -9,62 +9,65 @@ import type { Defaults } from '../types.js';
 export const defaults: Defaults = {
     "os-types": {
         "windows": {
-            "friendly-name": "Windows",
-            "version": "11"
+            "friendly-name": "Windows"
         },
         "mac": {
-            "friendly-name": "MacOS",
-            "version": "14"
+            "friendly-name": "MacOS"
         },
         "ios": {
-            "friendly-name": "iOS",
-            "version": "16"
+            "friendly-name": "iOS"
         },
         "android": {
-            "friendly-name": "Android",
-            "version": "15"
+            "friendly-name": "Android"
         },
         "appletvos": {
-            "friendly-name": "AppleTV",
-            "version": "16"
+            "friendly-name": "AppleTV"
         }
     },
+    /*
+     * Every assistive technology a functional test can be assigned to, in
+     * alphabetical order because the checkbox group is navigated by first
+     * letter.
+     *
+     * One entry per technology, not per technology and platform: the scripter
+     * enters the operating system separately, so a single "VoiceOver" covers
+     * macOS, iOS, iPadOS, watchOS and tvOS, and a single "Switch Control"
+     * covers Apple's and Android's. Entries keep a platform in their name only
+     * where the technology exists on that platform alone.
+     *
+     * Several are test conditions rather than software -- Keyboard-Only Usage,
+     * Hardware or Closed Product, Android Tablet. They are still things a
+     * script is performed against, so they belong here.
+     */
     "at-types": {
-        "nvda": {
-            "friendly-name": "NVDA",
-            "version": "2024",
-            "os-types": ["windows"]
-        },
-        "jaws": {
-            "friendly-name": "JAWS",
-            "version": "2024",
-            "os-types": ["windows"]
-        },
-        "voiceover": {
-            "friendly-name": "VoiceOver",
-            "version": "same as OS version",
-            "os-types": ["mac", "ios", "ipados", "applewatchos", "appletvos"]
-        },
-        "talkback": {
-            "friendly-name": "TalkBack",
-            "version": "15",
-            "os-types": ["android"]
-        },
-        "zoomtext": {
-            "friendly-name": "ZoomText",
-            "version": "2024",
-            "os-types": ["windows"]
-        },
-        "zoom": {
-            "friendly-name": "Zoom",
-            "version": "Same as OS version",
-            "os-types": ["mac", "ios", "ipados", "applewatchos", "appletvos"]
-        },
-        "dragon-ns": {
-            "friendly-name": "Dragon NaturallySpeaking",
-            "version": "18",
-            "os-types": ["windows"]
-        }
+        "android-magnification": { "friendly-name": "Android Magnification" },
+        "android-tablet": { "friendly-name": "Android Tablet" },
+        "android-voice-access": { "friendly-name": "Android Voice Access" },
+        "assistivetouch": { "friendly-name": "AssistiveTouch" },
+        "audio-guidance": { "friendly-name": "Audio Guidance" },
+        "browser-zoom": { "friendly-name": "Browser Zoom (to 200%)" },
+        "chromevox": { "friendly-name": "ChromeVox" },
+        "dragon-ns": { "friendly-name": "Dragon NaturallySpeaking" },
+        "hardware-closed-product": { "friendly-name": "Hardware or Closed Product" },
+        "high-contrast-mode": { "friendly-name": "High Contrast Mode" },
+        "inverse-colors": { "friendly-name": "Inverse Colors" },
+        "jaws": { "friendly-name": "JAWS" },
+        "keyboard-only": { "friendly-name": "Keyboard-Only Usage" },
+        "larger-text": { "friendly-name": "Larger Text" },
+        "no-audio-visual-indication": { "friendly-name": "No Audio/Visual Indication of Audio Information" },
+        "nvda": { "friendly-name": "NVDA" },
+        "refreshable-braille": { "friendly-name": "Refreshable Braille Display" },
+        "switch-control": { "friendly-name": "Switch Control" },
+        "talkback": { "friendly-name": "TalkBack" },
+        "voice-control": { "friendly-name": "Voice Control" },
+        "voiceover": { "friendly-name": "VoiceOver" },
+        "voiceview": { "friendly-name": "VoiceView" },
+        "windows-magnifier": { "friendly-name": "Windows Magnifier" },
+        "windows-narrator": { "friendly-name": "Windows Narrator" },
+        "windows-on-screen-keyboard": { "friendly-name": "Windows On-Screen Keyboard" },
+        "windows-speech-recognition": { "friendly-name": "Windows Speech Recognition" },
+        "zoom": { "friendly-name": "Zoom" },
+        "zoomtext": { "friendly-name": "ZoomText" },
     },
     "scores": [
         { value: -1, label: "Not Rated (-1)" },

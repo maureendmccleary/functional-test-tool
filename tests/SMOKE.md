@@ -131,6 +131,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the first checkbox: no menu mode, no "grouping" boundary, no stop of any
       kind on the container
 - [ ] The checkboxes read as checkboxes, not as menu items
+- [ ] With focus inside the group, typing a letter moves to the first
+      technology starting with it, and pressing the same letter again moves to
+      the next one sharing it: "v" walks Voice Control, VoiceOver, VoiceView
+- [ ] Typing a longer run quickly, such as "win", reaches Windows Magnifier
+      directly
+- [ ] **Space** still ticks the focused checkbox rather than being swallowed by
+      the typing
 - [ ] Escape while focus is inside the group collapses it and returns focus to
       the **Assistive Technology** button
 - [ ] Reopen the editor several times, then press Escape inside the group once:
@@ -256,6 +263,8 @@ Open that document and check:
 - [ ] Word opens the document with **no prompt of any kind** -- no offer to
       update fields, no macro or security bar. A prompt means a field crept back
       into the document
+- [ ] "Assistive Technologies Used" lists the technologies by name with no
+      version numbers
 - [ ] The Table of Contents lists each assistive technology with its use cases
       indented under it, and clicking an entry jumps to that heading
 - [ ] The Scorecard's total counts **performed runs**, not scripts: three use
