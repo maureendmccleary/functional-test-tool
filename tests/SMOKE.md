@@ -297,6 +297,11 @@ Open that document and check:
       beside it
 - [ ] Each use case ends with the five score labels, the one it scored filled in
       a stronger colour and bold
+      <br>*(the contrast of every label against its fill is asserted by
+      `contrast.test.ts`; what needs an eye here is only that the right row is
+      the filled one)*
+- [ ] Open the report with Word in a dark theme: the filled rows and the table
+      headings still read as dark text on their pale fills
 - [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
       wording is deliberate output, see ARCHITECTURE.md

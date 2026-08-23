@@ -58,6 +58,49 @@ export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
     'If, during testing, the tester encounters any "stoppers" -- problems severe enough to prevent the completion of the use case -- the use case is automatically given a score of 1, "Fail - Severe Accessibility Problem(s)". Testers are generally instructed to get past the point of failure so that the whole use case is still performed, which is why problems may be noted in steps after a stopper.'
 ];
 
+/**
+ * Shading behind each score in the key, palest for the scores not achieved.
+ *
+ * Kept here with the rest of the report's presentation so the contrast of every
+ * pairing can be asserted without building a document. See
+ * `tests/contrast.test.ts`.
+ */
+const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
+    5: { plain: 'EAF4EA', achieved: '92D050' },
+    4: { plain: 'EFF6E7', achieved: 'C6E0B4' },
+    3: { plain: 'FFF8E5', achieved: 'FFD966' },
+    2: { plain: 'FDEEE3', achieved: 'F4B183' },
+    1: { plain: 'FBE9E9', achieved: 'E06666' }
+};
+
+/** Shading behind a table's heading row. */
+export const HEADER_FILL = 'EEEEEE';
+
+/**
+ * Text colour for anything the report gives a background of its own.
+ *
+ * Word's "auto" adapts the text to the theme, which is right for ordinary
+ * paragraphs and wrong on a cell whose fill is a fixed pale colour: in a dark
+ * theme it can turn the text pale as well, leaving pale on pale. Wherever a
+ * fill is set, the text colour is set with it, and the two are checked against
+ * each other in `tests/contrast.test.ts`. Unshaded text is deliberately left on
+ * "auto" so it still follows the reader's theme.
+ */
+export const REPORT_TEXT_COLOR = '000000';
+
+/**
+ * How one row of the score key is drawn.
+ *
+ * The achieved row is bold as well as more strongly filled. The bold is not
+ * decoration: the pale and strong fills of a given score differ by as little as
+ * 1.29:1, so the fill alone would not tell a low vision reader which score was
+ * reached, and colour would be carrying meaning on its own.
+ */
+export function scoreRowStyle(score: number, achieved: boolean): { fill: string; bold: boolean } {
+    const fills = SCORE_FILLS[score];
+    return { fill: achieved ? fills.achieved : fills.plain, bold: achieved };
+}
+
 /** The label for a score, or an empty string when it is not one of the five. */
 export function scoreLabel(score: number): string {
     return SCORE_LABELS.find((entry) => entry.score === score)?.label || '';

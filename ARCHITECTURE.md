@@ -221,6 +221,19 @@ hash in `index.html`, so the internals cannot shift without a deliberate version
 bump -- **if you bump `docx`, check that `Table.root[0]` is still the
 `w:tblPr` element.**
 
+The score key's colours live in `domain/report-format.ts` rather than beside the
+document builder, so `tests/contrast.test.ts` can assert them without loading
+the docx library. Two rules are enforced there. Text on any fill the report sets
+itself clears 4.5:1, and the achieved row is **bold as well as filled**: the pale
+and strong fills of one score differ by as little as 1.29:1, far below the 3:1
+that would let a fill carry the meaning alone, so the bold is what makes the row
+findable rather than decoration.
+
+Text is given an explicit colour **only** where the report sets a background.
+Word's "auto" adapts text to the reader's theme, which is right for ordinary
+paragraphs and wrong on a cell whose fill is a fixed pale colour: a dark theme
+can turn the text pale too, leaving pale on pale. Unshaded text stays on "auto".
+
 `ui/eval-results-view.ts` renders the results dialog section for section
 against the report, reading its wording from `domain/report-format.ts` and
 grouping runs with the same `groupRunsByAssistiveTechnology`. Changing one
