@@ -5,8 +5,9 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
-    formatAssistiveTechnology, formatOverallRating, formatReportTimestamp, formatScore
+    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, SCORING_KEY_PARAGRAPHS,
+    SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatAssistiveTechnology, formatOverallRating,
+    formatReportTimestamp, formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { requireEl } from '../ui/dom.js';
 
@@ -21,15 +22,6 @@ import { requireEl } from '../ui/dom.js';
  * scoring key, then the detailed results grouped by assistive technology
  * rather than by use case.
  */
-
-/** Shading behind each score in the key, palest for the scores not achieved. */
-const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
-    5: { plain: 'EAF4EA', achieved: '92D050' },
-    4: { plain: 'EFF6E7', achieved: 'C6E0B4' },
-    3: { plain: 'FFF8E5', achieved: 'FFD966' },
-    2: { plain: 'FDEEE3', achieved: 'F4B183' },
-    1: { plain: 'FBE9E9', achieved: 'E06666' }
-};
 
 /**
  * The part of a docx `Table` that `applyTableLook` writes to: the table
@@ -98,10 +90,11 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         return new TableCell({ children: paragraphs, ...(options.shading ? { shading: options.shading } : {}) });
     }
 
+    // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
     function headerCell(content: unknown) {
         return new TableCell({
-            children: [text(content, { bold: true })],
-            shading: { type: ShadingType.CLEAR, fill: 'EEEEEE', color: 'auto' }
+            children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
+            shading: { type: ShadingType.CLEAR, fill: HEADER_FILL, color: 'auto' }
         });
     }
 
@@ -339,20 +332,12 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
         // The five scores, with the one this use case reached filled in.
         children.push(new Table({
-            rows: SCORE_LABELS.map((entry) => {
-                const achieved = entry.score === score;
-                const fill = SCORE_FILLS[entry.score];
-                return new TableRow({
-                    children: [new TableCell({
-                        children: [text(entry.label, { bold: achieved })],
-                        shading: {
-                            type: ShadingType.CLEAR,
-                            fill: achieved ? fill.achieved : fill.plain,
-                            color: 'auto'
-                        }
-                    })]
-                });
-            }),
+            rows: scoreKeyRows(score).map((row) => new TableRow({
+                children: [new TableCell({
+                    children: [text(row.label, { bold: row.bold, color: REPORT_TEXT_COLOR })],
+                    shading: { type: ShadingType.CLEAR, fill: row.fill, color: 'auto' }
+                })]
+            })),
             width: { size: 100, type: WidthType.PERCENTAGE }
         }));
     }
