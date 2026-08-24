@@ -57,6 +57,7 @@ export const defaults: Defaults = {
         "larger-text": { "friendly-name": "Larger Text" },
         "no-audio-visual-indication": { "friendly-name": "No Audio/Visual Indication of Audio Information" },
         "nvda": { "friendly-name": "NVDA" },
+        "orca": { "friendly-name": "Orca" },
         "refreshable-braille": { "friendly-name": "Refreshable Braille Display" },
         "screen-reader": { "friendly-name": "Screen Reader" },
         "switch-control": { "friendly-name": "Switch Control" },
