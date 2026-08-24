@@ -322,14 +322,17 @@ function addAssistiveTechnologyDisclosureEvents(): void {
 
     atMenuBtn.addEventListener("click", (e) => {
         toggleMenu(e);
-        // Expanding lands on the first technology rather than leaving focus on
-        // the button. From the button the arrows and first letter navigation
-        // have nothing to act on, so the group looked unresponsive until Tab
-        // was pressed. Collapsing leaves focus where it is: the button.
+        // Expanding lands inside the list rather than leaving focus on the
+        // button. From the button the arrows and first letter navigation have
+        // nothing to act on, so the group looked unresponsive until Tab was
+        // pressed. It lands on the technology already assigned, since that is
+        // what the scripter came to look at, and on the first entry only when
+        // nothing is assigned yet. Collapsing leaves focus on the button.
         if (atMenuBtn.getAttribute("aria-expanded") === "true") {
             const { checkboxes } = assistiveTechnologyCheckboxes(atMenu);
-            if (checkboxes.length > 0) {
-                checkboxes[0].focus();
+            const target = checkboxes.find((checkbox) => checkbox.checked) || checkboxes[0];
+            if (target) {
+                target.focus();
             }
         }
     });

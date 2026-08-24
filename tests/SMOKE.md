@@ -122,9 +122,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Select `02 Renew a borrowed item - NVDA`, then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
-- [ ] The **Assistive Technology** button expands its group, focus lands
-      straight on the first checkbox, and the checked boxes match the test's
-      saved AT list
+- [ ] The **Assistive Technology** button expands its group and focus lands on
+      the technology the script is already assigned to, not at the top of the
+      list. The checked boxes match the test's saved AT list
+- [ ] On a new test with nothing assigned yet, expanding lands on the first
+      entry instead
 - [ ] Because focus is already inside, the arrow keys and first letter
       navigation work immediately, with no Tab needed first
 - [ ] There is no stop on the container itself: Tab from the last checkbox
