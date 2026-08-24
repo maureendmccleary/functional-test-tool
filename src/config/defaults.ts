@@ -1,29 +1,14 @@
 import type { Defaults } from '../types.js';
 
 /**
- * Catalogues and score lists that populate the menus.
+ * The assistive technology catalogue and the score lists that populate the
+ * menus.
  *
- * `os-types` is currently unread -- only `at-types` is used, by
- * fillCheckboxMenu. It is kept as the reference list of supported systems.
+ * There is deliberately no operating system catalogue. The operating system is
+ * a write-in field on the test, so a fixed list had no reader and would only
+ * have gone stale as testing reached systems it did not name.
  */
 export const defaults: Defaults = {
-    "os-types": {
-        "windows": {
-            "friendly-name": "Windows"
-        },
-        "mac": {
-            "friendly-name": "MacOS"
-        },
-        "ios": {
-            "friendly-name": "iOS"
-        },
-        "android": {
-            "friendly-name": "Android"
-        },
-        "appletvos": {
-            "friendly-name": "AppleTV"
-        }
-    },
     /*
      * Every assistive technology a functional test can be assigned to, in
      * alphabetical order because the checkbox group is navigated by first

@@ -309,6 +309,3 @@ checklist for the dialog, focus, and file-picker behavior.
 - **`noUncheckedIndexedAccess`** — expect noise from the pervasive array
   indexing, so give it its own change.
 - **`textContent` instead of `innerHTML`** for user-supplied text.
-- **Retire or use the `os-types` catalogue.** `config/defaults.ts` still carries
-  an `os-types` list nothing reads. The operating system is a write-in field on
-  the test, so either that list becomes the choices offered for it, or it goes.

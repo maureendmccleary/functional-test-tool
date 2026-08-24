@@ -177,7 +177,7 @@ export interface ListboxOption {
 }
 
 /**
- * An entry in the os-types / at-types catalogues.
+ * An entry in the assistive technology catalogue.
  *
  * No version: testing is always done with the current release, so pinning one
  * here would only go stale. No platform list either, now that one entry covers
@@ -190,7 +190,6 @@ export interface TypeCatalogEntry {
 
 /** The catalogues and score lists that populate the menus. */
 export interface Defaults {
-    'os-types': Record<string, TypeCatalogEntry>;
     'at-types': Record<string, TypeCatalogEntry>;
     scores: ListboxOption[];
     'issue-scores': ListboxOption[];
