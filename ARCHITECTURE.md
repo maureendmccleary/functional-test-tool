@@ -126,9 +126,11 @@ holds **one entry per technology, not per technology and platform**. The
 scripter records the operating system on the test, so a single "VoiceOver"
 covers macOS, iOS, iPadOS, watchOS and tvOS, and a single "Switch Control"
 covers Apple's and Android's. A platform stays in an entry's name only where the
-technology exists on that platform alone, as with Windows Narrator. The list is
-alphabetical because the checkbox group is navigated by first letter, and that
-group handles Up, Down, Home and End itself: moving focus into it puts a screen
+technology exists on that platform alone, as with Windows Narrator. Expanding the group moves focus onto its first checkbox, because from the
+button neither the arrows nor first letter navigation have anything to act on
+and the group reads as unresponsive. The list is alphabetical because the group
+is navigated by first letter, and that group handles Up, Down, Home and End
+itself: moving focus into it puts a screen
 reader in focus mode, where the reader stops browsing the page and hands arrow
 keys to the control, so without them the list cannot be walked at all. It
 records no versions: testing is always done with the current release, so a

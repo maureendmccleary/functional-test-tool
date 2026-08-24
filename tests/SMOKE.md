@@ -122,14 +122,15 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Select `02 Renew a borrowed item - NVDA`, then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
-- [ ] The **Assistive Technology** button expands its group, and the checked
-      boxes match the test's saved AT list
-- [ ] With the group expanded, one Tab from the **Assistive Technology** button
-      lands on the first checkbox -- there is no stop on the container in
-      between
-- [ ] With a screen reader running, one Down arrow from the button also reaches
-      the first checkbox: no menu mode, no "grouping" boundary, no stop of any
-      kind on the container
+- [ ] The **Assistive Technology** button expands its group, focus lands
+      straight on the first checkbox, and the checked boxes match the test's
+      saved AT list
+- [ ] Because focus is already inside, the arrow keys and first letter
+      navigation work immediately, with no Tab needed first
+- [ ] There is no stop on the container itself: Tab from the last checkbox
+      leaves the group rather than pausing on it
+- [ ] With a screen reader running, the group reads as checkboxes: no menu
+      mode, no "grouping" boundary announced on the container
 - [ ] The checkboxes read as checkboxes, not as menu items
 - [ ] With focus inside the group, **Down** and **Up** move through the list and
       wrap at both ends, and **Home** and **End** reach the first and last

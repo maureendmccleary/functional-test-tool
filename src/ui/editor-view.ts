@@ -320,7 +320,19 @@ function addAssistiveTechnologyDisclosureEvents(): void {
     const atMenuBtn = requireEl('test-edit-at-btn');
     const atMenu = requireEl("test-edit-at-menu");
 
-    atMenuBtn.addEventListener("click", toggleMenu);
+    atMenuBtn.addEventListener("click", (e) => {
+        toggleMenu(e);
+        // Expanding lands on the first technology rather than leaving focus on
+        // the button. From the button the arrows and first letter navigation
+        // have nothing to act on, so the group looked unresponsive until Tab
+        // was pressed. Collapsing leaves focus where it is: the button.
+        if (atMenuBtn.getAttribute("aria-expanded") === "true") {
+            const { checkboxes } = assistiveTechnologyCheckboxes(atMenu);
+            if (checkboxes.length > 0) {
+                checkboxes[0].focus();
+            }
+        }
+    });
     atMenu.addEventListener('keydown', (e) => {
         const event = e as KeyboardEvent;
         if (event.key === "Escape") {
