@@ -31,14 +31,14 @@ export function saveGeneralComments(e: Event): void {
     if (commentSummary === "") {
         run.comments.length = 0;
         const summaryLi = document.createElement("LI");
-        summaryLi.innerHTML = "No Issues";
+        summaryLi.textContent = "No Issues";
         summaryList.appendChild(summaryLi);
     }
     else {
         run.comments = splitSummaryComments(commentSummary);
         run.comments.forEach((c) => {
             const summaryLi = document.createElement("LI");
-            summaryLi.innerHTML = c;
+            summaryLi.textContent = c;
             summaryList.appendChild(summaryLi);
         });
     }

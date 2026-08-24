@@ -2,6 +2,7 @@ import type { FunctionalTest, TestRunStep } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import { testAssistiveTechnology } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
+import { safeLinkUrl } from '../domain/safe-url.js';
 import { emptyTestRun, ensureTestRunShape } from '../domain/test-run.js';
 import {
     getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
@@ -32,13 +33,13 @@ function drawIssueLists(section: 'steps' | 'extensions', records: TestRunStep[])
         if (issues.length > 0) {
             issues.forEach((issue) => {
                 const issueDescLi = document.createElement("LI");
-                issueDescLi.innerHTML = issue.description;
+                issueDescLi.textContent = issue.description;
                 issueAggregateUl.appendChild(issueDescLi);
             });
         }
         else {
             const issueDescLi = document.createElement("LI");
-            issueDescLi.innerHTML = "No issues";
+            issueDescLi.textContent = "No issues";
             issueAggregateUl.appendChild(issueDescLi);
         }
     });
@@ -57,10 +58,10 @@ function relabelIssueButtons(selector: string, records: TestRunStep[]): void {
         const record = records[index];
         const count = record && record.issues ? record.issues.length : 0;
         if (count === 0) {
-            button.innerHTML = "Add Issue";
+            button.textContent = "Add Issue";
             return;
         }
-        button.innerHTML = "View " + count + (count === 1 ? " Issue" : " Issues");
+        button.textContent = "View " + count + (count === 1 ? " Issue" : " Issues");
     });
 }
 
@@ -122,7 +123,7 @@ function createStepInstructionsForPerform(stepNumber: number): HTMLElement {
 
 function createIssueListHeading(): HTMLElement {
     const issueListH4 = document.createElement('H4');
-    issueListH4.innerHTML = "Issues";
+    issueListH4.textContent = "Issues";
     return issueListH4;
 }
 
@@ -200,7 +201,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
         instructions.textContent = extension.instructions;
 
         const issuesHeading = document.createElement("H4");
-        issuesHeading.innerHTML = "Issues";
+        issuesHeading.textContent = "Issues";
 
         const results = document.createElement("UL");
         results.setAttribute("id", getIssueListId('extensions', index));
@@ -243,18 +244,27 @@ export function populatePerform(): void {
     performForm.reset();
     fillListbox(defaults["scores"], "perform-score");
     requireEl("perform-at").textContent = testAssistiveTechnology(test);
-    requireEl("perform-name").innerHTML = test.name;
-    requireEl("perform-goal").innerHTML = test.goal;
+    requireEl("perform-name").textContent = test.name;
+    requireEl("perform-goal").textContent = test.goal;
     requireEl("perform-operator").textContent = test.operator || "";
     requireEl("perform-application").textContent = test.application || "";
     requireEl("perform-operating-system").textContent = normalizeOperatingSystem(test.operatingSystem);
-    const a = document.createElement('a');
-    a.href = test.startLocation;
-    a.textContent = test.startLocation;
-    a.target = "_blank";
+    // Only a real web address becomes a link. Anything else is shown as the
+    // text it is, so a saved file cannot turn the start location into script
+    // that runs when the tester follows it.
     const span = requireEl("perform-start-location");
-    span.innerHTML = "";
-    span.appendChild(a);
+    span.textContent = "";
+    const address = safeLinkUrl(test.startLocation);
+    if (address === "") {
+        span.textContent = test.startLocation;
+    } else {
+        const a = document.createElement('a');
+        a.href = address;
+        a.textContent = test.startLocation;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        span.appendChild(a);
+    }
     requireEl("perform-score").addEventListener("change", scoreChanged);
 
     for (let i = 0; i < test.steps.length; i++) {

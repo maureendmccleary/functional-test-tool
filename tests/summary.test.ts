@@ -110,7 +110,7 @@ describe('saveGeneralComments', () => {
         document.getElementById('general-comments')!.value = '   ';
         saveGeneralComments(clickEvent);
         expect(run.comments).toEqual([]);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.innerHTML))
+        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
             .toEqual(['No Issues']);
     });
 
@@ -123,7 +123,7 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         expect(run.comments)
             .toEqual(['cannot activate the control', 'no status message on submit']);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.innerHTML))
+        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
             .toEqual(run.comments);
     });
 
@@ -133,7 +133,7 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         document.getElementById('general-comments')!.value = 'second save';
         saveGeneralComments(clickEvent);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.innerHTML))
+        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
             .toEqual(['second save']);
     });
 });

@@ -35,8 +35,8 @@ export function confirmDiscardUnsavedIssueEntry(): boolean {
 
 /** Removes any validation messages and invalid states. */
 export function clearIssueFieldErrors(): void {
-    requireEl("add-issue-description-error").innerHTML = "";
-    requireEl("add-issue-score-error").innerHTML = "";
+    requireEl("add-issue-description-error").textContent = "";
+    requireEl("add-issue-score-error").textContent = "";
     requireEl("add-issue-description").removeAttribute("aria-invalid");
     requireEl("add-issue-score").removeAttribute("aria-invalid");
 }
@@ -51,7 +51,7 @@ export function showAddIssueControls(): void {
     requireEl<HTMLInputElement>("add-issue-description").value = "";
     requireEl<HTMLInputElement>("add-issue-findingURL").value = "";
     requireEl<HTMLSelectElement>("add-issue-score").value = "-1";
-    requireEl("add-issue-msg").innerHTML = "";
+    requireEl("add-issue-msg").textContent = "";
     clearIssueFieldErrors();
     requireEl("add-issue-description").focus();
 }
@@ -71,14 +71,14 @@ export function validateIssueInputs(): boolean {
     const score = scoreInput.value;
     clearIssueFieldErrors();
     if (description === "") {
-        requireEl("add-issue-description-error").innerHTML = "Description is required.";
+        requireEl("add-issue-description-error").textContent = "Description is required.";
         descriptionInput.setAttribute("aria-invalid", "true");
         descriptionInput.focus();
         return false;
     }
     // The only thing keeping a "-1" score out of saved data.
     if (score === "-1") {
-        requireEl("add-issue-score-error").innerHTML = "Score is required.";
+        requireEl("add-issue-score-error").textContent = "Score is required.";
         scoreInput.setAttribute("aria-invalid", "true");
         scoreInput.focus();
         return false;
@@ -96,14 +96,14 @@ export function updateIssueList(): void {
     }
     if (issues.length === 0) {
         const issueLI = document.createElement("LI");
-        issueLI.innerHTML = "No issues";
+        issueLI.textContent = "No issues";
         issueList.appendChild(issueLI);
 
     }
     else {
         for (let i = 0; i < issues.length; i++) {
             const issueLI = document.createElement("LI");
-            issueLI.innerHTML = issues[i].description;
+            issueLI.textContent = issues[i].description;
             issueList.appendChild(issueLI);
         }
     }
@@ -119,10 +119,10 @@ export function insertIssueTable(newIssue: Issue): void {
     const cell4 = row.insertCell(3);
     const cell5 = row.insertCell(4);
     cell1.setAttribute("style", "text-align: center");
-    cell1.innerHTML = String(issueTable.rows.length - 1);
-    cell2.innerHTML = newIssue.description;
-    cell3.innerHTML = newIssue.findingURL;
-    cell4.innerHTML = newIssue.score;
+    cell1.textContent = String(issueTable.rows.length - 1);
+    cell2.textContent = newIssue.description;
+    cell3.textContent = newIssue.findingURL;
+    cell4.textContent = newIssue.score;
     cell4.setAttribute("style", "text-align: center");
     const deleteIssueButton = document.createElement('button');
     deleteIssueButton.setAttribute("aria-label", "delete");
@@ -173,9 +173,12 @@ export function updateIssueTable(): void {
     for (let i = 0; i < rows.length - 1; i++) {
         const row = rows[i + 1];
         const cells = row.cells;
-        if (getCurrentRecord().issues[i].description !== cells[1].innerHTML
-            || getCurrentRecord().issues[i].findingURL !== cells[2].innerHTML
-            || getCurrentRecord().issues[i].score !== cells[3].innerHTML) {
+        // Compared as text, matching how the cells are written. Read back as
+        // innerHTML, a description holding & or < came back escaped and never
+        // matched, so the table redrew on every open.
+        if (getCurrentRecord().issues[i].description !== cells[1].textContent
+            || getCurrentRecord().issues[i].findingURL !== cells[2].textContent
+            || getCurrentRecord().issues[i].score !== cells[3].textContent) {
             copyIssues2Table(issueTable);
         }
     }
@@ -195,8 +198,8 @@ export function saveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").innerHTML = "";
-    requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
+    requireEl("add-issue-msg").textContent = "";
+    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
 }
@@ -220,8 +223,8 @@ export function editSaveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").innerHTML = "";
-    requireEl("add-issue-msg").innerHTML = "Issue successfully saved!";
+    requireEl("add-issue-msg").textContent = "";
+    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
 }
@@ -240,8 +243,8 @@ export function editIssue(e: Event): void {
     requireEl<HTMLInputElement>("add-issue-description").value = row.cells[1].innerText;
     requireEl<HTMLInputElement>("add-issue-findingURL").value = row.cells[2].innerText;
     requireEl<HTMLSelectElement>("add-issue-score").value = row.cells[3].innerText;
-    requireEl("add-issue-msg").innerHTML = "";
-    requireEl("add-issue-msg").innerHTML = "Editing issue " + getCurrentIssue();
+    requireEl("add-issue-msg").textContent = "";
+    requireEl("add-issue-msg").textContent = "Editing issue " + getCurrentIssue();
     requireEl("add-issue-description").focus();
 }
 
@@ -251,12 +254,12 @@ export function deleteIssue(e: Event): void {
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;
-    requireEl("add-issue-msg").innerHTML = "";
-    requireEl("add-issue-msg").innerHTML = "Deleting issue " + rowIndex;
+    requireEl("add-issue-msg").textContent = "";
+    requireEl("add-issue-msg").textContent = "Deleting issue " + rowIndex;
     issueTable.deleteRow(rowIndex);
     setCurrentIssue(getCurrentRecord().issues.length);
     for (let i = 1; i < issueTable.rows.length; i++) {
-        issueTable.rows[i].cells[0].innerHTML = String(i);
+        issueTable.rows[i].cells[0].textContent = String(i);
     }
     getCurrentRecord().issues.splice(rowIndex - 1, 1);
     markEvaluationChanged();
@@ -285,7 +288,7 @@ export function addIssueButtonClick(e: Event): void {
         addIssueDialog.close();
     });
     const heading = requireEl("add-issue-dialog-title");
-    requireEl("add-issue-msg").innerHTML = "";
+    requireEl("add-issue-msg").textContent = "";
     // Which button was pressed decides both the index and the list it indexes,
     // so an issue found in extension 2 is not filed against step 2.
     const buttonId = (e.target as HTMLElement).id;
@@ -298,11 +301,11 @@ export function addIssueButtonClick(e: Event): void {
     const label = `${isExtension ? "Extension" : "Step"} ${currentStep + 1}`;
     const source = isExtension ? test.extensions : test.steps;
 
-    heading.innerHTML = getCurrentRecord().issues.length === 0
+    heading.textContent = getCurrentRecord().issues.length === 0
         ? `Add Issue ${label}`
         : `View Issue ${label}`;
-    requireEl("add-issue-step-label").innerHTML = label;
-    requireEl("add-issue-step").innerHTML = (source[currentStep] || { instructions: "" }).instructions;
+    requireEl("add-issue-step-label").textContent = label;
+    requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);
     updateIssueTable();
     const newIssue = requireEl("add-issue-dialog-new-issue");

@@ -85,6 +85,9 @@ tested commit.
 
 ## Constraints worth knowing before changing things
 
+- **A saved evaluation file is untrusted input.** Never assign to `innerHTML`; ESLint
+  refuses it. Text goes in with `textContent`, structure is built as elements, and a URL
+  from a file goes through `safeLinkUrl` before it reaches an `href`.
 - **File load/save is Chromium-only** (File System Access API). `isFilePickerSupported()`
   gates the controls; picker `AbortError` is a normal outcome, not a failure.
 - `docx@8.5.0` is loaded from unpkg by a `<script>` tag in `index.html` with a

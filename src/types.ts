@@ -3,7 +3,7 @@
  *
  * Two representations of a score coexist and must not be unified:
  * `Issue.score` is a string (it comes straight off a <select> and is compared
- * as a string against cell.innerHTML in updateIssueTable), while
+ * as a string against cell.textContent in updateIssueTable), while
  * `TestRun.score` is a number (parseInt). See ARCHITECTURE.md.
  */
 

@@ -160,6 +160,26 @@ reads, losing the edit the next time the editor opened.
 `domain/migration.ts` is the only place untrusted file contents become an
 `Evaluation`. Everything downstream can assume the normalized shape.
 
+## Untrusted file contents
+
+An evaluation file is untrusted input. It is passed between testers, and
+everything in it reaches the screen: names, goals, step instructions, issue
+descriptions, comments.
+
+**Nothing builds DOM from a string.** Text goes in through `textContent`, and
+anything with structure is built as elements. `eslint.config.js` bans
+`innerHTML`, `outerHTML` and `insertAdjacentHTML` outright, so the rule is
+enforced rather than remembered. Before that, a description reading
+`<img src=x onerror=...>` ran as script the moment its step was opened.
+
+**Only a real web address becomes a link.** A test's start location goes into an
+anchor's href, and an href accepts `javascript:` and `data:` URLs, which run
+when followed. `domain/safe-url.ts` allows `http:` and `https:` and nothing
+else; anything refused is shown as the text it is.
+
+There is no Content Security Policy. One would be a second line of defence, and
+would have to allow the `docx` script from unpkg.
+
 ## Failure handling
 
 The File System Access API is Chromium-only and both pickers reject with an
