@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-    SCORE_LABELS, buildCoverSubtitle, formatAssistiveTechnology, formatOverallRating,
+    SCORE_LABELS, buildCoverSubtitle, formatOverallRating,
     formatReportTimestamp, formatScore, formatUseCaseName, scoreLabel
 } from '../src/domain/report-format.js';
 
@@ -36,17 +36,6 @@ describe('formatOverallRating', () => {
 
     test('reports an unset rating as not rated', () => {
         expect(formatOverallRating(-1)).toBe('Not rated');
-    });
-});
-
-describe('formatAssistiveTechnology', () => {
-    test('appends a known version', () => {
-        expect(formatAssistiveTechnology('JAWS', '2024')).toBe('JAWS 2024');
-    });
-
-    test('leaves the name alone when no version is known', () => {
-        expect(formatAssistiveTechnology('JAWS', undefined)).toBe('JAWS');
-        expect(formatAssistiveTechnology('JAWS', '   ')).toBe('JAWS');
     });
 });
 

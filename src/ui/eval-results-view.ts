@@ -5,10 +5,9 @@ import {
 import { buildOverallCommentsText } from '../domain/summary.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatAssistiveTechnology,
-    formatOverallRating
+    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatOverallRating
 } from '../domain/report-format.js';
-import { catalogueVersion, renderEvalResultsDocx } from '../io/docx-report.js';
+import { renderEvalResultsDocx } from '../io/docx-report.js';
 import { getEvaluation, markEvaluationChanged } from '../state/store.js';
 import {
     appendNewlines, createDataTable, createLabelValueTable, createUnorderedList, fillListbox
@@ -127,10 +126,8 @@ function renderAssistiveTechnologiesUsed(): void {
         return;
     }
     replaceContents("eval-results-at-used", [createDataTable(
-        ["Assistive Technologies & Versions"],
-        groups.map((group) => [formatAssistiveTechnology(
-            group.assistiveTechnology, catalogueVersion(group.assistiveTechnology)
-        )])
+        ["Assistive Technologies"],
+        groups.map((group) => [group.assistiveTechnology])
     )]);
 }
 

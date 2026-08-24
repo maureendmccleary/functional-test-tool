@@ -121,6 +121,22 @@ writes the score: `isPerformed` reads it, `buildScorecard` skips runs that fail
 it, and `runScore` returns `-1` for them so the detailed section says
 "Not rated".
 
+Assistive technologies come from the catalogue in `config/defaults.ts`, which
+holds **one entry per technology, not per technology and platform**. The
+scripter records the operating system on the test, so a single "VoiceOver"
+covers macOS, iOS, iPadOS, watchOS and tvOS, and a single "Switch Control"
+covers Apple's and Android's. A platform stays in an entry's name only where the
+technology exists on that platform alone, as with Windows Narrator. Expanding the group moves focus into the list, because from the button neither
+the arrows nor first letter navigation have anything to act on and the group
+reads as unresponsive. It lands on the technology already assigned, falling back
+to the first entry when none is. The list is alphabetical because the group
+is navigated by first letter, and that group handles Up, Down, Home and End
+itself: moving focus into it puts a screen
+reader in focus mode, where the reader stops browsing the page and hands arrow
+keys to the control, so without them the list cannot be walked at all. It
+records no versions: testing is always done with the current release, so a
+pinned version would only go stale.
+
 The evaluation also carries what the report cover needs — `workspace` (the
 company the work is for), `asset` (the thing under evaluation) and `name` — plus
 one **assistive technology summary** per AT in use. That summary holds an
@@ -299,7 +315,3 @@ checklist for the dialog, focus, and file-picker behavior.
 - **`noUncheckedIndexedAccess`** — expect noise from the pervasive array
   indexing, so give it its own change.
 - **`textContent` instead of `innerHTML`** for user-supplied text.
-- **Bundle the assistive-technology catalogue with the OS catalogue.**
-  `config/defaults.ts` still carries an `os-types` list nothing reads. The
-  operating system is already a write-in field, so decide whether that list has
-  a use or should be retired.

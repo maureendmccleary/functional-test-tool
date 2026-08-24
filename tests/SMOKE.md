@@ -122,15 +122,30 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Select `02 Renew a borrowed item - NVDA`, then **Edit Functional Test**
 - [ ] Name, Goal, Operator, Start Location, Operating System, and Application all
       show the saved values
-- [ ] The **Assistive Technology** button expands its group, and the checked
-      boxes match the test's saved AT list
-- [ ] With the group expanded, one Tab from the **Assistive Technology** button
-      lands on the first checkbox -- there is no stop on the container in
-      between
-- [ ] With a screen reader running, one Down arrow from the button also reaches
-      the first checkbox: no menu mode, no "grouping" boundary, no stop of any
-      kind on the container
+- [ ] The **Assistive Technology** button expands its group and focus lands on
+      the technology the script is already assigned to, not at the top of the
+      list. The checked boxes match the test's saved AT list
+- [ ] On a new test with nothing assigned yet, expanding lands on the first
+      entry instead
+- [ ] Because focus is already inside, the arrow keys and first letter
+      navigation work immediately, with no Tab needed first
+- [ ] There is no stop on the container itself: Tab from the last checkbox
+      leaves the group rather than pausing on it
+- [ ] With a screen reader running, the group reads as checkboxes: no menu
+      mode, no "grouping" boundary announced on the container
 - [ ] The checkboxes read as checkboxes, not as menu items
+- [ ] With focus inside the group, **Down** and **Up** move through the list and
+      wrap at both ends, and **Home** and **End** reach the first and last
+      entries. Check this *after* using first letter navigation as well: moving
+      focus puts a screen reader in focus mode, where the group has to handle
+      the arrows itself
+- [ ] With focus inside the group, typing a letter moves to the first
+      technology starting with it, and pressing the same letter again moves to
+      the next one sharing it: "v" walks Voice Control, VoiceOver, VoiceView
+- [ ] Typing a longer run quickly, such as "win", reaches Windows Magnifier
+      directly
+- [ ] **Space** still ticks the focused checkbox rather than being swallowed by
+      the typing
 - [ ] Escape while focus is inside the group collapses it and returns focus to
       the **Assistive Technology** button
 - [ ] Reopen the editor several times, then press Escape inside the group once:
@@ -256,6 +271,8 @@ Open that document and check:
 - [ ] Word opens the document with **no prompt of any kind** -- no offer to
       update fields, no macro or security bar. A prompt means a field crept back
       into the document
+- [ ] "Assistive Technologies Used" lists the technologies by name with no
+      version numbers
 - [ ] The Table of Contents lists each assistive technology with its use cases
       indented under it, and clicking an entry jumps to that heading
 - [ ] The Scorecard's total counts **performed runs**, not scripts: three use

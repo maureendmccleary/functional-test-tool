@@ -1,6 +1,8 @@
 import type { FunctionalTest } from '../types.js';
 import { AT_ALIAS_MAP, normalizeOperatingSystem } from '../domain/migration.js';
-import { collectSelectedValues, normalizeSelectionValues } from '../domain/selection-utils.js';
+import {
+    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues, stepIndex
+} from '../domain/selection-utils.js';
 import {
     DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest, getTestComments,
     nextTestNumber, testDisplayName
@@ -232,6 +234,84 @@ export function changeFormField(e: Event): void {
 }
 
 /**
+ * How long a typed character stays part of the search before it starts a new
+ * one. The value a native listbox uses.
+ */
+const TYPE_AHEAD_RESET_MS = 500;
+
+/** What has been typed so far, and when the last character arrived. */
+let typeAhead = { query: '', at: 0 };
+
+/** The group's checkboxes, and which of them focus is on, or -1. */
+function assistiveTechnologyCheckboxes(atMenu: HTMLElement): {
+    checkboxes: HTMLInputElement[]; focused: number;
+} {
+    const checkboxes = [...atMenu.querySelectorAll<HTMLInputElement>("input[type='checkbox']")];
+    return { checkboxes, focused: checkboxes.indexOf(document.activeElement as HTMLInputElement) };
+}
+
+/**
+ * Moves focus through the list with the arrow keys, and to its ends with Home
+ * and End.
+ *
+ * The group needs to handle these itself. Moving focus into it puts a screen
+ * reader into focus mode, where it stops browsing the page and hands arrow
+ * keys to the control; a bare group of checkboxes does nothing with them, so
+ * the list became unnavigable the moment first letter navigation moved focus
+ * into it. Handling them here means the list walks the same way in either mode.
+ *
+ * @returns true when the key was one of these and has been dealt with
+ */
+function assistiveTechnologyArrowKeys(e: KeyboardEvent, atMenu: HTMLElement): boolean {
+    const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
+    const { checkboxes, focused } = assistiveTechnologyCheckboxes(atMenu);
+
+    let target = -1;
+    if (e.key in steps) {
+        target = stepIndex(checkboxes.length, focused, steps[e.key]);
+    } else if (e.key === 'Home') {
+        target = checkboxes.length > 0 ? 0 : -1;
+    } else if (e.key === 'End') {
+        target = checkboxes.length - 1;
+    } else {
+        return false;
+    }
+
+    if (target !== -1) {
+        e.preventDefault();
+        checkboxes[target].focus();
+    }
+    return true;
+}
+
+/**
+ * Moves focus to the assistive technology matching what was just typed.
+ *
+ * The list runs to thirty entries, so reaching Windows Narrator by Tab alone
+ * means passing everything before it. Space is left alone deliberately: it
+ * ticks the focused checkbox, and stealing it would break the control.
+ */
+function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): void {
+    if (e.key.length !== 1 || e.key === ' ' || e.ctrlKey || e.altKey || e.metaKey) {
+        return;
+    }
+
+    const now = Date.now();
+    typeAhead = {
+        query: (now - typeAhead.at > TYPE_AHEAD_RESET_MS ? '' : typeAhead.query) + e.key,
+        at: now
+    };
+
+    const { checkboxes, focused } = assistiveTechnologyCheckboxes(atMenu);
+    const labels = checkboxes.map((checkbox) => checkbox.value);
+    const match = findTypeAheadIndex(labels, typeAhead.query, focused === -1 ? 0 : focused);
+    if (match !== -1) {
+        e.preventDefault();
+        checkboxes[match].focus();
+    }
+}
+
+/**
  * Wires the Assistive Technology disclosure button to the checkbox group it
  * shows and hides. Called once at startup, not from `populateEditor`, so the
  * Escape handler is not re-registered every time a test is opened.
@@ -240,13 +320,34 @@ function addAssistiveTechnologyDisclosureEvents(): void {
     const atMenuBtn = requireEl('test-edit-at-btn');
     const atMenu = requireEl("test-edit-at-menu");
 
-    atMenuBtn.addEventListener("click", toggleMenu);
+    atMenuBtn.addEventListener("click", (e) => {
+        toggleMenu(e);
+        // Expanding lands inside the list rather than leaving focus on the
+        // button. From the button the arrows and first letter navigation have
+        // nothing to act on, so the group looked unresponsive until Tab was
+        // pressed. It lands on the technology already assigned, since that is
+        // what the scripter came to look at, and on the first entry only when
+        // nothing is assigned yet. Collapsing leaves focus on the button.
+        if (atMenuBtn.getAttribute("aria-expanded") === "true") {
+            const { checkboxes } = assistiveTechnologyCheckboxes(atMenu);
+            const target = checkboxes.find((checkbox) => checkbox.checked) || checkboxes[0];
+            if (target) {
+                target.focus();
+            }
+        }
+    });
     atMenu.addEventListener('keydown', (e) => {
-        if ((e as KeyboardEvent).key === "Escape") {
+        const event = e as KeyboardEvent;
+        if (event.key === "Escape") {
             atMenuBtn.setAttribute("aria-expanded", "false");
             atMenu.hidden = true;
             atMenuBtn.focus(); // Return focus to button
+            return;
         }
+        if (assistiveTechnologyArrowKeys(event, atMenu)) {
+            return;
+        }
+        assistiveTechnologyTypeAhead(event, atMenu);
     });
 }
 
