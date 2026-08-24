@@ -131,6 +131,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the first checkbox: no menu mode, no "grouping" boundary, no stop of any
       kind on the container
 - [ ] The checkboxes read as checkboxes, not as menu items
+- [ ] With focus inside the group, **Down** and **Up** move through the list and
+      wrap at both ends, and **Home** and **End** reach the first and last
+      entries. Check this *after* using first letter navigation as well: moving
+      focus puts a screen reader in focus mode, where the group has to handle
+      the arrows itself
 - [ ] With focus inside the group, typing a letter moves to the first
       technology starting with it, and pressing the same letter again moves to
       the next one sharing it: "v" walks Voice Control, VoiceOver, VoiceView

@@ -73,3 +73,16 @@ export function findTypeAheadIndex(labels: string[], query: string, fromIndex: n
     }
     return -1;
 }
+
+/**
+ * The index `delta` steps from `fromIndex`, wrapping at both ends.
+ *
+ * Wrapping arithmetic is where off-by-one errors live, so it is here rather
+ * than inline in the key handler. An empty list has no index to move to.
+ */
+export function stepIndex(length: number, fromIndex: number, delta: number): number {
+    if (length <= 0) {
+        return -1;
+    }
+    return (((fromIndex + delta) % length) + length) % length;
+}

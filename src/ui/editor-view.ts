@@ -1,7 +1,7 @@
 import type { FunctionalTest } from '../types.js';
 import { AT_ALIAS_MAP, normalizeOperatingSystem } from '../domain/migration.js';
 import {
-    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues
+    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues, stepIndex
 } from '../domain/selection-utils.js';
 import {
     DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest, getTestComments,
@@ -242,12 +242,54 @@ const TYPE_AHEAD_RESET_MS = 500;
 /** What has been typed so far, and when the last character arrived. */
 let typeAhead = { query: '', at: 0 };
 
+/** The group's checkboxes, and which of them focus is on, or -1. */
+function assistiveTechnologyCheckboxes(atMenu: HTMLElement): {
+    checkboxes: HTMLInputElement[]; focused: number;
+} {
+    const checkboxes = [...atMenu.querySelectorAll<HTMLInputElement>("input[type='checkbox']")];
+    return { checkboxes, focused: checkboxes.indexOf(document.activeElement as HTMLInputElement) };
+}
+
+/**
+ * Moves focus through the list with the arrow keys, and to its ends with Home
+ * and End.
+ *
+ * The group needs to handle these itself. Moving focus into it puts a screen
+ * reader into focus mode, where it stops browsing the page and hands arrow
+ * keys to the control; a bare group of checkboxes does nothing with them, so
+ * the list became unnavigable the moment first letter navigation moved focus
+ * into it. Handling them here means the list walks the same way in either mode.
+ *
+ * @returns true when the key was one of these and has been dealt with
+ */
+function assistiveTechnologyArrowKeys(e: KeyboardEvent, atMenu: HTMLElement): boolean {
+    const steps: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
+    const { checkboxes, focused } = assistiveTechnologyCheckboxes(atMenu);
+
+    let target = -1;
+    if (e.key in steps) {
+        target = stepIndex(checkboxes.length, focused, steps[e.key]);
+    } else if (e.key === 'Home') {
+        target = checkboxes.length > 0 ? 0 : -1;
+    } else if (e.key === 'End') {
+        target = checkboxes.length - 1;
+    } else {
+        return false;
+    }
+
+    if (target !== -1) {
+        e.preventDefault();
+        checkboxes[target].focus();
+    }
+    return true;
+}
+
 /**
  * Moves focus to the assistive technology matching what was just typed.
  *
- * The list runs to nearly thirty entries, so reaching Windows Narrator by Tab
- * alone means passing everything before it. Space is left alone deliberately:
- * it ticks the focused checkbox, and stealing it would break the control.
+ * The list runs to thirty entries, so reaching Windows Narrator by Tab alone
+ * means passing everything before it. Space is left alone deliberately: it
+ * ticks the focused checkbox, and stealing it would break the control.
  */
 function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): void {
     if (e.key.length !== 1 || e.key === ' ' || e.ctrlKey || e.altKey || e.metaKey) {
@@ -260,10 +302,9 @@ function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): vo
         at: now
     };
 
-    const checkboxes = [...atMenu.querySelectorAll<HTMLInputElement>("input[type='checkbox']")];
+    const { checkboxes, focused } = assistiveTechnologyCheckboxes(atMenu);
     const labels = checkboxes.map((checkbox) => checkbox.value);
-    const from = checkboxes.indexOf(document.activeElement as HTMLInputElement);
-    const match = findTypeAheadIndex(labels, typeAhead.query, from === -1 ? 0 : from);
+    const match = findTypeAheadIndex(labels, typeAhead.query, focused === -1 ? 0 : focused);
     if (match !== -1) {
         e.preventDefault();
         checkboxes[match].focus();
@@ -286,6 +327,9 @@ function addAssistiveTechnologyDisclosureEvents(): void {
             atMenuBtn.setAttribute("aria-expanded", "false");
             atMenu.hidden = true;
             atMenuBtn.focus(); // Return focus to button
+            return;
+        }
+        if (assistiveTechnologyArrowKeys(event, atMenu)) {
             return;
         }
         assistiveTechnologyTypeAhead(event, atMenu);

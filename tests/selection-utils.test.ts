@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
-    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues
+    collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues, stepIndex
 } from '../src/domain/selection-utils.js';
 
 describe('normalizeSelectionValues', () => {
@@ -82,5 +82,26 @@ describe('findTypeAheadIndex', () => {
 
     test('it copes with an empty list', () => {
         expect(findTypeAheadIndex([], 'a', 0)).toBe(-1);
+    });
+});
+
+describe('stepIndex', () => {
+    test('moves forward and back', () => {
+        expect(stepIndex(5, 1, 1)).toBe(2);
+        expect(stepIndex(5, 1, -1)).toBe(0);
+    });
+
+    test('wraps at the end and at the start', () => {
+        expect(stepIndex(5, 4, 1)).toBe(0);
+        expect(stepIndex(5, 0, -1)).toBe(4);
+    });
+
+    test('copes with nothing focused yet', () => {
+        // -1 means focus is not on a checkbox; Down should reach the first.
+        expect(stepIndex(5, -1, 1)).toBe(0);
+    });
+
+    test('an empty list has nowhere to go', () => {
+        expect(stepIndex(0, 0, 1)).toBe(-1);
     });
 });
