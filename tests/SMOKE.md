@@ -335,6 +335,10 @@ dialog and the report.
 - [ ] A start location of `javascript:alert(1)`: the Perform dialog shows it as
       plain text with no link to follow
 - [ ] A start location of `https://example.org`: still a working link
+- [ ] The devtools console reports **no Content Security Policy violations** at
+      any point in this run. The report needs the docx library from unpkg and
+      downloads through a blob URL, so generate one and watch the console while
+      it runs
 
 ## 9. Save and diff
 

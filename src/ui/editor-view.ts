@@ -33,7 +33,7 @@ let returnScreen: ScreenName = 'landing';
 
 function createStepLabelForEditor(stepNumber: number): HTMLElement {
     const newStepLabel = document.createElement('LABEL');
-    newStepLabel.setAttribute("style", "vertical-align:top");
+    newStepLabel.classList.add("label-top");
     newStepLabel.textContent = "Step " + (stepNumber + 1) + " ";
     const newStepLabelId = `step-label[${stepNumber}]`;
     newStepLabel.setAttribute("id", newStepLabelId);
@@ -88,7 +88,7 @@ function addExtensionToEditor(index: number): HTMLElement {
     extensionDiv.setAttribute("id", `extension-div[${index}]`);
 
     const label = document.createElement("LABEL");
-    label.setAttribute("style", "vertical-align:top");
+    label.classList.add("label-top");
     label.textContent = `Extension ${index + 1} `;
     label.setAttribute("id", `extension-label[${index}]`);
     label.setAttribute("for", getExtensionId(index));

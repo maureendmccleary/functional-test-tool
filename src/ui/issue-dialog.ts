@@ -118,12 +118,12 @@ export function insertIssueTable(newIssue: Issue): void {
     const cell3 = row.insertCell(2);
     const cell4 = row.insertCell(3);
     const cell5 = row.insertCell(4);
-    cell1.setAttribute("style", "text-align: center");
+    cell1.classList.add("cell-centered");
     cell1.textContent = String(issueTable.rows.length - 1);
     cell2.textContent = newIssue.description;
     cell3.textContent = newIssue.findingURL;
     cell4.textContent = newIssue.score;
-    cell4.setAttribute("style", "text-align: center");
+    cell4.classList.add("cell-centered");
     const deleteIssueButton = document.createElement('button');
     deleteIssueButton.setAttribute("aria-label", "delete");
     const deleteIssueIcon = document.createElement("span");

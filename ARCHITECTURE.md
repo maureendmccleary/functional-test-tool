@@ -177,8 +177,20 @@ anchor's href, and an href accepts `javascript:` and `data:` URLs, which run
 when followed. `domain/safe-url.ts` allows `http:` and `https:` and nothing
 else; anything refused is shown as the text it is.
 
-There is no Content Security Policy. One would be a second line of defence, and
-would have to allow the `docx` script from unpkg.
+**A Content Security Policy backs both of those up.** It is a `<meta>` tag in
+`index.html`, so it applies to the dev server and the built output alike.
+`script-src` names unpkg because the `docx` library is loaded from there, and
+nothing else may load or run. If a way to inject markup ever reappears, the
+policy is what stops it fetching or running anything.
+
+Two allowances are deliberate. `style-src` permits inline styles because Vite
+injects stylesheets as `<style>` elements when running the dev server; no user
+text reaches a style, so nothing turns on it. `frame-ancestors` is absent
+because it is ignored in a meta policy and needs a response header, which GitHub
+Pages does not let us set.
+
+The view modules set classes rather than style attributes for the same reason:
+inline styles would have forced that allowance even in the built output.
 
 ## Failure handling
 

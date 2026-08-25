@@ -64,7 +64,7 @@ function appendResultsSection(
         row.insertCell(0).textContent = String(index + 1);
         const instructions = row.insertCell(1);
         instructions.textContent = entry.instructions;
-        instructions.setAttribute("style", "text-align: center");
+        instructions.classList.add("cell-centered");
         row.insertCell(2).textContent = String(stepScore({ issues }));
         // One element per issue rather than a string of markup: descriptions
         // come out of a saved file and must never be parsed as HTML.
@@ -78,7 +78,7 @@ function appendResultsSection(
                 issueCell.appendChild(line);
             });
         }
-        issueCell.setAttribute("style", "text-align: center");
+        issueCell.classList.add("cell-centered");
     });
     resultsDiv.appendChild(table);
 }

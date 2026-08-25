@@ -138,3 +138,15 @@ tr {
   display: flex;
   align-items: center;
 }
+/*
+ * Replaces style attributes the view modules used to set by hand. Inline styles
+ * would force style-src 'unsafe-inline' on anything stricter than the policy in
+ * index.html, and there is no reason for these to be inline.
+ */
+.cell-centered {
+    text-align: center;
+}
+
+.label-top {
+    vertical-align: top;
+}
