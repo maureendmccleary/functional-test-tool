@@ -6,7 +6,7 @@ import {
     getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
 } from '../state/store.js';
 import { fillListbox } from './controls.js';
-import { requireEl } from './dom.js';
+import { findEl, requireEl } from './dom.js';
 import { showStatusMessage } from './status.js';
 
 /**
@@ -42,15 +42,36 @@ function isCancellation(error: unknown): boolean {
 }
 
 /**
- * Reports a message once the file dialog has released focus.
+ * Puts focus back on the control that opened the file dialog.
+ *
+ * A native picker hands focus back to the page without leaving it anywhere, so
+ * the reader re-orients itself and reads the document title and whatever else
+ * it finds. Unlike a load, a save has no next thing to move on to, so the
+ * control that was pressed is where focus belongs. Done on cancellation too:
+ * changing your mind about saving should not strand focus either.
+ */
+function restoreFocusAfterDialog(sourceId: string | undefined): void {
+    const control = sourceId ? findEl(sourceId) : null;
+    if (control) {
+        control.focus();
+    }
+}
+
+/**
+ * Reports a message once the file dialog has released focus, with focus put
+ * back first so the message is not read out behind the reader re-orienting.
  *
  * @param clearAfterMs 0 leaves it on screen, which is what a load wants: it
  *                     says which evaluation is open, and that stays true
  */
 function reportAfterDialog(
-    elementId: string, message: string, delayMs: number, clearAfterMs?: number
+    elementId: string, message: string, delayMs: number,
+    options: { focusId?: string; clearAfterMs?: number } = {}
 ): void {
-    setTimeout(() => showStatusMessage(elementId, message, clearAfterMs), delayMs);
+    setTimeout(() => {
+        restoreFocusAfterDialog(options.focusId);
+        showStatusMessage(elementId, message, options.clearAfterMs);
+    }, delayMs);
 }
 
 /**
@@ -230,12 +251,15 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         await saveEvaluation(getEvaluation());
     } catch (error) {
         if (isCancellation(error)) {
+            restoreFocusAfterDialog(sourceId);
             return;
         }
-        reportAfterDialog(status.elementId, 'The file could not be saved.', SAVE_ANNOUNCE_DELAY_MS);
+        reportAfterDialog(status.elementId, 'The file could not be saved.',
+            SAVE_ANNOUNCE_DELAY_MS, { focusId: sourceId });
         return;
     }
 
     markEvaluationSaved();
-    reportAfterDialog(status.elementId, status.message, SAVE_ANNOUNCE_DELAY_MS);
+    reportAfterDialog(status.elementId, status.message,
+        SAVE_ANNOUNCE_DELAY_MS, { focusId: sourceId });
 }

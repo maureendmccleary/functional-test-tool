@@ -364,6 +364,12 @@ appear on screen, and the two are separate elements now.
 - [ ] Saving two issues in a row announces **both**, not just the first
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
+- [ ] **Save Evaluation File** puts focus back on that button and then
+      announces, without the document title being read first
+- [ ] **Save Functional Test Results** from inside the Perform dialog does the
+      same, returning focus to that button rather than out of the dialog
+- [ ] Cancelling either picker also returns focus to the button, announcing
+      nothing
 - [ ] Loading a file lands focus on "Select a Functional Test" and announces the
       evaluation by name. The document title should not be read out twice first,
       nor the buttons walked through, before the message arrives

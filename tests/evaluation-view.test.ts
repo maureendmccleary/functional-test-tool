@@ -21,7 +21,7 @@ const ELEMENT_IDS = [
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading'
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -240,6 +240,23 @@ describe('saving', () => {
         expect(documentStub.getElementById('perform-msg')!.textContent)
             .toBe('Functional Test data saved!');
         expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
+    });
+
+    test('focus goes back to the control that opened the picker', async () => {
+        vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
+
+        await saveFileButtonClick(clickEvent('perform-save'));
+        vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
+
+        expect(documentStub.getElementById('perform-save')!.focused).toBe(true);
+    });
+
+    test('cancelling also puts focus back rather than stranding it', async () => {
+        vi.mocked(picker.saveEvaluation).mockRejectedValue(cancellation());
+
+        await saveFileButtonClick(clickEvent('eval-save-file'));
+
+        expect(documentStub.getElementById('eval-save-file')!.focused).toBe(true);
     });
 
     test('an unrecognised control falls back to the evaluation status region', async () => {

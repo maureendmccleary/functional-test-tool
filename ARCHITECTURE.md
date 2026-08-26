@@ -267,7 +267,10 @@ The same rule covers the file dialogs. A native picker hands focus back to the
 page without leaving it anywhere, so a reader re-orients itself: it reads the
 document title and then walks whatever it finds, and a polite message queues up
 behind all of it. Loading a file puts focus on the list of functional tests,
-which says the evaluation is open and what is in it, before announcing.
+which says the evaluation is open and what is in it, before announcing. Saving
+has no next thing to move on to, so focus goes back to the control that was
+pressed, cancelling included: changing your mind should not strand focus
+either.
 
 **Settle focus before announcing, never after.** A handler that removes or
 hides the element holding focus drops focus to the body, and a screen reader
