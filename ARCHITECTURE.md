@@ -209,6 +209,13 @@ what announces on the page. It is `role="status"`, which is polite: a load
 confirmation should wait its turn rather than cut across whatever the reader is
 saying.
 
+**Which region gets the message is decided by focus, not by document order.**
+The issue dialog opens on top of the Perform dialog, so two dialogs are open at
+once; asking the document for `dialog[open]` answers with the first in the
+markup, which is the Perform dialog, and the modal above it has made that inert.
+A modal traps focus, so the dialog containing the focused element is the one on
+top and the only one a reader can reach.
+
 **The dialogs' regions are `role="alert"`, which is assertive, and that
 difference is deliberate.** A polite update waits for the reader to fall idle
 and is dropped rather than queued if it never does. The dialog messages report

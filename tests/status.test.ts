@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { announce, showStatusMessage } from '../src/ui/status.js';
-import { clearDocumentStub, installDocumentStub, type DocumentStub } from './helpers/dom-stub.js';
+import {
+    clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
+} from './helpers/dom-stub.js';
 
 /**
  * Showing a message and announcing it are two jobs done by two elements. These
@@ -85,5 +87,52 @@ describe('showStatusMessage', () => {
         showStatusMessage('test-editor-msg', 'second', 0);
         vi.advanceTimersByTime(3000);
         expect(paragraph().textContent).toBe('second');
+    });
+});
+
+describe('choosing which region to announce from', () => {
+    /**
+     * Two regions and a focused element, which is all reachableLiveRegion
+     * looks at. The shared stub does not model dialogs or focus, so this
+     * builds just enough document to ask the question.
+     */
+    function withDialog(focusInsideDialog: boolean) {
+        const pageRegion = createElementStub();
+        const dialogRegion = createElementStub();
+        const dialog = {
+            querySelector: (selector: string) => selector === '.app-status' ? dialogRegion : null
+        };
+        const active = {
+            closest: (selector: string) =>
+                selector === 'dialog[open]' && focusInsideDialog ? dialog : null
+        };
+        (globalThis as unknown as { document: unknown }).document = {
+            activeElement: active,
+            querySelector: (selector: string) => selector === '#app-status' ? pageRegion : null
+        };
+        return { pageRegion, dialogRegion };
+    }
+
+    test('announces from the dialog focus is in, not the first one in the markup', () => {
+        // The issue dialog opens on top of the Perform dialog, so two are open.
+        // Asking the document for dialog[open] answers with the Perform dialog,
+        // which the modal above it has made inert, and the message is lost.
+        const { pageRegion, dialogRegion } = withDialog(true);
+
+        announce('Issue successfully saved!');
+        vi.runAllTimers();
+
+        expect(dialogRegion.textContent).toBe('Issue successfully saved!');
+        expect(pageRegion.textContent).toBe('');
+    });
+
+    test('announces from the page when focus is not in a dialog', () => {
+        const { pageRegion, dialogRegion } = withDialog(false);
+
+        announce('Evaluation loaded successfully.');
+        vi.runAllTimers();
+
+        expect(pageRegion.textContent).toBe('Evaluation loaded successfully.');
+        expect(dialogRegion.textContent).toBe('');
     });
 });
