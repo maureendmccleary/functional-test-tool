@@ -23,8 +23,18 @@ const SAVE_ANNOUNCE_DELAY_MS = 500;
  * The functional test editor's Save is not one of them: it completes the script
  * and its copies in memory, and the file is written from the evaluation screen.
  */
-const SAVE_STATUS_TARGETS: Record<string, { elementId: string; message: string }> = {
-    'perform-save': { elementId: 'perform-msg', message: 'Functional Test data saved!' }
+const SAVE_STATUS_TARGETS: Record<
+    string, { elementId: string; message: string; focusId?: string }
+> = {
+    // Focus goes to the dialog's close button rather than back to Save. Landing
+    // on Save again made a reader re-announce the dialog and read on into the
+    // next button; the close button is both quieter and where the tester is
+    // heading once the results are saved.
+    'perform-save': {
+        elementId: 'perform-msg',
+        message: 'Functional Test data saved!',
+        focusId: 'perform-dialog-close'
+    }
 };
 const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg', message: 'Evaluation data saved.' };
 
@@ -241,6 +251,10 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
     e.preventDefault();
     const sourceId = (e.currentTarget as HTMLElement | null)?.id;
     const status = (sourceId && SAVE_STATUS_TARGETS[sourceId]) || DEFAULT_SAVE_STATUS;
+    // Where focus belongs afterwards: the control that opened the picker unless
+    // that target names somewhere better.
+    const focusId: string | undefined =
+        (status as { focusId?: string }).focusId || sourceId;
 
     if (!isFilePickerSupported()) {
         showStatusMessage(status.elementId, UNSUPPORTED_BROWSER_MESSAGE, 0);
@@ -251,15 +265,15 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         await saveEvaluation(getEvaluation());
     } catch (error) {
         if (isCancellation(error)) {
-            restoreFocusAfterDialog(sourceId);
+            restoreFocusAfterDialog(focusId);
             return;
         }
         reportAfterDialog(status.elementId, 'The file could not be saved.',
-            SAVE_ANNOUNCE_DELAY_MS, { focusId: sourceId });
+            SAVE_ANNOUNCE_DELAY_MS, { focusId });
         return;
     }
 
     markEvaluationSaved();
     reportAfterDialog(status.elementId, status.message,
-        SAVE_ANNOUNCE_DELAY_MS, { focusId: sourceId });
+        SAVE_ANNOUNCE_DELAY_MS, { focusId });
 }
