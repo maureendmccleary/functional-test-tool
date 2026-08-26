@@ -21,7 +21,7 @@ const ELEMENT_IDS = [
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name', 'app-status'
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -103,6 +103,28 @@ describe('loading', () => {
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('Evaluation loaded successfully. 1 functional test.');
+    });
+
+    test('focus lands on the list of functional tests', async () => {
+        // A file dialog hands focus back without leaving it anywhere, so the
+        // reader re-orients and the message arrives behind the noise.
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            evalUCs: [{ name: 'One', steps: [] }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(documentStub.getElementById('select-test')!.focused).toBe(true);
+    });
+
+    test('an evaluation with no tests puts focus on the heading instead', async () => {
+        vi.mocked(picker.loadFile).mockResolvedValue({ evalUCs: [] });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(documentStub.getElementById('landing-heading')!.focused).toBe(true);
     });
 
     test('the announcement reaches the live region, not just the paragraph', async () => {

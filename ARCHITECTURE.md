@@ -263,6 +263,12 @@ speaking a focus change. These handlers move focus and then announce, and a
 reader busy with the focus change drops a live region update that arrives while
 it is speaking.
 
+The same rule covers the file dialogs. A native picker hands focus back to the
+page without leaving it anywhere, so a reader re-orients itself: it reads the
+document title and then walks whatever it finds, and a polite message queues up
+behind all of it. Loading a file puts focus on the list of functional tests,
+which says the evaluation is open and what is in it, before announcing.
+
 **Settle focus before announcing, never after.** A handler that removes or
 hides the element holding focus drops focus to the body, and a screen reader
 treats that as a context change and discards a pending message. Saving an issue

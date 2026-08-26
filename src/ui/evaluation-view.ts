@@ -158,6 +158,20 @@ export function enableEvaluationControls(): void {
 }
 
 /**
+ * Puts focus on the list of functional tests once a file has loaded.
+ *
+ * A native file dialog hands focus back to the page without leaving it
+ * anywhere, so a screen reader re-orients itself: it reads the document title
+ * and then walks whatever it finds, and the load message arrives behind all of
+ * that. Landing on the list says the evaluation is open and what is in it,
+ * which is the useful thing, and it is where the tester goes next. An
+ * evaluation with no tests has nothing to list, so the heading takes it.
+ */
+function focusAfterLoad(hasTests: boolean): void {
+    requireEl(hasTests ? 'select-test' : 'landing-heading').focus();
+}
+
+/**
  * Prompts for an evaluation file, loads it, and enables the controls it
  * unlocks. Cancelling the dialog leaves the loaded evaluation untouched.
  */
@@ -188,7 +202,11 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
     enableEvaluationControls();
 
     requireEl('evaluation-msg').textContent = '';
-    reportAfterDialog('evaluation-msg', loadedMessage(evaluation), LOAD_ANNOUNCE_DELAY_MS, 0);
+    const summary = loadedMessage(evaluation);
+    setTimeout(() => {
+        focusAfterLoad(evaluation.tests.length > 0);
+        showStatusMessage('evaluation-msg', summary, 0);
+    }, LOAD_ANNOUNCE_DELAY_MS);
 }
 
 /**

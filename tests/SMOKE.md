@@ -364,7 +364,9 @@ appear on screen, and the two are separate elements now.
 - [ ] Saving two issues in a row announces **both**, not just the first
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
-- [ ] Loading a file still waits its turn rather than cutting across the reader
+- [ ] Loading a file lands focus on "Select a Functional Test" and announces the
+      evaluation by name. The document title should not be read out twice first,
+      nor the buttons walked through, before the message arrives
 - [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
       than being lost to the page
 - [ ] Editing an issue is announced, with focus in the Description field
