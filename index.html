@@ -45,7 +45,7 @@
     status paragraph is now plain visible text, updated alongside this. See
     ui/status.ts.
   -->
-  <div id="app-status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+  <div id="app-status" class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
   <form id="evaluation-form">
     <div>
       <h1 id="landing-heading" tabindex="-1">Functional Accessibility Testing Tool</h1>
@@ -174,6 +174,7 @@
   </form>
   <button id="new-step-btn" class="inactive">New Step</button>
   <dialog id="new-step-dialog" aria-labelledby="add-step-heading">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="close-button">
       <button type="button" id="new-step-dialog-close" aria-label="close"><span class="fa fa-times"></span></button>
     </div>
@@ -185,6 +186,7 @@
     <button id="add-step">Add Step</button>
   </dialog>
   <dialog id="perform-dialog" aria-labelledby="dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="perform-form" name="performForm">
       <div class="close-button">
         <button type="button" autofocus id="perform-dialog-close" aria-label="close"><span
@@ -232,6 +234,7 @@
     </div>
   </dialog>
   <dialog id="view-summary-dialog" aria-labelledby="view-summary-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-summary-" name="viewSummary">
       <div class="close-button">
         <button type="button" autofocus id="view-summary-dialog-close" aria-label="close"><span
@@ -249,6 +252,7 @@
     </form>
   </dialog>
   <dialog id="view-overall-comments-dialog" aria-labelledby="view-overall-comments-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-overall-comments-form" name="viewOverallComments">
       <div class="close-button">
         <button type="button" autofocus id="view-overall-comments-dialog-close" aria-label="close"><span
@@ -266,6 +270,7 @@
     </form>
   </dialog>
   <dialog id="add-issue-dialog" aria-labelledby="add-issue-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="add-issue-btn-dialog-form" name="ucAddIssueDialog">
       <div class="close-button">
         <button type="button" autofocus id="add-issue-dialog-close" aria-label="close"><span
@@ -307,6 +312,7 @@
     </form>
   </dialog>
   <dialog id="view-results-dialog" aria-labelledby="view-results-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-results-form" name="viewResults">
       <div class="close-button">
         <button type="button" autofocus id="view-results-dialog-close" aria-label="close"><span
@@ -319,6 +325,7 @@
     </form>
   </dialog>
   <dialog id="eval-view-results-dialog" aria-labelledby="eval-view-results-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="eval-view-results-form" name="evaluationViewResults">
       <div>
         <div class="close-button">

@@ -12,8 +12,15 @@ import { findEl } from './dom.js';
  * `index.html` that is never hidden, and the paragraph is plain text.
  */
 
-/** The one element that announces. Never hidden, never moved. */
-const LIVE_REGION_ID = 'app-status';
+/**
+ * The live regions, one on the page and one inside every dialog.
+ *
+ * A modal dialog puts itself in the browser's top layer and makes everything
+ * outside it inert, which takes the page's region out of the accessibility tree
+ * for as long as the dialog is open. So each dialog carries its own, and the
+ * announcement goes to whichever is reachable.
+ */
+const LIVE_REGION_SELECTOR = '.app-status';
 
 /**
  * How long the region is left empty before the message goes in.
@@ -29,9 +36,19 @@ const ANNOUNCE_DELAY_MS = 50;
 /** How long a message stays on screen when the caller does not say. */
 const DEFAULT_CLEAR_MS = 3000;
 
-/** Announces a message, whichever screen the reader is on. */
+/**
+ * The region a screen reader can actually reach right now: the open dialog's
+ * when one is open, the page's otherwise.
+ */
+function reachableLiveRegion(): HTMLElement | null {
+    const openDialog = document.querySelector('dialog[open]');
+    const inDialog = openDialog && openDialog.querySelector<HTMLElement>(LIVE_REGION_SELECTOR);
+    return inDialog || document.querySelector<HTMLElement>(`#app-status`);
+}
+
+/** Announces a message, whichever screen or dialog the reader is in. */
 export function announce(message: string): void {
-    const region = findEl(LIVE_REGION_ID);
+    const region = reachableLiveRegion();
     if (!region) {
         return;
     }

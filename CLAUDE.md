@@ -85,9 +85,10 @@ tested commit.
 
 ## Constraints worth knowing before changing things
 
-- **Only `#app-status` announces.** It sits outside every screen and dialog because a live
-  region inside a hidden one announces nothing. Report through `showStatusMessage`; never add
-  `aria-live` to a status paragraph.
+- **Status is announced from a `.app-status` region**, one on the page and one in every
+  dialog: a live region inside a hidden screen announces nothing, and a modal dialog makes
+  everything outside it inert. Report through `showStatusMessage`; never add `aria-live` to a
+  status paragraph, and give any new dialog its own region.
 - **A saved evaluation file is untrusted input.** Never assign to `innerHTML`; ESLint
   refuses it. Text goes in with `textContent`, structure is built as elements, and a URL
   from a file goes through `safeLinkUrl` before it reaches an `href`.

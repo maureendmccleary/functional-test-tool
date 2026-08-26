@@ -205,7 +205,12 @@ been permanently visible, and hiding the landing screen silently stopped every
 announcement it made.
 
 So `#app-status` sits outside every screen and dialog, is never hidden, and is
-the only element in the app that announces. It is off screen via
+what announces on the page. **Every dialog carries one of its own too.** A modal
+dialog puts itself in the browser's top layer and makes everything outside it
+inert, which takes the page's region out of the accessibility tree for as long
+as the dialog is open -- so a message raised from the issue dialog, announced
+from the page's region, is heard by nobody. `announce` sends the message to
+whichever region is reachable: the open dialog's, or the page's. It is off screen via
 `.visually-hidden`, which keeps it in the accessibility tree; `display: none`
 would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
 announces even when the paragraph is missing.
