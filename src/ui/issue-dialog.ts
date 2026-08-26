@@ -311,12 +311,23 @@ export function addIssueDialogEvents(): void {
     requireEl("add-issue-dialog-new-issue").addEventListener("click", newIssueButtonClick);
 }
 
+/**
+ * Opens the issue dialog on one step or extension.
+ *
+ * The dialog is filled in **before** it is opened. Its accessible name comes
+ * from its heading through aria-labelledby, and the heading is empty in the
+ * static markup, so opening first and writing the title afterwards leaves a
+ * reader that reads the name at open time announcing nothing on the first open
+ * and the previous step's title on every one after. Nothing here yields, so
+ * doing the work first costs nothing.
+ *
+ * Focus is the exception: it can only be placed once the dialog is open.
+ */
 export function addIssueButtonClick(e: Event): void {
     e.preventDefault();
     const addIssueDialog = requireEl<HTMLDialogElement>("add-issue-dialog");
-    addIssueDialog.showModal();
     const heading = requireEl("add-issue-dialog-title");
-    requireEl("add-issue-msg").textContent = "";
+
     // Which button was pressed decides both the index and the list it indexes,
     // so an issue found in extension 2 is not filed against step 2.
     const buttonId = (e.target as HTMLElement).id;
@@ -328,15 +339,18 @@ export function addIssueButtonClick(e: Event): void {
     const isExtension = getCurrentSection() === 'extensions';
     const label = `${isExtension ? "Extension" : "Step"} ${currentStep + 1}`;
     const source = isExtension ? test.extensions : test.steps;
+    const empty = getCurrentRecord().issues.length === 0;
 
-    heading.textContent = getCurrentRecord().issues.length === 0
-        ? `Add Issue ${label}`
-        : `View Issue ${label}`;
+    requireEl("add-issue-msg").textContent = "";
+    heading.textContent = empty ? `Add Issue ${label}` : `View Issue ${label}`;
     requireEl("add-issue-step-label").textContent = label;
     requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);
     updateIssueTable();
-    if (getCurrentRecord().issues.length === 0) {
+
+    addIssueDialog.showModal();
+
+    if (empty) {
         newIssueButtonClick();
         return;
     }

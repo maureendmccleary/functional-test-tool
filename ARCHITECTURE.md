@@ -232,6 +232,14 @@ issue dialog's close button, each running the discard prompt in turn. A named
 function passed repeatedly is deduplicated by `addEventListener` and is safe;
 an inline one never is.
 
+**Fill a dialog before opening it.** A dialog is named by its heading through
+`aria-labelledby`, and the issue dialog is the only one whose heading is empty
+in the markup and written by script. Opening first and writing the title
+afterwards leaves a reader that reads the name at open time announcing nothing
+the first time and the previous step's title every time after. Nothing on that
+path yields, so the work costs nothing done first. Focus is the exception: it
+can only be placed once the dialog is open.
+
 **Every dialog opens on its heading**, which is what names it, and its close
 button comes straight after. The close button used to be first in the source and
 carry `autofocus`, so opening any dialog announced "close" before saying what

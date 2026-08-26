@@ -202,6 +202,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Issues
 
+- [ ] Open the issue dialog on **step 1**, close it, then open it on **step 3**:
+      the second announces "Add Issue Step 3", not step 1's title and not a
+      dialog with no name. Its title is the only one written by script, so it
+      is the only one that can go stale
 - [ ] Every dialog opens announcing its own heading, never "close": New Step,
       Perform, Add Issue, View Summary, View Results, Evaluation Results and
       View Overall Comments
