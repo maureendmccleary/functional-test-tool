@@ -85,6 +85,8 @@ tested commit.
 
 ## Constraints worth knowing before changing things
 
+- **Wire a dialog's own controls once at startup.** An inline handler registered in the
+  open path is a new closure every time and they accumulate; a named one is deduplicated.
 - **A dialog opens on its heading, not its close button.** Give a new one a heading with
   `tabindex="-1"`, a `.app-status` region, and the close button straight after the heading.
 - **Status is announced from a `.app-status` region**, one on the page and one in every

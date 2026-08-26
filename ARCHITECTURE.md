@@ -215,6 +215,13 @@ whichever region is reachable: the open dialog's, or the page's. It is off scree
 would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
 announces even when the paragraph is missing.
 
+A dialog's own controls are wired **once at startup**, not each time it opens.
+Registering an inline function in the open handler adds a fresh closure every
+time, and the browser keeps all of them: ten opens meant ten handlers on the
+issue dialog's close button, each running the discard prompt in turn. A named
+function passed repeatedly is deduplicated by `addEventListener` and is safe;
+an inline one never is.
+
 **Every dialog opens on its heading**, which is what names it, and its close
 button comes straight after. The close button used to be first in the source and
 carry `autofocus`, so opening any dialog announced "close" before saying what

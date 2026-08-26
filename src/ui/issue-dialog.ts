@@ -283,18 +283,33 @@ export function newIssueButtonClick(): void {
 }
 
 /** Opens the issue dialog for the step whose button was activated. */
+/**
+ * Closes the dialog from its own X button, asking first if an issue is part
+ * entered.
+ *
+ * Registered once at startup, not each time the dialog opens. As an inline
+ * function inside the open handler it was a fresh closure every time, so the
+ * browser kept all of them: ten opens meant ten handlers, each running the
+ * discard prompt in turn.
+ */
+export function addIssueDialogCloseClicked(e: Event): void {
+    e.preventDefault();
+    if (!confirmDiscardUnsavedIssueEntry()) {
+        return;
+    }
+    requireEl<HTMLDialogElement>("add-issue-dialog").close();
+}
+
+/** Wires the issue dialog's own controls. Called once at startup. */
+export function addIssueDialogEvents(): void {
+    requireEl("add-issue-dialog-close").addEventListener("click", addIssueDialogCloseClicked);
+    requireEl("add-issue-dialog-new-issue").addEventListener("click", newIssueButtonClick);
+}
+
 export function addIssueButtonClick(e: Event): void {
     e.preventDefault();
     const addIssueDialog = requireEl<HTMLDialogElement>("add-issue-dialog");
-    const addIssueClose = requireEl("add-issue-dialog-close");
     addIssueDialog.showModal();
-    addIssueClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!confirmDiscardUnsavedIssueEntry()) {
-            return;
-        }
-        addIssueDialog.close();
-    });
     const heading = requireEl("add-issue-dialog-title");
     requireEl("add-issue-msg").textContent = "";
     // Which button was pressed decides both the index and the list it indexes,
@@ -316,8 +331,6 @@ export function addIssueButtonClick(e: Event): void {
     requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);
     updateIssueTable();
-    const newIssue = requireEl("add-issue-dialog-new-issue");
-    newIssue.addEventListener("click", newIssueButtonClick);
     if (getCurrentRecord().issues.length === 0) {
         newIssueButtonClick();
         return;
