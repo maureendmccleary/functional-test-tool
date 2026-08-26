@@ -323,6 +323,23 @@ Open that document and check:
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
       wording is deliberate output, see ARCHITECTURE.md
 
+## 8a. Untrusted file contents
+
+Author a functional test with these in it, then perform it and open the results
+dialog and the report.
+
+- [ ] A step whose instructions are `<img src=x onerror="alert(1)">`: it reads
+      back as that text everywhere, and no alert appears
+- [ ] An issue whose description is `<script>alert(1)</script>`: same, in the
+      issue dialog, the step's issue list, and the results table
+- [ ] A start location of `javascript:alert(1)`: the Perform dialog shows it as
+      plain text with no link to follow
+- [ ] A start location of `https://example.org`: still a working link
+- [ ] The devtools console reports **no Content Security Policy violations** at
+      any point in this run. The report needs the docx library from unpkg and
+      downloads through a blob URL, so generate one and watch the console while
+      it runs
+
 ## 9. Save and diff
 
 - [ ] **Save Evaluation File** over `/tmp/smoke.json`

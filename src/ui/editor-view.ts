@@ -33,7 +33,7 @@ let returnScreen: ScreenName = 'landing';
 
 function createStepLabelForEditor(stepNumber: number): HTMLElement {
     const newStepLabel = document.createElement('LABEL');
-    newStepLabel.setAttribute("style", "vertical-align:top");
+    newStepLabel.classList.add("label-top");
     newStepLabel.textContent = "Step " + (stepNumber + 1) + " ";
     const newStepLabelId = `step-label[${stepNumber}]`;
     newStepLabel.setAttribute("id", newStepLabelId);
@@ -88,7 +88,7 @@ function addExtensionToEditor(index: number): HTMLElement {
     extensionDiv.setAttribute("id", `extension-div[${index}]`);
 
     const label = document.createElement("LABEL");
-    label.setAttribute("style", "vertical-align:top");
+    label.classList.add("label-top");
     label.textContent = `Extension ${index + 1} `;
     label.setAttribute("id", `extension-label[${index}]`);
     label.setAttribute("for", getExtensionId(index));
@@ -121,7 +121,7 @@ function addExtensionToEditor(index: number): HTMLElement {
 /** Replaces the rendered extension list with a fresh one built from the model. */
 function redrawExtensions(test: FunctionalTest): void {
     const parent = requireEl("extension-list");
-    parent.innerHTML = "";
+    parent.textContent = "";
     (test.extensions || []).forEach((extension, index) => {
         parent.appendChild(addExtensionToEditor(index));
     });
@@ -174,7 +174,7 @@ export function renderSteps(test: FunctionalTest): HTMLElement {
 /** Replaces the rendered step list with a fresh one built from the model. */
 function redrawSteps(test: FunctionalTest): void {
     const stepParentDiv = requireEl("step-list");
-    stepParentDiv.innerHTML = "";
+    stepParentDiv.textContent = "";
     stepParentDiv.appendChild(renderSteps(test));
 }
 
@@ -186,8 +186,8 @@ export function deleteStepButtonClicked(e: Event): void {
     test.steps.splice(i, 1);
     markEvaluationChanged();
     redrawSteps(test);
-    requireEl("test-editor-msg").innerHTML = "";
-    requireEl("test-editor-msg").innerHTML = `Step ${(i + 1)} was successfully deleted!`;
+    requireEl("test-editor-msg").textContent = "";
+    requireEl("test-editor-msg").textContent = `Step ${(i + 1)} was successfully deleted!`;
     if (test.steps.length <= i) {
         requireEl(getStepId(test.steps.length - 1)).focus();
     }
@@ -390,13 +390,13 @@ export function populateEditor(): void {
     if (testComments.length > 0) {
         testComments.forEach((comment) => {
             const summaryLi = document.createElement("LI");
-            summaryLi.innerHTML = comment;
+            summaryLi.textContent = comment;
             summaryList.appendChild(summaryLi);
         });
     }
     else {
         const summaryLi = document.createElement("LI");
-        summaryLi.innerHTML = "No Issues";
+        summaryLi.textContent = "No Issues";
         summaryList.appendChild(summaryLi);
     }
 }
@@ -556,7 +556,7 @@ export function newStepButtonClick(e: Event): void {
     for (let i = 1; i <= test.steps.length + 1; i++) {
         numbers.push(i);
     }
-    requireEl("step-number").innerHTML = "";
+    requireEl("step-number").textContent = "";
     fillListbox(numbers, "step-number");
     const stepNumberCmb = requireEl<HTMLSelectElement>("step-number");
     stepNumberCmb.selectedIndex = numbers.length - 1;

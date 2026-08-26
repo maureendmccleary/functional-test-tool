@@ -47,7 +47,7 @@ export function fillListbox(
         return;
     }
 
-    lbx.innerHTML = "";
+    lbx.textContent = "";
 
     if (Array.isArray(jobj)) {
         for (let i = 0; i < jobj.length; i++) {

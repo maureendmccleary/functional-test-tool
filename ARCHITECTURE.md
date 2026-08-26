@@ -160,6 +160,38 @@ reads, losing the edit the next time the editor opened.
 `domain/migration.ts` is the only place untrusted file contents become an
 `Evaluation`. Everything downstream can assume the normalized shape.
 
+## Untrusted file contents
+
+An evaluation file is untrusted input. It is passed between testers, and
+everything in it reaches the screen: names, goals, step instructions, issue
+descriptions, comments.
+
+**Nothing builds DOM from a string.** Text goes in through `textContent`, and
+anything with structure is built as elements. `eslint.config.js` bans
+`innerHTML`, `outerHTML` and `insertAdjacentHTML` outright, so the rule is
+enforced rather than remembered. Before that, a description reading
+`<img src=x onerror=...>` ran as script the moment its step was opened.
+
+**Only a real web address becomes a link.** A test's start location goes into an
+anchor's href, and an href accepts `javascript:` and `data:` URLs, which run
+when followed. `domain/safe-url.ts` allows `http:` and `https:` and nothing
+else; anything refused is shown as the text it is.
+
+**A Content Security Policy backs both of those up.** It is a `<meta>` tag in
+`index.html`, so it applies to the dev server and the built output alike.
+`script-src` names unpkg because the `docx` library is loaded from there, and
+nothing else may load or run. If a way to inject markup ever reappears, the
+policy is what stops it fetching or running anything.
+
+Two allowances are deliberate. `style-src` permits inline styles because Vite
+injects stylesheets as `<style>` elements when running the dev server; no user
+text reaches a style, so nothing turns on it. `frame-ancestors` is absent
+because it is ignored in a meta policy and needs a response header, which GitHub
+Pages does not let us set.
+
+The view modules set classes rather than style attributes for the same reason:
+inline styles would have forced that allowance even in the built output.
+
 ## Failure handling
 
 The File System Access API is Chromium-only and both pickers reject with an

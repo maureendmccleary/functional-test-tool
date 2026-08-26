@@ -40,7 +40,7 @@ function summaryIssuesId(index: number): string {
 export function renderAssistiveTechnologySummaries(): void {
     const evaluation = getEvaluation();
     const parentDiv = requireEl("at-summaries");
-    parentDiv.innerHTML = "";
+    parentDiv.textContent = "";
 
     const summaries = evaluation.assistiveTechnologySummaries || [];
     if (summaries.length === 0) {
@@ -99,7 +99,7 @@ export function renderAssistiveTechnologySummaries(): void {
 /** Replaces an element's contents with the given nodes. */
 function replaceContents(elementId: string, nodes: Node[]): void {
     const parent = requireEl(elementId);
-    parent.innerHTML = "";
+    parent.textContent = "";
     nodes.forEach((node) => parent.appendChild(node));
 }
 
@@ -171,7 +171,7 @@ function renderScoringKey(): void {
 /** The detailed results, grouped by assistive technology as the report groups them. */
 function renderDetailedResults(): void {
     const parentDiv = requireEl("eval-results-tests");
-    parentDiv.innerHTML = "";
+    parentDiv.textContent = "";
 
     groupRunsByAssistiveTechnology(getEvaluation()).forEach((group) => {
         const atHeading = document.createElement("h3");

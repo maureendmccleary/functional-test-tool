@@ -14,6 +14,15 @@ export default tseslint.config(
             globals: { ...globals.browser, docx: 'readonly' }
         },
         rules: {
+            // Nothing in this app should build DOM from a string. Everything a
+            // page shows can come out of a saved evaluation file, and those are
+            // passed between testers, so text goes in as text.
+            'no-restricted-properties': ['error',
+                { property: 'innerHTML', message: 'Use textContent: file contents must never be parsed as HTML.' },
+                { property: 'outerHTML', message: 'Use textContent: file contents must never be parsed as HTML.' },
+                { property: 'insertAdjacentHTML', message: 'Build elements instead; file contents must never be parsed as HTML.' }
+            ],
+
             eqeqeq: ['error', 'always'],
             'prefer-const': 'error',
             'no-var': 'error',

@@ -2,6 +2,30 @@
 <html lang="en">
 
 <head>
+  <!--
+    Second line of defence behind the escaping in the view modules. An
+    evaluation file is untrusted, and if a way to inject markup ever reappears,
+    this is what stops it fetching or running anything.
+
+    script-src names unpkg because the docx library is loaded from there, pinned
+    by the integrity hash below. style-src allows inline styles only because
+    Vite injects stylesheets as <style> elements when running the dev server;
+    the built output links a stylesheet instead. No user text ever reaches a
+    style, so nothing turns on that allowance.
+
+    frame-ancestors is deliberately absent: it is ignored in a meta policy and
+    has to come from a response header, which GitHub Pages does not let us set.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://unpkg.com;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    font-src 'self' data:;
+    connect-src 'self';
+    object-src 'none';
+    base-uri 'none';
+    form-action 'none'">
   <title>Functional Accessibility Testing Tool</title>
   <link rel="stylesheet" type="text/css" href="styles.css">
   <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">

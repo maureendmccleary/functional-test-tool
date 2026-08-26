@@ -11,7 +11,7 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
     if (test.comments && test.comments.length > 0) {
         test.comments.forEach(comment => {
             const topIssue = document.createElement("li");
-            topIssue.innerHTML = comment;
+            topIssue.textContent = comment;
             topIssues.appendChild(topIssue);
         });
         return;
@@ -23,13 +23,13 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
 
     if (!sortedIssues || sortedIssues.length === 0) {
         const topIssue = document.createElement("li");
-        topIssue.innerHTML = "No issues";
+        topIssue.textContent = "No issues";
         topIssues.appendChild(topIssue);
         return;
     }
     for (let count = 0; count < 3 && count < sortedIssues.length; count++) {
         const topIssue = document.createElement("li");
-        topIssue.innerHTML = sortedIssues[count];
+        topIssue.textContent = sortedIssues[count];
         topIssues.appendChild(topIssue);
     }
 }
@@ -61,16 +61,24 @@ function appendResultsSection(
     entries.forEach((entry, index) => {
         const issues = entry.issues || [];
         const row = table.insertRow(-1);
-        row.insertCell(0).innerHTML = String(index + 1);
+        row.insertCell(0).textContent = String(index + 1);
         const instructions = row.insertCell(1);
-        instructions.innerHTML = entry.instructions;
-        instructions.setAttribute("style", "text-align: center");
-        row.insertCell(2).innerHTML = String(stepScore({ issues }));
+        instructions.textContent = entry.instructions;
+        instructions.classList.add("cell-centered");
+        row.insertCell(2).textContent = String(stepScore({ issues }));
+        // One element per issue rather than a string of markup: descriptions
+        // come out of a saved file and must never be parsed as HTML.
         const issueCell = row.insertCell(3);
-        issueCell.innerHTML = issues.length === 0
-            ? "•No issues"
-            : issues.map((issue) => "•" + issue.description).join("<br>") + "<br>";
-        issueCell.setAttribute("style", "text-align: center");
+        if (issues.length === 0) {
+            issueCell.textContent = "•No issues";
+        } else {
+            issues.forEach((issue) => {
+                const line = document.createElement("div");
+                line.textContent = "•" + issue.description;
+                issueCell.appendChild(line);
+            });
+        }
+        issueCell.classList.add("cell-centered");
     });
     resultsDiv.appendChild(table);
 }
@@ -134,7 +142,7 @@ export function createResultsTable(
     resultsDiv.appendChild(summaryHeading);
     const p1 = document.createElement("p");
     const score = minimumScore(issuesMap(test));
-    p1.innerHTML = `${test.assistiveTechnology} Overall Rating: ${score}`;
+    p1.textContent = `${test.assistiveTechnology} Overall Rating: ${score}`;
     resultsDiv.appendChild(p1);
     const topIssues = document.createElement("ul");
     addTopIssues(topIssues, test);
@@ -153,7 +161,7 @@ export function viewResultsButtonClicked(e: Event): void {
         viewResultsDialog.close();
     });
     const parentDiv = requireEl("test-results-issues");
-    parentDiv.innerHTML = "";
+    parentDiv.textContent = "";
     const test = getCurrentTest();
     const run = getCurrentRun();
     const resultsDiv = document.createElement("div");
