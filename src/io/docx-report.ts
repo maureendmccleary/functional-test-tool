@@ -8,7 +8,7 @@ import {
     SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatOverallRating, formatReportTimestamp,
     formatScore, scoreKeyRows
 } from '../domain/report-format.js';
-import { requireEl } from '../ui/dom.js';
+import { showStatusMessage } from '../ui/status.js';
 
 /**
  * Builds the .docx document tree for an evaluation.
@@ -350,21 +350,22 @@ export function isReportLibraryAvailable(): boolean {
  * on screen after a failure would read as a hang.
  */
 export function renderEvalResultsDocx(evaluation: Evaluation): void {
-    const statusEl = requireEl('generate-pdf-status');
-
     if (!isReportLibraryAvailable()) {
-        statusEl.textContent =
-            'The report library could not be loaded. Check your network connection and reload the page.';
+        showStatusMessage(
+            'generate-pdf-status',
+            'The report library could not be loaded. Check your network connection and reload the page.',
+            0
+        );
         return;
     }
 
-    statusEl.textContent = 'Generating report, please wait...';
+    showStatusMessage('generate-pdf-status', 'Generating report, please wait...', 0);
 
     let doc: unknown;
     try {
         doc = buildEvalResultsDocument(evaluation);
     } catch {
-        statusEl.textContent = 'The report could not be generated.';
+        showStatusMessage('generate-pdf-status', 'The report could not be generated.', 0);
         return;
     }
 
@@ -377,8 +378,8 @@ export function renderEvalResultsDocx(evaluation: Evaluation): void {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        statusEl.textContent = 'Report download complete.';
+        showStatusMessage('generate-pdf-status', 'Report download complete.', 0);
     }).catch(() => {
-        statusEl.textContent = 'The report could not be generated.';
+        showStatusMessage('generate-pdf-status', 'The report could not be generated.', 0);
     });
 }

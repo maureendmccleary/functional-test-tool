@@ -36,6 +36,16 @@
 </head>
 
 <body>
+  <!--
+    The one live region in the app, and the only element that announces.
+
+    It sits here, outside every screen and every dialog, because it must never
+    be hidden: a live region inside a display:none subtree is not announced, and
+    a screen reader drops it rather than resuming when it reappears. Every other
+    status paragraph is now plain visible text, updated alongside this. See
+    ui/status.ts.
+  -->
+  <div id="app-status" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
   <form id="evaluation-form">
     <div>
       <h1 id="landing-heading" tabindex="-1">Functional Accessibility Testing Tool</h1>
@@ -62,14 +72,14 @@
         <button id="perform-test" type="button" disabled>Perform</button>
       </div>
       <br><br>
-      <p id="evaluation-msg" role="status" aria-live="assertive"></p>
+      <p id="evaluation-msg" class="status-text"></p>
     </div>
   </form>
   <form id="evaluation-editor-form" class="inactive" name="evaluationEditor">
     <div>
       <h1 id="evaluation-editor-heading" tabindex="-1">Evaluation</h1>
       <br><br>
-      <p id="evaluation-editor-msg" role="status" aria-live="assertive"></p>
+      <p id="evaluation-editor-msg" class="status-text"></p>
       <br><br>
       <div role="group" aria-labelledby="evaluation-details-heading">
         <h2 id="evaluation-details-heading">Evaluation Details</h2>
@@ -104,7 +114,7 @@
     <div role="group" id="test-edit" aria-labelledby="test-header-edit">
       <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
       <br><br>
-      <p id="test-editor-msg" role="status" aria-live="assertive"></p>
+      <p id="test-editor-msg" class="status-text"></p>
       <br><br>
       <h2 id="test-header-edit">Functional Test Information</h2>
       <label for="test-edit-name">Name: </label>
@@ -184,7 +194,7 @@
       <button type="button" id="view-test-results">View Results</button>
       <h2 id="dialog-title">Perform Functional Test</h2>
       <br><br>
-      <p id="perform-msg" role="status" aria-live="assertive"></p>
+      <p id="perform-msg" class="status-text"></p>
       <h3>Overview Information: <span id="perform-name"></span></h3>
       <br>
       <p>Goal: <span id="perform-goal"></span></p>
@@ -263,7 +273,7 @@
       </div>
       <h2 id="add-issue-dialog-title"></h2>
       <br>
-      <p id="add-issue-msg" role="status" aria-live="assertive"></p>
+      <p id="add-issue-msg" class="status-text"></p>
       <br><br>
       <h3 id="add-issue-step-label"></h3>
       <p id="add-issue-step"></p>
@@ -318,7 +328,7 @@
         <button id="view-overall-comments" type="button">View Overall Comments</button>
         <button id="generate-pdf" type="button">Generate Report (.docx)</button>
         <br>
-        <p id="generate-pdf-status" role="status" aria-live="polite"></p>
+        <p id="generate-pdf-status" class="status-text"></p>
         <h1 id="eval-view-results-dialog-title">Evaluation Results</h1>
         <br><br>
         <h2>Use Case Results Summary</h2>

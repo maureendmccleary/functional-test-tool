@@ -192,6 +192,31 @@ Pages does not let us set.
 The view modules set classes rather than style attributes for the same reason:
 inline styles would have forced that allowance even in the built output.
 
+## Status messages
+
+Showing a message and announcing it are two jobs, done by two elements.
+
+The visible paragraph belongs beside the control it reports on, which puts it
+inside a screen or a dialog, and those get hidden. A live region cannot live
+there: inside a `display: none` subtree it announces nothing, and a screen
+reader drops it rather than picking it up again when the screen returns. That is
+exactly what happened when the screens were introduced -- `evaluation-msg` had
+been permanently visible, and hiding the landing screen silently stopped every
+announcement it made.
+
+So `#app-status` sits outside every screen and dialog, is never hidden, and is
+the only element in the app that announces. It is off screen via
+`.visually-hidden`, which keeps it in the accessibility tree; `display: none`
+would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
+announces even when the paragraph is missing.
+
+Two things it does deliberately. It never touches `aria-live` at run time: the
+attribute belongs on the region before the content changes, and the old code set
+it afterwards. And it empties the region before putting the message in, one task
+later, because a live region announces a *change* -- setting the same text twice
+in a row is no change at all, which is why saving two issues in a row used to
+announce only the first.
+
 ## Failure handling
 
 The File System Access API is Chromium-only and both pickers reject with an

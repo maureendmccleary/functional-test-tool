@@ -340,6 +340,19 @@ dialog and the report.
       downloads through a blob URL, so generate one and watch the console while
       it runs
 
+## 8b. Announcements
+
+With a screen reader running. Every message below has to be *heard*, not just
+appear on screen, and the two are separate elements now.
+
+- [ ] Loading a file announces the evaluation by name
+- [ ] **Save** in the functional test editor announces what it created
+- [ ] Deleting a step, and deleting an extension, are each announced
+- [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Add Test, then Back, then Edit Evaluation: messages are still announced
+      after moving between screens
+- [ ] Generating a report announces its progress and its result
+
 ## 9. Save and diff
 
 - [ ] **Save Evaluation File** over `/tmp/smoke.json`

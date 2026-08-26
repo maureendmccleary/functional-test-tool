@@ -6,6 +6,7 @@ import {
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
+import { showStatusMessage } from './status.js';
 import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
 import { getIssueListId, getStepNumber, isExtensionElementId } from './step-ids.js';
 
@@ -198,8 +199,7 @@ export function saveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
 }
@@ -223,8 +223,7 @@ export function editSaveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
 }
@@ -243,8 +242,7 @@ export function editIssue(e: Event): void {
     requireEl<HTMLInputElement>("add-issue-description").value = row.cells[1].innerText;
     requireEl<HTMLInputElement>("add-issue-findingURL").value = row.cells[2].innerText;
     requireEl<HTMLSelectElement>("add-issue-score").value = row.cells[3].innerText;
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Editing issue " + getCurrentIssue();
+    showStatusMessage("add-issue-msg", "Editing issue " + getCurrentIssue(), 0);
     requireEl("add-issue-description").focus();
 }
 
@@ -254,8 +252,7 @@ export function deleteIssue(e: Event): void {
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Deleting issue " + rowIndex;
+    showStatusMessage("add-issue-msg", "Deleting issue " + rowIndex, 0);
     issueTable.deleteRow(rowIndex);
     setCurrentIssue(getCurrentRecord().issues.length);
     for (let i = 1; i < issueTable.rows.length; i++) {

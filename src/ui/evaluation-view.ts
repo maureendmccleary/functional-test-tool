@@ -41,9 +41,16 @@ function isCancellation(error: unknown): boolean {
     return error instanceof DOMException && error.name === 'AbortError';
 }
 
-/** Announces a message after the file dialog has released focus. */
-function announce(elementId: string, message: string, delayMs: number): void {
-    setTimeout(() => showStatusMessage(elementId, message), delayMs);
+/**
+ * Reports a message once the file dialog has released focus.
+ *
+ * @param clearAfterMs 0 leaves it on screen, which is what a load wants: it
+ *                     says which evaluation is open, and that stays true
+ */
+function reportAfterDialog(
+    elementId: string, message: string, delayMs: number, clearAfterMs?: number
+): void {
+    setTimeout(() => showStatusMessage(elementId, message, clearAfterMs), delayMs);
 }
 
 /**
@@ -180,10 +187,8 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
     populateEvaluationDetails();
     enableEvaluationControls();
 
-    const evalMsg = requireEl('evaluation-msg');
-    evalMsg.textContent = '';
-    const summary = loadedMessage(evaluation);
-    setTimeout(() => { evalMsg.textContent = summary; }, LOAD_ANNOUNCE_DELAY_MS);
+    requireEl('evaluation-msg').textContent = '';
+    reportAfterDialog('evaluation-msg', loadedMessage(evaluation), LOAD_ANNOUNCE_DELAY_MS, 0);
 }
 
 /**
@@ -209,10 +214,10 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         if (isCancellation(error)) {
             return;
         }
-        announce(status.elementId, 'The file could not be saved.', SAVE_ANNOUNCE_DELAY_MS);
+        reportAfterDialog(status.elementId, 'The file could not be saved.', SAVE_ANNOUNCE_DELAY_MS);
         return;
     }
 
     markEvaluationSaved();
-    announce(status.elementId, status.message, SAVE_ANNOUNCE_DELAY_MS);
+    reportAfterDialog(status.elementId, status.message, SAVE_ANNOUNCE_DELAY_MS);
 }

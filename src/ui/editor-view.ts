@@ -186,8 +186,7 @@ export function deleteStepButtonClicked(e: Event): void {
     test.steps.splice(i, 1);
     markEvaluationChanged();
     redrawSteps(test);
-    requireEl("test-editor-msg").textContent = "";
-    requireEl("test-editor-msg").textContent = `Step ${(i + 1)} was successfully deleted!`;
+    showStatusMessage("test-editor-msg", `Step ${(i + 1)} was successfully deleted!`);
     if (test.steps.length <= i) {
         requireEl(getStepId(test.steps.length - 1)).focus();
     }
