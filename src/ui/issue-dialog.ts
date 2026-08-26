@@ -320,7 +320,11 @@ export function addIssueButtonClick(e: Event): void {
     newIssue.addEventListener("click", newIssueButtonClick);
     if (getCurrentRecord().issues.length === 0) {
         newIssueButtonClick();
+        return;
     }
+    // On the heading, which names the step, rather than on the close button:
+    // "close" is not what the tester came here to hear.
+    heading.focus();
 }
 
 // Runs whenever the add-issue dialog closes (X button, Escape key, or programmatic close), so the

@@ -215,6 +215,10 @@ whichever region is reachable: the open dialog's, or the page's. It is off scree
 would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
 announces even when the paragraph is missing.
 
+The issue dialog's controls are ordered so that reading forwards matches doing:
+New Issue, then the fields it reveals, then Save Issue. The button used to sit
+*after* the fields, so pressing it threw focus backwards up the dialog.
+
 **Settle focus before announcing, never after.** A handler that removes or
 hides the element holding focus drops focus to the body, and a screen reader
 treats that as a context change and discards a pending message. Saving an issue

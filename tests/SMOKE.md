@@ -203,7 +203,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 ## 6. Issues
 
 - [ ] **Add Issue** on a step opens the issue dialog with that step's issues in
-      the table
+      the table, and focus lands on the dialog's heading, which names the step.
+      A step with no issues yet opens straight into the Description field
+- [ ] Tab order runs forwards: **New Issue**, then Description, Score, Finding
+      URL, then **Save Issue**. Pressing New Issue moves focus down the dialog,
+      never back up it
 - [ ] Saving with an empty description shows "Description is required." and moves
       focus to the description field
 - [ ] Saving with the score left on "Not Rated (-1)" shows "Score is required."
