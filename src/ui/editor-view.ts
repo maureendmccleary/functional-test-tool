@@ -550,6 +550,7 @@ export function newStepButtonClick(e: Event): void {
     const test = getCurrentTest();
     const newStepCloseBtn = requireEl("new-step-dialog-close");
     newStepDialog.showModal();
+    requireEl('add-step-heading').focus();
     newStepCloseBtn.addEventListener("click", (e) => {
         e.preventDefault();
         newStepDialog.close();

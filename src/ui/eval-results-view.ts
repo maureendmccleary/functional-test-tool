@@ -241,6 +241,7 @@ export function overallCommentsClicked(e: Event): void {
         overallCommentsDialog.close();
     });
     overallCommentsDialog.showModal();
+    requireEl('view-overall-comments-dialog-title').focus();
     const overallCommentsTextarea = requireEl<HTMLTextAreaElement>("overall-comments");
     let commentsText = "";
     if (evaluation.comments) {
@@ -258,6 +259,7 @@ export function evalViewResultsButtonClicked(e: Event): void {
     const evalViewResultsDialog = requireEl<HTMLDialogElement>("eval-view-results-dialog");
     const evalViewResultsDialogClose = requireEl("eval-view-results-dialog-close");
     evalViewResultsDialog.showModal();
+    requireEl('eval-view-results-dialog-title').focus();
     evalViewResultsDialogClose.addEventListener("click", (e) => {
         e.preventDefault();
         evalViewResultsDialog.close();

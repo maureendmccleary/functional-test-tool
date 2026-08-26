@@ -202,6 +202,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Issues
 
+- [ ] Every dialog opens announcing its own heading, never "close": New Step,
+      Perform, Add Issue, View Summary, View Results, Evaluation Results and
+      View Overall Comments
+- [ ] In each, the close button is reached straight after the heading, and
+      **Escape** still closes
 - [ ] **Add Issue** on a step opens the issue dialog with that step's issues in
       the table, and focus lands on the dialog's heading, which names the step.
       A step with no issues yet opens straight into the Description field

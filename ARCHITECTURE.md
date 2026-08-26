@@ -215,6 +215,13 @@ whichever region is reachable: the open dialog's, or the page's. It is off scree
 would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
 announces even when the paragraph is missing.
 
+**Every dialog opens on its heading**, which is what names it, and its close
+button comes straight after. The close button used to be first in the source and
+carry `autofocus`, so opening any dialog announced "close" before saying what
+the dialog was for. It is positioned absolutely, so its place in the source
+never affected where it appears; it only ever affected what was read first.
+Headings carry `tabindex="-1"` so they can take focus.
+
 The issue dialog's controls are ordered so that reading forwards matches doing:
 New Issue, then the fields it reveals, then Save Issue. The button used to sit
 *after* the fields, so pressing it threw focus backwards up the dialog.

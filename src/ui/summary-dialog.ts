@@ -49,6 +49,7 @@ export function viewSummaryButtonClicked(e: Event): void {
     e.preventDefault();
     const viewSummaryDialog = requireEl<HTMLDialogElement>("view-summary-dialog");
     viewSummaryDialog.showModal();
+    requireEl('view-summary-dialog-title').focus();
     const viewSummaryDialogClose = requireEl("view-summary-dialog-close");
     viewSummaryDialogClose.addEventListener("click", (e) => {
         e.preventDefault();

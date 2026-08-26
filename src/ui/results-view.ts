@@ -156,6 +156,7 @@ export function viewResultsButtonClicked(e: Event): void {
     const viewResultsDialog = requireEl<HTMLDialogElement>("view-results-dialog");
     const viewResultsDialogClose = requireEl("view-results-dialog-close");
     viewResultsDialog.showModal();
+    requireEl('view-results-dialog-title').focus();
     viewResultsDialogClose.addEventListener("click", (e) => {
         e.preventDefault();
         viewResultsDialog.close();

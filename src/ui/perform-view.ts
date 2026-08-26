@@ -236,6 +236,7 @@ export function populatePerform(): void {
 
     const performDialogClose = requireEl("perform-dialog-close");
     performDialog.showModal();
+    requireEl('dialog-title').focus();
     performDialogClose.addEventListener("click", (e) => {
         e.preventDefault();
         performDialog.close();
