@@ -358,6 +358,9 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
+      an issue are each heard even though focus moves at the same moment
+- [ ] Loading a file still waits its turn rather than cutting across the reader
 - [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
       than being lost to the page
 - [ ] Editing an issue is announced, with focus in the Description field

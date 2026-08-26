@@ -205,7 +205,17 @@ been permanently visible, and hiding the landing screen silently stopped every
 announcement it made.
 
 So `#app-status` sits outside every screen and dialog, is never hidden, and is
-what announces on the page. **Every dialog carries one of its own too.** A modal
+what announces on the page. It is `role="status"`, which is polite: a load
+confirmation should wait its turn rather than cut across whatever the reader is
+saying.
+
+**The dialogs' regions are `role="alert"`, which is assertive, and that
+difference is deliberate.** A polite update waits for the reader to fall idle
+and is dropped rather than queued if it never does. The dialog messages report
+what an action just did, and every one of those handlers moves focus first, so
+the reader is mid-sentence when the message arrives. The paragraph was being
+written correctly and the message was simply never spoken; interrupting is the
+right behaviour for a confirmation the tester is waiting on. **Every dialog carries one of its own too.** A modal
 dialog puts itself in the browser's top layer and makes everything outside it
 inert, which takes the page's region out of the accessibility tree for as long
 as the dialog is open -- so a message raised from the issue dialog, announced
