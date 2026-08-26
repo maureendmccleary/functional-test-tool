@@ -87,10 +87,13 @@ tested commit.
 
 - **Wire a dialog's own controls once at startup.** An inline handler registered in the
   open path is a new closure every time and they accumulate; a named one is deduplicated.
+- **Fill a dialog before `showModal()`.** Its accessible name comes from its heading, and a
+  name written after opening can be read as empty or stale. Place focus after opening.
 - **A dialog opens on its heading, not its close button.** Give a new one a heading with
   `tabindex="-1"`, a `.app-status` region, and the close button straight after the heading.
-- **Status is announced from a `.app-status` region**, one on the page and one in every
-  dialog: a live region inside a hidden screen announces nothing, and a modal dialog makes
+- **Status is announced from a `.app-status` region**, `role="status"` on the page and
+  `role="alert"` in each dialog, because a dialog message lands while the reader is speaking a
+  focus change and a polite one is dropped rather than queued: a live region inside a hidden screen announces nothing, and a modal dialog makes
   everything outside it inert. Report through `showStatusMessage`; never add `aria-live` to a
   status paragraph, and give any new dialog its own region.
 - **A saved evaluation file is untrusted input.** Never assign to `innerHTML`; ESLint

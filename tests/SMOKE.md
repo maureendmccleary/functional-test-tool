@@ -202,6 +202,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Issues
 
+- [ ] Open the issue dialog on **step 1**, close it, then open it on **step 3**:
+      the second announces "Add Issue Step 3", not step 1's title and not a
+      dialog with no name. Its title is the only one written by script, so it
+      is the only one that can go stale
 - [ ] Every dialog opens announcing its own heading, never "close": New Step,
       Perform, Add Issue, View Summary, View Results, Evaluation Results and
       View Overall Comments
@@ -358,6 +362,17 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
+      an issue are each heard even though focus moves at the same moment
+- [ ] **Save Evaluation File** puts focus back on that button and then
+      announces, without the document title being read first
+- [ ] **Save Functional Test Results** from inside the Perform dialog does the
+      same, returning focus to that button rather than out of the dialog
+- [ ] Cancelling either picker also returns focus to the button, announcing
+      nothing
+- [ ] Loading a file lands focus on "Select a Functional Test" and announces the
+      evaluation by name. The document title should not be read out twice first,
+      nor the buttons walked through, before the message arrives
 - [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
       than being lost to the page
 - [ ] Editing an issue is announced, with focus in the Description field

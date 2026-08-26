@@ -205,7 +205,24 @@ been permanently visible, and hiding the landing screen silently stopped every
 announcement it made.
 
 So `#app-status` sits outside every screen and dialog, is never hidden, and is
-what announces on the page. **Every dialog carries one of its own too.** A modal
+what announces on the page. It is `role="status"`, which is polite: a load
+confirmation should wait its turn rather than cut across whatever the reader is
+saying.
+
+**Which region gets the message is decided by focus, not by document order.**
+The issue dialog opens on top of the Perform dialog, so two dialogs are open at
+once; asking the document for `dialog[open]` answers with the first in the
+markup, which is the Perform dialog, and the modal above it has made that inert.
+A modal traps focus, so the dialog containing the focused element is the one on
+top and the only one a reader can reach.
+
+**The dialogs' regions are `role="alert"`, which is assertive, and that
+difference is deliberate.** A polite update waits for the reader to fall idle
+and is dropped rather than queued if it never does. The dialog messages report
+what an action just did, and every one of those handlers moves focus first, so
+the reader is mid-sentence when the message arrives. The paragraph was being
+written correctly and the message was simply never spoken; interrupting is the
+right behaviour for a confirmation the tester is waiting on. **Every dialog carries one of its own too.** A modal
 dialog puts itself in the browser's top layer and makes everything outside it
 inert, which takes the page's region out of the accessibility tree for as long
 as the dialog is open -- so a message raised from the issue dialog, announced
@@ -222,6 +239,14 @@ issue dialog's close button, each running the discard prompt in turn. A named
 function passed repeatedly is deduplicated by `addEventListener` and is safe;
 an inline one never is.
 
+**Fill a dialog before opening it.** A dialog is named by its heading through
+`aria-labelledby`, and the issue dialog is the only one whose heading is empty
+in the markup and written by script. Opening first and writing the title
+afterwards leaves a reader that reads the name at open time announcing nothing
+the first time and the previous step's title every time after. Nothing on that
+path yields, so the work costs nothing done first. Focus is the exception: it
+can only be placed once the dialog is open.
+
 **Every dialog opens on its heading**, which is what names it, and its close
 button comes straight after. The close button used to be first in the source and
 carry `autofocus`, so opening any dialog announced "close" before saying what
@@ -237,6 +262,15 @@ The gap before the message lands is also what gives a reader time to finish
 speaking a focus change. These handlers move focus and then announce, and a
 reader busy with the focus change drops a live region update that arrives while
 it is speaking.
+
+The same rule covers the file dialogs. A native picker hands focus back to the
+page without leaving it anywhere, so a reader re-orients itself: it reads the
+document title and then walks whatever it finds, and a polite message queues up
+behind all of it. Loading a file puts focus on the list of functional tests,
+which says the evaluation is open and what is in it, before announcing. Saving
+has no next thing to move on to, so focus goes back to the control that was
+pressed, cancelling included: changing your mind should not strand focus
+either.
 
 **Settle focus before announcing, never after.** A handler that removes or
 hides the element holding focus drops focus to the body, and a screen reader

@@ -42,13 +42,25 @@ const ANNOUNCE_DELAY_MS = 250;
 const DEFAULT_CLEAR_MS = 3000;
 
 /**
- * The region a screen reader can actually reach right now: the open dialog's
- * when one is open, the page's otherwise.
+ * The region a screen reader can actually reach right now.
+ *
+ * Found through whatever holds focus, not by looking for an open dialog. The
+ * issue dialog opens on top of the Perform dialog, so two are open at once, and
+ * asking the document for `dialog[open]` answers with the first one in the
+ * markup -- the Perform dialog, which the modal on top of it has made inert.
+ * Messages went into a region no reader could see.
+ *
+ * A modal traps focus, so the dialog containing the focused element is the one
+ * on top. Where focus has escaped to the body, or there is no dialog at all,
+ * the page's region is right.
  */
 function reachableLiveRegion(): HTMLElement | null {
-    const openDialog = document.querySelector('dialog[open]');
-    const inDialog = openDialog && openDialog.querySelector<HTMLElement>(LIVE_REGION_SELECTOR);
-    return inDialog || document.querySelector<HTMLElement>(`#app-status`);
+    const active = document.activeElement as Element | null;
+    const dialog = typeof active?.closest === 'function'
+        ? active.closest('dialog[open]')
+        : null;
+    const inDialog = dialog && dialog.querySelector<HTMLElement>(LIVE_REGION_SELECTOR);
+    return inDialog || document.querySelector<HTMLElement>('#app-status');
 }
 
 /** Announces a message, whichever screen or dialog the reader is in. */
