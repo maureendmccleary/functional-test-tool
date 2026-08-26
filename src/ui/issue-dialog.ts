@@ -238,7 +238,9 @@ export function editSaveIssueButtonClick(e: Event): void {
 
 /** Loads the clicked row into the fields for editing. */
 export function editIssue(e: Event): void {
-    const button = e.target as HTMLElement;
+    // currentTarget for the same reason as deleteIssue: the icon span is what a
+    // mouse click hits.
+    const button = e.currentTarget as HTMLElement;
     let row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     setCurrentIssue(row.rowIndex);
@@ -250,13 +252,16 @@ export function editIssue(e: Event): void {
     requireEl<HTMLInputElement>("add-issue-description").value = row.cells[1].innerText;
     requireEl<HTMLInputElement>("add-issue-findingURL").value = row.cells[2].innerText;
     requireEl<HTMLSelectElement>("add-issue-score").value = row.cells[3].innerText;
-    showStatusMessage("add-issue-msg", "Editing issue " + getCurrentIssue(), 0);
     requireEl("add-issue-description").focus();
+    showStatusMessage("add-issue-msg", "Editing issue " + getCurrentIssue(), 0);
 }
 
 /** Removes the clicked row and its issue, renumbering the rows after it. */
 export function deleteIssue(e: Event): void {
-    const button = e.target as HTMLElement;
+    // currentTarget, not target: the button holds a span for its icon, and a
+    // mouse click lands on the span. Walking up from there reaches the cell
+    // rather than the row, and the handler threw before it announced anything.
+    const button = e.currentTarget as HTMLElement;
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;

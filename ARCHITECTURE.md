@@ -233,6 +233,11 @@ The issue dialog's controls are ordered so that reading forwards matches doing:
 New Issue, then the fields it reveals, then Save Issue. The button used to sit
 *after* the fields, so pressing it threw focus backwards up the dialog.
 
+The gap before the message lands is also what gives a reader time to finish
+speaking a focus change. These handlers move focus and then announce, and a
+reader busy with the focus change drops a live region update that arrives while
+it is speaking.
+
 **Settle focus before announcing, never after.** A handler that removes or
 hides the element holding focus drops focus to the body, and a screen reader
 treats that as a context change and discards a pending message. Saving an issue

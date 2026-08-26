@@ -25,13 +25,18 @@ const LIVE_REGION_SELECTOR = '.app-status';
 /**
  * How long the region is left empty before the message goes in.
  *
- * A live region announces a *change*. Setting the same message twice in a row
- * is no change at all, so saving two issues used to announce only the first.
- * Clearing and setting in one go does not help, because the browser reports the
- * net result of a task rather than each step; the message has to land in a
- * later one.
+ * Two jobs. A live region announces a *change*, and setting the same message
+ * twice in a row is no change at all, so saving two issues used to announce
+ * only the first; clearing and setting in one go does not help, because the
+ * browser reports the net result of a task rather than each step, so the
+ * message has to land in a later one.
+ *
+ * The length is the second job. These handlers move focus, and a reader
+ * speaking a focus change will drop a live region update that arrives while it
+ * is busy. This is long enough for it to finish and pick the message up, and
+ * short enough that nobody waits for it.
  */
-const ANNOUNCE_DELAY_MS = 50;
+const ANNOUNCE_DELAY_MS = 250;
 
 /** How long a message stays on screen when the caller does not say. */
 const DEFAULT_CLEAR_MS = 3000;

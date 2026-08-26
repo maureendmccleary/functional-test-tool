@@ -360,6 +360,10 @@ appear on screen, and the two are separate elements now.
 - [ ] Saving two issues in a row announces **both**, not just the first
 - [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
       than being lost to the page
+- [ ] Editing an issue is announced, with focus in the Description field
+- [ ] Delete and edit an issue **with the mouse**, clicking the small trash and
+      pencil icons themselves: the click lands on the icon rather than the
+      button, which used to throw before anything was announced
 - [ ] Deleting the only step of a test focuses **New Step** instead of throwing
 - [ ] Check the issue dialog messages in **JAWS as well as NVDA**: these were
       the ones JAWS dropped when focus moved after the announcement
