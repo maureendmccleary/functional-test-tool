@@ -199,9 +199,13 @@ export function saveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
     updateIssueList();
-    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
+    // Focus, then announce. Hiding the Save button drops focus to the body, and
+    // a screen reader treats that as a context change and discards a pending
+    // announcement. JAWS did; NVDA happened not to.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
 }
 
 /** Validates and overwrites the issue currently being edited. */
@@ -223,9 +227,13 @@ export function editSaveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
     markEvaluationChanged();
     updateIssueList();
-    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
+    // Focus, then announce. Hiding the Save button drops focus to the body, and
+    // a screen reader treats that as a context change and discards a pending
+    // announcement. JAWS did; NVDA happened not to.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
 }
 
 /** Loads the clicked row into the fields for editing. */
@@ -252,7 +260,6 @@ export function deleteIssue(e: Event): void {
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;
-    showStatusMessage("add-issue-msg", "Deleting issue " + rowIndex, 0);
     issueTable.deleteRow(rowIndex);
     setCurrentIssue(getCurrentRecord().issues.length);
     for (let i = 1; i < issueTable.rows.length; i++) {
@@ -261,6 +268,10 @@ export function deleteIssue(e: Event): void {
     getCurrentRecord().issues.splice(rowIndex - 1, 1);
     markEvaluationChanged();
     updateIssueList();
+    // The row just removed held the button that had focus, so focus has to land
+    // somewhere before the message, or it is discarded with the old context.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", `Issue ${rowIndex} was deleted.`, 0);
 }
 
 /** Switches the dialog into add mode, pointing Save at the add handler. */

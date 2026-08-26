@@ -215,6 +215,15 @@ whichever region is reachable: the open dialog's, or the page's. It is off scree
 would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
 announces even when the paragraph is missing.
 
+**Settle focus before announcing, never after.** A handler that removes or
+hides the element holding focus drops focus to the body, and a screen reader
+treats that as a context change and discards a pending message. Saving an issue
+hides the Save button that was just pressed; deleting one removes the row the
+delete button was in; deleting a step removes the step. Each announced first and
+moved focus afterwards, and each was silent in JAWS while NVDA happened to be
+forgiving enough to read it anyway. Move focus somewhere deliberate, then call
+`showStatusMessage` last.
+
 Two things it does deliberately. It never touches `aria-live` at run time: the
 attribute belongs on the region before the content changes, and the old code set
 it afterwards. And it empties the region before putting the message in, one task

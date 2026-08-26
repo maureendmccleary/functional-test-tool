@@ -349,6 +349,11 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
+      than being lost to the page
+- [ ] Deleting the only step of a test focuses **New Step** instead of throwing
+- [ ] Check the issue dialog messages in **JAWS as well as NVDA**: these were
+      the ones JAWS dropped when focus moved after the announcement
 - [ ] Add Test, then Back, then Edit Evaluation: messages are still announced
       after moving between screens
 - [ ] Generating a report announces its progress and its result
