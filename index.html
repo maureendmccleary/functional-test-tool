@@ -185,16 +185,21 @@
     <br><br>
     <button id="add-step">Add Step</button>
   </dialog>
-  <dialog id="perform-dialog" aria-labelledby="dialog-title">
-    <div class="app-status visually-hidden" role="alert"></div>
+  <!--
+    A screen, not a dialog. Performing a test is where a tester spends most of
+    their time, and the Add Issue, View Results and View Summary dialogs all
+    open from it: as a dialog it made those nested modals, which put the live
+    region of whichever one was underneath out of a reader's reach and had the
+    dialog re-announce itself whenever focus moved inside it. It carries no
+    status region of its own for the same reason every screen does not: the
+    page's #app-status is never hidden.
+  -->
+  <div id="perform-screen" class="inactive">
     <form id="perform-form" name="performForm">
+      <h2 id="perform-heading" tabindex="-1">Perform Functional Test</h2>
+      <button type="button" id="perform-back">Back</button>
       <button type="button" id="perform-save">Save Functional Test Results</button>
       <button type="button" id="view-test-results">View Results</button>
-      <h2 id="dialog-title" tabindex="-1">Perform Functional Test</h2>
-      <div class="close-button">
-        <button type="button" id="perform-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
-      </div>
       <br><br>
       <p id="perform-msg" class="status-text"></p>
       <h3>Overview Information: <span id="perform-name"></span></h3>
@@ -232,7 +237,7 @@
       <br><br>
       <button type="button" id="view-summary">View Summary</button>
     </div>
-  </dialog>
+  </div>
   <dialog id="view-summary-dialog" aria-labelledby="view-summary-dialog-title">
     <div class="app-status visually-hidden" role="alert"></div>
     <form id="view-summary-" name="viewSummary">

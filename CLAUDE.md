@@ -87,6 +87,8 @@ tested commit.
 
 - **Wire a dialog's own controls once at startup.** An inline handler registered in the
   open path is a new closure every time and they accumulate; a named one is deduplicated.
+- **Perform is a screen, not a dialog**, so Add Issue, View Results and View Summary open
+  over a screen rather than stacking modals. Do not put it back in a `<dialog>`.
 - **Fill a dialog before `showModal()`.** Its accessible name comes from its heading, and a
   name written after opening can be read as empty or stale. Place focus after opening.
 - **A dialog opens on its heading, not its close button.** Give a new one a heading with

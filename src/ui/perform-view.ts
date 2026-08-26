@@ -9,6 +9,7 @@ import {
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
+import { showScreen } from './screens.js';
 import { saveFileButtonClick } from './evaluation-view.js';
 import { addIssueButtonClick } from './issue-dialog.js';
 import { viewResultsButtonClicked } from './results-view.js';
@@ -54,7 +55,7 @@ export function populateIssuesList(): void {
 
 /** Relabels one set of buttons to reflect how many issues each holds. */
 function relabelIssueButtons(selector: string, records: TestRunStep[]): void {
-    requireEl('perform-dialog').querySelectorAll(selector).forEach((button, index) => {
+    requireEl('perform-screen').querySelectorAll(selector).forEach((button, index) => {
         const record = records[index];
         const count = record && record.issues ? record.issues.length : 0;
         if (count === 0) {
@@ -225,22 +226,21 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
     form.appendChild(container);
 }
 
-/** Fills the perform dialog for the current test and selects a run. */
+/**
+ * Fills the perform screen for the current test and selects a run.
+ *
+ * Built before the screen is shown, the way the issue dialog is filled before
+ * it opens: nothing is seen part drawn, and showScreen moves focus to the
+ * heading once it is all there.
+ */
 export function populatePerform(): void {
     const test = getCurrentTest();
-    const performDialog = requireEl<HTMLDialogElement>("perform-dialog");
-    const stepDivs = performDialog.querySelectorAll('div[id^="step-div"]');
+    const performScreen = requireEl("perform-screen");
+    const stepDivs = performScreen.querySelectorAll('div[id^="step-div"]');
     for (let i = 1; i < stepDivs.length; i++) {
         stepDivs[i].remove();
     }
 
-    const performDialogClose = requireEl("perform-dialog-close");
-    performDialog.showModal();
-    requireEl('dialog-title').focus();
-    performDialogClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        performDialog.close();
-    });
     const performForm = requireEl<HTMLFormElement>("perform-form");
     performForm.reset();
     fillListbox(defaults["scores"], "perform-score");
@@ -266,8 +266,6 @@ export function populatePerform(): void {
         a.rel = "noopener noreferrer";
         span.appendChild(a);
     }
-    requireEl("perform-score").addEventListener("change", scoreChanged);
-
     for (let i = 0; i < test.steps.length; i++) {
         if (i === 0) {
             requireEl("perform-step-contents[0]").textContent = test.steps[i].instructions;
@@ -277,15 +275,25 @@ export function populatePerform(): void {
     }
     renderExtensionsForPerform(test);
 
-    const saveResultsButton = requireEl("perform-save");
-    saveResultsButton.addEventListener("click", saveFileButtonClick);
-    const viewResults = requireEl("view-test-results");
-    viewResults.addEventListener('click', viewResultsButtonClicked);
-    const viewSummaryBtn = requireEl("view-summary");
-    viewSummaryBtn.addEventListener('click', viewSummaryButtonClicked);
-
     requireEl("add-issue-btn[0]").addEventListener('click', addIssueButtonClick);
     openTestRun();
+
+    showScreen('perform');
+}
+
+/** Leaves the perform screen for the one it was opened from. */
+export function performBackButtonClicked(e: Event): void {
+    e.preventDefault();
+    showScreen('landing');
+}
+
+/** Wires the perform screen's own controls. Called once at startup. */
+export function addPerformScreenEvents(): void {
+    requireEl("perform-back").addEventListener('click', performBackButtonClicked);
+    requireEl("perform-save").addEventListener("click", saveFileButtonClick);
+    requireEl("view-test-results").addEventListener('click', viewResultsButtonClicked);
+    requireEl("view-summary").addEventListener('click', viewSummaryButtonClicked);
+    requireEl("perform-score").addEventListener("change", scoreChanged);
 }
 
 /** Opens the perform dialog on the test chosen in the list. */

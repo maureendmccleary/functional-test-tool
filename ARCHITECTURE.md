@@ -61,6 +61,21 @@ changed.
   recognition through it, so a copy gets instructions of its own here.
 - **Functional test editor** — one script: its metadata, its assistive
   technologies, and its steps.
+- **Perform** — one run of one script: every step, every extension, an issue
+  list and Add Issue button per step, the score and the summary.
+
+Perform was a modal dialog, and Add Issue, View Results and View Summary all
+open from it, which made those nested modals. Nesting cost real bugs: a message
+went to the live region of whichever dialog was underneath, which the modal on
+top had made inert and no reader could reach, and the dialog re-announced its
+title and contents whenever focus moved inside it. As a screen it leaves each of
+those three as the only modal, opened over a screen, which is the ordinary case.
+It is also what a screen is for: a dialog is an interruption to dismiss, and
+performing a test is where a tester spends most of their time.
+
+Escape does not leave a screen. None of the others offer it either, and Back is
+the way out; a document level Escape handler would have to know whether a dialog
+above it had already claimed the key.
 
 Both the evaluation screen and the editor have a Back. Nothing on either is held
 back until Save — the evaluation is changed in place as it is edited — so Back

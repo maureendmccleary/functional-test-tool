@@ -17,7 +17,8 @@ const SCREENS = {
         // New Step sits outside the form in the markup, so it has to be listed.
         elementIds: ['test-editor-form', 'new-step-btn'],
         headingId: 'test-editor-heading'
-    }
+    },
+    perform: { elementIds: ['perform-screen'], headingId: 'perform-heading' }
 } as const;
 
 export type ScreenName = keyof typeof SCREENS;

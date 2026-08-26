@@ -176,9 +176,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       renumbered; cancelling leaves it in place
 - [ ] Deleting the last extension warns only that its issues will be lost
 
-## 5. Perform a functional test
+## 5. Perform a functional test (a screen, not a dialog)
 
-- [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**
+- [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**:
+      the perform **screen** replaces the landing screen, focus lands on
+      "Perform Functional Test", and there is no dialog to escape from
+- [ ] **Back** returns to the landing screen with the test list intact
+- [ ] **Add Issue**, **View Results** and **View Summary** each open a single
+      dialog over the screen. Closing one returns to the perform screen, not to
+      another dialog
+- [ ] Nothing is announced twice on opening the perform screen, and the reader
+      does not read the whole screen back after focus moves inside it
 - [ ] Every step shows its instructions, its recorded issues, and an **Add Issue**
       button
 - [ ] Assistive Technology reads as **text**, showing NVDA. There is no
@@ -366,8 +374,8 @@ appear on screen, and the two are separate elements now.
       an issue are each heard even though focus moves at the same moment
 - [ ] **Save Evaluation File** puts focus back on that button and then
       announces, without the document title being read first
-- [ ] **Save Functional Test Results** from inside the Perform dialog does the
-      same, returning focus to that button rather than out of the dialog
+- [ ] **Save Functional Test Results** on the perform screen returns focus to
+      **Back** and announces, without reading on into the next button
 - [ ] Cancelling either picker also returns focus to the button, announcing
       nothing
 - [ ] Loading a file lands focus on "Select a Functional Test" and announces the

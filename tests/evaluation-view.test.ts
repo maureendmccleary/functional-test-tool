@@ -21,7 +21,7 @@ const ELEMENT_IDS = [
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save', 'perform-dialog-close'
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save', 'perform-back'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -242,16 +242,14 @@ describe('saving', () => {
         expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
     });
 
-    test('saving results sends focus to the dialog close button', async () => {
+    test('saving results sends focus to Back, not to Save', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('perform-save'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
-        // Saving results sends focus to the dialog's close button, not back to
-        // Save: landing on Save re-announced the dialog and read on into the
-        // next button.
-        expect(documentStub.getElementById('perform-dialog-close')!.focused).toBe(true);
+        // Landing on Save again made a reader read on into the next button.
+        expect(documentStub.getElementById('perform-back')!.focused).toBe(true);
         expect(documentStub.getElementById('perform-save')!.focused).toBe(false);
     });
 

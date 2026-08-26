@@ -18,7 +18,7 @@ import {
     addIssueDialogEvents, confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
-import { performButtonClick } from './ui/perform-view.js';
+import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
 function initialize(): void {
@@ -47,6 +47,7 @@ function initialize(): void {
     requireEl("test-editor-back").addEventListener('click', backButtonClicked);
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
+    addPerformScreenEvents();
     requireEl("new-step-btn").addEventListener('click', newStepButtonClick);
     requireEl("new-extension-btn").addEventListener('click', newExtensionButtonClicked);
 
