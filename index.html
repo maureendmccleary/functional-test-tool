@@ -36,6 +36,16 @@
 </head>
 
 <body>
+  <!--
+    The one live region in the app, and the only element that announces.
+
+    It sits here, outside every screen and every dialog, because it must never
+    be hidden: a live region inside a display:none subtree is not announced, and
+    a screen reader drops it rather than resuming when it reappears. Every other
+    status paragraph is now plain visible text, updated alongside this. See
+    ui/status.ts.
+  -->
+  <div id="app-status" class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
   <form id="evaluation-form">
     <div>
       <h1 id="landing-heading" tabindex="-1">Functional Accessibility Testing Tool</h1>
@@ -62,14 +72,14 @@
         <button id="perform-test" type="button" disabled>Perform</button>
       </div>
       <br><br>
-      <p id="evaluation-msg" role="status" aria-live="assertive"></p>
+      <p id="evaluation-msg" class="status-text"></p>
     </div>
   </form>
   <form id="evaluation-editor-form" class="inactive" name="evaluationEditor">
     <div>
       <h1 id="evaluation-editor-heading" tabindex="-1">Evaluation</h1>
       <br><br>
-      <p id="evaluation-editor-msg" role="status" aria-live="assertive"></p>
+      <p id="evaluation-editor-msg" class="status-text"></p>
       <br><br>
       <div role="group" aria-labelledby="evaluation-details-heading">
         <h2 id="evaluation-details-heading">Evaluation Details</h2>
@@ -104,7 +114,7 @@
     <div role="group" id="test-edit" aria-labelledby="test-header-edit">
       <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
       <br><br>
-      <p id="test-editor-msg" role="status" aria-live="assertive"></p>
+      <p id="test-editor-msg" class="status-text"></p>
       <br><br>
       <h2 id="test-header-edit">Functional Test Information</h2>
       <label for="test-edit-name">Name: </label>
@@ -164,27 +174,29 @@
   </form>
   <button id="new-step-btn" class="inactive">New Step</button>
   <dialog id="new-step-dialog" aria-labelledby="add-step-heading">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+    <br><br>
+    <h1 id="add-step-heading" tabindex="-1">Select Step Number To Add</h1>
     <div class="close-button">
       <button type="button" id="new-step-dialog-close" aria-label="close"><span class="fa fa-times"></span></button>
     </div>
-    <br><br>
-    <h1 id="add-step-heading">Select Step Number To Add</h1>
     <label for="step-number">Step Number</label>
     <select id="step-number"></select>
     <br><br>
     <button id="add-step">Add Step</button>
   </dialog>
   <dialog id="perform-dialog" aria-labelledby="dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="perform-form" name="performForm">
-      <div class="close-button">
-        <button type="button" autofocus id="perform-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
-      </div>
       <button type="button" id="perform-save">Save Functional Test Results</button>
       <button type="button" id="view-test-results">View Results</button>
-      <h2 id="dialog-title">Perform Functional Test</h2>
+      <h2 id="dialog-title" tabindex="-1">Perform Functional Test</h2>
+      <div class="close-button">
+        <button type="button" id="perform-dialog-close" aria-label="close"><span
+            class="fa fa-times"></span></button>
+      </div>
       <br><br>
-      <p id="perform-msg" role="status" aria-live="assertive"></p>
+      <p id="perform-msg" class="status-text"></p>
       <h3>Overview Information: <span id="perform-name"></span></h3>
       <br>
       <p>Goal: <span id="perform-goal"></span></p>
@@ -222,12 +234,13 @@
     </div>
   </dialog>
   <dialog id="view-summary-dialog" aria-labelledby="view-summary-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-summary-" name="viewSummary">
+      <h1 id="view-summary-dialog-title" tabindex="-1">View Summary</h1>
       <div class="close-button">
-        <button type="button" autofocus id="view-summary-dialog-close" aria-label="close"><span
+        <button type="button" id="view-summary-dialog-close" aria-label="close"><span
             class="fa fa-times"></span></button>
       </div>
-      <h1 id="view-summary-dialog-title">View Summary</h1>
       <br><br>
       <p>The following is a list of the most important issues encountered while testing this Functional Test.</p>
       <br><br>
@@ -239,12 +252,13 @@
     </form>
   </dialog>
   <dialog id="view-overall-comments-dialog" aria-labelledby="view-overall-comments-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-overall-comments-form" name="viewOverallComments">
+      <h1 id="view-overall-comments-dialog-title" tabindex="-1">View Overall Comments</h1>
       <div class="close-button">
-        <button type="button" autofocus id="view-overall-comments-dialog-close" aria-label="close"><span
+        <button type="button" id="view-overall-comments-dialog-close" aria-label="close"><span
             class="fa fa-times"></span></button>
       </div>
-      <h1 id="view-overall-comments-dialog-title">View Overall Comments</h1>
       <br><br>
       <p>The following is a list of the most important issues encountered while testing the evaluation.</p>
       <br><br>
@@ -256,14 +270,15 @@
     </form>
   </dialog>
   <dialog id="add-issue-dialog" aria-labelledby="add-issue-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="add-issue-btn-dialog-form" name="ucAddIssueDialog">
+      <h2 id="add-issue-dialog-title" tabindex="-1"></h2>
       <div class="close-button">
-        <button type="button" autofocus id="add-issue-dialog-close" aria-label="close"><span
+        <button type="button" id="add-issue-dialog-close" aria-label="close"><span
             class="fa fa-times"></span></button>
       </div>
-      <h2 id="add-issue-dialog-title"></h2>
       <br>
-      <p id="add-issue-msg" role="status" aria-live="assertive"></p>
+      <p id="add-issue-msg" class="status-text"></p>
       <br><br>
       <h3 id="add-issue-step-label"></h3>
       <p id="add-issue-step"></p>
@@ -277,6 +292,8 @@
           <th scope="col">Action</th>
         </tr>
       </table>
+      <br><br>
+      <button id="add-issue-dialog-new-issue" type="button">New Issue</button>
       <br><br>
       <div class="inactive" id="add-issue-controls">
         <label id="add-issue-description-label" for="add-issue-description">Description</label>
@@ -292,34 +309,35 @@
       </div>
       <br>
       <br>
-      <button id="add-issue-dialog-new-issue" type="button">New Issue</button>
       <button class="inactive" id="add-issue-dialog-save" type="button">Save Issue</button>
     </form>
   </dialog>
   <dialog id="view-results-dialog" aria-labelledby="view-results-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="view-results-form" name="viewResults">
+      <br>
+      <h1 id="view-results-dialog-title" tabindex="-1">Functional Test Results</h1>
       <div class="close-button">
-        <button type="button" autofocus id="view-results-dialog-close" aria-label="close"><span
+        <button type="button" id="view-results-dialog-close" aria-label="close"><span
             class="fa fa-times"></span></button>
       </div>
-      <br>
-      <h1 id="view-results-dialog-title">Functional Test Results</h1>
       <br><br>
       <div id="test-results-issues"></div>
     </form>
   </dialog>
   <dialog id="eval-view-results-dialog" aria-labelledby="eval-view-results-dialog-title">
+    <div class="app-status visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
     <form id="eval-view-results-form" name="evaluationViewResults">
       <div>
-        <div class="close-button">
-          <button type="button" autofocus id="eval-view-results-dialog-close" aria-label="close"><span
-              class="fa fa-times"></span></button>
-        </div>
         <button id="view-overall-comments" type="button">View Overall Comments</button>
         <button id="generate-pdf" type="button">Generate Report (.docx)</button>
         <br>
-        <p id="generate-pdf-status" role="status" aria-live="polite"></p>
-        <h1 id="eval-view-results-dialog-title">Evaluation Results</h1>
+        <p id="generate-pdf-status" class="status-text"></p>
+        <h1 id="eval-view-results-dialog-title" tabindex="-1">Evaluation Results</h1>
+        <div class="close-button">
+          <button type="button" id="eval-view-results-dialog-close" aria-label="close"><span
+              class="fa fa-times"></span></button>
+        </div>
         <br><br>
         <h2>Use Case Results Summary</h2>
         <h3>Scorecard</h3>

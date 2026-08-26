@@ -66,6 +66,23 @@ export interface DocumentStub {
     elements: Map<string, ElementStub>;
     getElementById(id: string): ElementStub | null;
     createElement(tagName: string): ElementStub;
+    querySelector(selector: string): ElementStub | null;
+}
+
+/**
+ * Answers only the queries the modules actually make, by id or by the one
+ * class the status regions carry. Dialogs are not modelled, so a query for an
+ * open one is answered with null -- which is the page's own state in these
+ * tests, and the branch the code then takes.
+ */
+function matchSelector(elements: Map<string, ElementStub>, selector: string): ElementStub | null {
+    if (selector.startsWith('#')) {
+        return elements.get(selector.slice(1)) ?? null;
+    }
+    if (selector === '.app-status') {
+        return elements.get('app-status') ?? null;
+    }
+    return null;
 }
 
 /**
@@ -83,6 +100,9 @@ export function installDocumentStub(ids: string[]): DocumentStub {
         },
         createElement(tagName) {
             return createElementStub(tagName);
+        },
+        querySelector(selector) {
+            return matchSelector(elements, selector);
         }
     };
     (globalThis as unknown as { document: unknown }).document = documentStub;

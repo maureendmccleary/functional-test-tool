@@ -147,8 +147,8 @@ export function deleteExtensionButtonClicked(e: Event): void {
     test.extensions.splice(index, 1);
     markEvaluationChanged();
     redrawExtensions(test);
-    showStatusMessage("test-editor-msg", `Extension ${index + 1} was deleted.`);
     requireEl("new-extension-btn").focus();
+    showStatusMessage("test-editor-msg", `Extension ${index + 1} was deleted.`);
 }
 
 /** Appends a blank extension and puts focus in it. */
@@ -186,14 +186,16 @@ export function deleteStepButtonClicked(e: Event): void {
     test.steps.splice(i, 1);
     markEvaluationChanged();
     redrawSteps(test);
-    requireEl("test-editor-msg").textContent = "";
-    requireEl("test-editor-msg").textContent = `Step ${(i + 1)} was successfully deleted!`;
-    if (test.steps.length <= i) {
-        requireEl(getStepId(test.steps.length - 1)).focus();
+
+    // Focus before announcing: the step that had focus has just been removed,
+    // and a screen reader discards a pending message when focus moves. The
+    // last step deleted leaves nothing to focus, so New Step takes it.
+    if (test.steps.length === 0) {
+        requireEl("new-step-btn").focus();
+    } else {
+        requireEl(getStepId(Math.min(i, test.steps.length - 1))).focus();
     }
-    else {
-        requireEl(getStepId(i)).focus();
-    }
+    showStatusMessage("test-editor-msg", `Step ${(i + 1)} was successfully deleted!`);
 }
 
 /**
@@ -548,6 +550,7 @@ export function newStepButtonClick(e: Event): void {
     const test = getCurrentTest();
     const newStepCloseBtn = requireEl("new-step-dialog-close");
     newStepDialog.showModal();
+    requireEl('add-step-heading').focus();
     newStepCloseBtn.addEventListener("click", (e) => {
         e.preventDefault();
         newStepDialog.close();

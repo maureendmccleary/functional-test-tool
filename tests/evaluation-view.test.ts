@@ -21,7 +21,7 @@ const ELEMENT_IDS = [
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name'
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -103,6 +103,21 @@ describe('loading', () => {
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('Evaluation loaded successfully. 1 functional test.');
+    });
+
+    test('the announcement reaches the live region, not just the paragraph', async () => {
+        // The paragraph lives inside a screen that gets hidden, so it cannot be
+        // what announces. app-status is never hidden.
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            name: 'Q3 2026 Accessibility Evaluation',
+            evalUCs: [{ name: 'One', steps: [] }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(documentStub.getElementById('app-status')!.textContent)
+            .toBe('Q3 2026 Accessibility Evaluation loaded successfully. 1 functional test.');
     });
 
     test('fills in the workspace, asset and evaluation name', async () => {

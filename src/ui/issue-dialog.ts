@@ -6,6 +6,7 @@ import {
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
+import { showStatusMessage } from './status.js';
 import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
 import { getIssueListId, getStepNumber, isExtensionElementId } from './step-ids.js';
 
@@ -198,10 +199,13 @@ export function saveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
+    // Focus, then announce. Hiding the Save button drops focus to the body, and
+    // a screen reader treats that as a context change and discards a pending
+    // announcement. JAWS did; NVDA happened not to.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
 }
 
 /** Validates and overwrites the issue currently being edited. */
@@ -223,15 +227,20 @@ export function editSaveIssueButtonClick(e: Event): void {
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
     markEvaluationChanged();
     updateIssueList();
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Issue successfully saved!";
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
+    // Focus, then announce. Hiding the Save button drops focus to the body, and
+    // a screen reader treats that as a context change and discards a pending
+    // announcement. JAWS did; NVDA happened not to.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", "Issue successfully saved!", 0);
 }
 
 /** Loads the clicked row into the fields for editing. */
 export function editIssue(e: Event): void {
-    const button = e.target as HTMLElement;
+    // currentTarget for the same reason as deleteIssue: the icon span is what a
+    // mouse click hits.
+    const button = e.currentTarget as HTMLElement;
     let row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     setCurrentIssue(row.rowIndex);
@@ -243,19 +252,19 @@ export function editIssue(e: Event): void {
     requireEl<HTMLInputElement>("add-issue-description").value = row.cells[1].innerText;
     requireEl<HTMLInputElement>("add-issue-findingURL").value = row.cells[2].innerText;
     requireEl<HTMLSelectElement>("add-issue-score").value = row.cells[3].innerText;
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Editing issue " + getCurrentIssue();
     requireEl("add-issue-description").focus();
+    showStatusMessage("add-issue-msg", "Editing issue " + getCurrentIssue(), 0);
 }
 
 /** Removes the clicked row and its issue, renumbering the rows after it. */
 export function deleteIssue(e: Event): void {
-    const button = e.target as HTMLElement;
+    // currentTarget, not target: the button holds a span for its icon, and a
+    // mouse click lands on the span. Walking up from there reaches the cell
+    // rather than the row, and the handler threw before it announced anything.
+    const button = e.currentTarget as HTMLElement;
     const row = button.parentNode!.parentNode as HTMLTableRowElement;
     const issueTable = row.parentNode!.parentNode as HTMLTableElement;
     const rowIndex = row.rowIndex;
-    requireEl("add-issue-msg").textContent = "";
-    requireEl("add-issue-msg").textContent = "Deleting issue " + rowIndex;
     issueTable.deleteRow(rowIndex);
     setCurrentIssue(getCurrentRecord().issues.length);
     for (let i = 1; i < issueTable.rows.length; i++) {
@@ -264,6 +273,10 @@ export function deleteIssue(e: Event): void {
     getCurrentRecord().issues.splice(rowIndex - 1, 1);
     markEvaluationChanged();
     updateIssueList();
+    // The row just removed held the button that had focus, so focus has to land
+    // somewhere before the message, or it is discarded with the old context.
+    requireEl("add-issue-dialog-new-issue").focus();
+    showStatusMessage("add-issue-msg", `Issue ${rowIndex} was deleted.`, 0);
 }
 
 /** Switches the dialog into add mode, pointing Save at the add handler. */
@@ -275,18 +288,33 @@ export function newIssueButtonClick(): void {
 }
 
 /** Opens the issue dialog for the step whose button was activated. */
+/**
+ * Closes the dialog from its own X button, asking first if an issue is part
+ * entered.
+ *
+ * Registered once at startup, not each time the dialog opens. As an inline
+ * function inside the open handler it was a fresh closure every time, so the
+ * browser kept all of them: ten opens meant ten handlers, each running the
+ * discard prompt in turn.
+ */
+export function addIssueDialogCloseClicked(e: Event): void {
+    e.preventDefault();
+    if (!confirmDiscardUnsavedIssueEntry()) {
+        return;
+    }
+    requireEl<HTMLDialogElement>("add-issue-dialog").close();
+}
+
+/** Wires the issue dialog's own controls. Called once at startup. */
+export function addIssueDialogEvents(): void {
+    requireEl("add-issue-dialog-close").addEventListener("click", addIssueDialogCloseClicked);
+    requireEl("add-issue-dialog-new-issue").addEventListener("click", newIssueButtonClick);
+}
+
 export function addIssueButtonClick(e: Event): void {
     e.preventDefault();
     const addIssueDialog = requireEl<HTMLDialogElement>("add-issue-dialog");
-    const addIssueClose = requireEl("add-issue-dialog-close");
     addIssueDialog.showModal();
-    addIssueClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!confirmDiscardUnsavedIssueEntry()) {
-            return;
-        }
-        addIssueDialog.close();
-    });
     const heading = requireEl("add-issue-dialog-title");
     requireEl("add-issue-msg").textContent = "";
     // Which button was pressed decides both the index and the list it indexes,
@@ -308,11 +336,13 @@ export function addIssueButtonClick(e: Event): void {
     requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);
     updateIssueTable();
-    const newIssue = requireEl("add-issue-dialog-new-issue");
-    newIssue.addEventListener("click", newIssueButtonClick);
     if (getCurrentRecord().issues.length === 0) {
         newIssueButtonClick();
+        return;
     }
+    // On the heading, which names the step, rather than on the close button:
+    // "close" is not what the tester came here to hear.
+    heading.focus();
 }
 
 // Runs whenever the add-issue dialog closes (X button, Escape key, or programmatic close), so the

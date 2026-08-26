@@ -14,7 +14,9 @@ import {
 import {
     addEvaluationDetailEvents, loadEvalButtonClicked, saveFileButtonClick
 } from './ui/evaluation-view.js';
-import { confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed } from './ui/issue-dialog.js';
+import {
+    addIssueDialogEvents, confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed
+} from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { performButtonClick } from './ui/perform-view.js';
 
@@ -65,6 +67,7 @@ function initialize(): void {
         });
     }
 
+    addIssueDialogEvents();
     const addIssueDialog = requireEl("add-issue-dialog");
     addIssueDialog.addEventListener('close', onAddIssueDialogClosed);
     addIssueDialog.addEventListener('cancel', (e) => {

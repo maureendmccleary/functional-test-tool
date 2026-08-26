@@ -202,8 +202,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 
 ## 6. Issues
 
+- [ ] Every dialog opens announcing its own heading, never "close": New Step,
+      Perform, Add Issue, View Summary, View Results, Evaluation Results and
+      View Overall Comments
+- [ ] In each, the close button is reached straight after the heading, and
+      **Escape** still closes
 - [ ] **Add Issue** on a step opens the issue dialog with that step's issues in
-      the table
+      the table, and focus lands on the dialog's heading, which names the step.
+      A step with no issues yet opens straight into the Description field
+- [ ] Tab order runs forwards: **New Issue**, then Description, Score, Finding
+      URL, then **Save Issue**. Pressing New Issue moves focus down the dialog,
+      never back up it
 - [ ] Saving with an empty description shows "Description is required." and moves
       focus to the description field
 - [ ] Saving with the score left on "Not Rated (-1)" shows "Score is required."
@@ -339,6 +348,28 @@ dialog and the report.
       any point in this run. The report needs the docx library from unpkg and
       downloads through a blob URL, so generate one and watch the console while
       it runs
+
+## 8b. Announcements
+
+With a screen reader running. Every message below has to be *heard*, not just
+appear on screen, and the two are separate elements now.
+
+- [ ] Loading a file announces the evaluation by name
+- [ ] **Save** in the functional test editor announces what it created
+- [ ] Deleting a step, and deleting an extension, are each announced
+- [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Deleting an issue is announced, and focus lands on **New Issue** rather
+      than being lost to the page
+- [ ] Editing an issue is announced, with focus in the Description field
+- [ ] Delete and edit an issue **with the mouse**, clicking the small trash and
+      pencil icons themselves: the click lands on the icon rather than the
+      button, which used to throw before anything was announced
+- [ ] Deleting the only step of a test focuses **New Step** instead of throwing
+- [ ] Check the issue dialog messages in **JAWS as well as NVDA**: these were
+      the ones JAWS dropped when focus moved after the announcement
+- [ ] Add Test, then Back, then Edit Evaluation: messages are still announced
+      after moving between screens
+- [ ] Generating a report announces its progress and its result
 
 ## 9. Save and diff
 

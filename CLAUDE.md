@@ -85,6 +85,14 @@ tested commit.
 
 ## Constraints worth knowing before changing things
 
+- **Wire a dialog's own controls once at startup.** An inline handler registered in the
+  open path is a new closure every time and they accumulate; a named one is deduplicated.
+- **A dialog opens on its heading, not its close button.** Give a new one a heading with
+  `tabindex="-1"`, a `.app-status` region, and the close button straight after the heading.
+- **Status is announced from a `.app-status` region**, one on the page and one in every
+  dialog: a live region inside a hidden screen announces nothing, and a modal dialog makes
+  everything outside it inert. Report through `showStatusMessage`; never add `aria-live` to a
+  status paragraph, and give any new dialog its own region.
 - **A saved evaluation file is untrusted input.** Never assign to `innerHTML`; ESLint
   refuses it. Text goes in with `textContent`, structure is built as elements, and a URL
   from a file goes through `safeLinkUrl` before it reaches an `href`.

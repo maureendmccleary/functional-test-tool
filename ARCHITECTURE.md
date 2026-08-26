@@ -192,6 +192,68 @@ Pages does not let us set.
 The view modules set classes rather than style attributes for the same reason:
 inline styles would have forced that allowance even in the built output.
 
+## Status messages
+
+Showing a message and announcing it are two jobs, done by two elements.
+
+The visible paragraph belongs beside the control it reports on, which puts it
+inside a screen or a dialog, and those get hidden. A live region cannot live
+there: inside a `display: none` subtree it announces nothing, and a screen
+reader drops it rather than picking it up again when the screen returns. That is
+exactly what happened when the screens were introduced -- `evaluation-msg` had
+been permanently visible, and hiding the landing screen silently stopped every
+announcement it made.
+
+So `#app-status` sits outside every screen and dialog, is never hidden, and is
+what announces on the page. **Every dialog carries one of its own too.** A modal
+dialog puts itself in the browser's top layer and makes everything outside it
+inert, which takes the page's region out of the accessibility tree for as long
+as the dialog is open -- so a message raised from the issue dialog, announced
+from the page's region, is heard by nobody. `announce` sends the message to
+whichever region is reachable: the open dialog's, or the page's. It is off screen via
+`.visually-hidden`, which keeps it in the accessibility tree; `display: none`
+would defeat the point. `ui/status.ts` writes both, and `showStatusMessage`
+announces even when the paragraph is missing.
+
+A dialog's own controls are wired **once at startup**, not each time it opens.
+Registering an inline function in the open handler adds a fresh closure every
+time, and the browser keeps all of them: ten opens meant ten handlers on the
+issue dialog's close button, each running the discard prompt in turn. A named
+function passed repeatedly is deduplicated by `addEventListener` and is safe;
+an inline one never is.
+
+**Every dialog opens on its heading**, which is what names it, and its close
+button comes straight after. The close button used to be first in the source and
+carry `autofocus`, so opening any dialog announced "close" before saying what
+the dialog was for. It is positioned absolutely, so its place in the source
+never affected where it appears; it only ever affected what was read first.
+Headings carry `tabindex="-1"` so they can take focus.
+
+The issue dialog's controls are ordered so that reading forwards matches doing:
+New Issue, then the fields it reveals, then Save Issue. The button used to sit
+*after* the fields, so pressing it threw focus backwards up the dialog.
+
+The gap before the message lands is also what gives a reader time to finish
+speaking a focus change. These handlers move focus and then announce, and a
+reader busy with the focus change drops a live region update that arrives while
+it is speaking.
+
+**Settle focus before announcing, never after.** A handler that removes or
+hides the element holding focus drops focus to the body, and a screen reader
+treats that as a context change and discards a pending message. Saving an issue
+hides the Save button that was just pressed; deleting one removes the row the
+delete button was in; deleting a step removes the step. Each announced first and
+moved focus afterwards, and each was silent in JAWS while NVDA happened to be
+forgiving enough to read it anyway. Move focus somewhere deliberate, then call
+`showStatusMessage` last.
+
+Two things it does deliberately. It never touches `aria-live` at run time: the
+attribute belongs on the region before the content changes, and the old code set
+it afterwards. And it empties the region before putting the message in, one task
+later, because a live region announces a *change* -- setting the same text twice
+in a row is no change at all, which is why saving two issues in a row used to
+announce only the first.
+
 ## Failure handling
 
 The File System Access API is Chromium-only and both pickers reject with an
