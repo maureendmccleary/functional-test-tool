@@ -309,6 +309,11 @@ moved focus afterwards, and each was silent in JAWS while NVDA happened to be
 forgiving enough to read it anyway. Move focus somewhere deliberate, then call
 `showStatusMessage` last.
 
+**The region is emptied again once the message has been spoken.** A live region
+keeps whatever it last said, and that text stays in the accessibility tree as
+ordinary content: a save announced on the perform screen was still there to be
+read on returning to the landing screen, long after it stopped being true.
+
 Two things it does deliberately. It never touches `aria-live` at run time: the
 attribute belongs on the region before the content changes, and the old code set
 it afterwards. And it empties the region before putting the message in, one task

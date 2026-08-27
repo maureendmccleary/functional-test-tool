@@ -138,7 +138,7 @@ describe('loading', () => {
         });
 
         await loadEvalButtonClicked(clickEvent());
-        vi.runAllTimers();
+        vi.advanceTimersByTime(500);
 
         expect(documentStub.getElementById('app-status')!.textContent)
             .toBe('Q3 2026 Accessibility Evaluation loaded successfully. 1 functional test.');

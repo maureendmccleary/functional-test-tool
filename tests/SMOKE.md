@@ -397,6 +397,8 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Save on the perform screen, then go **Back**: the save message is not read
+      out a second time on the landing screen, nor found there by browsing
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
 - [ ] **Save Evaluation File** puts focus back on that button and then

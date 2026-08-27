@@ -12,6 +12,9 @@ import {
 
 const ELEMENT_IDS = ['app-status', 'test-editor-msg'];
 
+/** Long enough for the message to land, short of the delay that empties it. */
+const SPOKEN_MS = 400;
+
 let documentStub: DocumentStub;
 
 beforeEach(() => {
@@ -31,7 +34,7 @@ const paragraph = () => documentStub.getElementById('test-editor-msg')!;
 describe('announce', () => {
     test('puts the message in the live region', () => {
         announce('Saved as 01 Place a hold - NVDA.');
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
         expect(liveRegion().textContent).toBe('Saved as 01 Place a hold - NVDA.');
     });
 
@@ -39,12 +42,24 @@ describe('announce', () => {
         // A live region announces a change. Without the gap, setting the same
         // message twice is no change at all and the second is never heard.
         announce('Issue successfully saved!');
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
         announce('Issue successfully saved!');
         expect(liveRegion().textContent).toBe('');
 
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
         expect(liveRegion().textContent).toBe('Issue successfully saved!');
+    });
+
+    test('empties the region once it has been spoken', () => {
+        // A live region keeps its last message, and it reads as ordinary page
+        // content afterwards: a save announced on one screen was still there to
+        // be found on the next.
+        announce('Functional Test data saved!');
+        vi.advanceTimersByTime(SPOKEN_MS);
+        expect(liveRegion().textContent).toBe('Functional Test data saved!');
+
+        vi.runAllTimers();
+        expect(liveRegion().textContent).toBe('');
     });
 
     test('says nothing when the region is missing rather than throwing', () => {
@@ -59,14 +74,14 @@ describe('showStatusMessage', () => {
         showStatusMessage('test-editor-msg', 'Extension 1 was deleted.', 0);
         expect(paragraph().textContent).toBe('Extension 1 was deleted.');
 
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
         expect(liveRegion().textContent).toBe('Extension 1 was deleted.');
     });
 
     test('announces even when the paragraph is missing', () => {
         // The paragraph is optional; the reader hearing it is not.
         showStatusMessage('no-such-element', 'Evaluation ready to perform.', 0);
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
         expect(liveRegion().textContent).toBe('Evaluation ready to perform.');
     });
 
@@ -120,7 +135,7 @@ describe('choosing which region to announce from', () => {
         const { pageRegion, dialogRegion } = withDialog(true);
 
         announce('Issue successfully saved!');
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
 
         expect(dialogRegion.textContent).toBe('Issue successfully saved!');
         expect(pageRegion.textContent).toBe('');
@@ -130,7 +145,7 @@ describe('choosing which region to announce from', () => {
         const { pageRegion, dialogRegion } = withDialog(false);
 
         announce('Evaluation loaded successfully.');
-        vi.runAllTimers();
+        vi.advanceTimersByTime(SPOKEN_MS);
 
         expect(pageRegion.textContent).toBe('Evaluation loaded successfully.');
         expect(dialogRegion.textContent).toBe('');
