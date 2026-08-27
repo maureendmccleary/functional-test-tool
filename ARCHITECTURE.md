@@ -444,6 +444,14 @@ comments rather than replacing, so a tester's own wording is never thrown away.
 It writes `overallRating` and `significantIssues`, which is what Significant
 Issues and Assistive Technology Summaries both render.
 
+**The report falls back to what the evaluation already knows.** A technology
+whose dialog was never opened still gets a rating and a list of issues, computed
+the same way the dialog would have offered them: the worst score it reached, and
+its three most severe issues. `effectiveSummaryFor` is the one place that rule
+lives, and the results dialog, the report and the scorecard's overall figure all
+read through it. A tester who performed every test but never wrote a summary
+should not produce a report that says "Not rated" and "No issues."
+
 One loose end remains: `Evaluation.comments`, which the old evaluation wide
 version of that dialog wrote, is displayed by nothing and now written by
 nothing. It is left in the model and in saved files rather than dropped, so text

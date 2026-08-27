@@ -1,6 +1,6 @@
 import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
 import {
-    buildScorecard, findSummary, groupRunsByAssistiveTechnology, runScore, stepScore
+    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
@@ -225,12 +225,12 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(new Paragraph({ text: 'No issues.' }));
     }
     groups.forEach((group) => {
-        const summary = findSummary(evaluation, group.assistiveTechnology);
+        const summary = effectiveSummaryFor(evaluation, group.assistiveTechnology);
         children.push(text(
-            `${group.assistiveTechnology} Overall Rating: ${formatOverallRating(summary?.overallRating ?? -1)}`,
+            `${group.assistiveTechnology} Overall Rating: ${formatOverallRating(summary.overallRating)}`,
             { bold: true }
         ));
-        bullets(summary?.significantIssues).forEach((paragraph) => children.push(paragraph));
+        bullets(summary.significantIssues).forEach((paragraph) => children.push(paragraph));
     });
 
     // Scoring key.

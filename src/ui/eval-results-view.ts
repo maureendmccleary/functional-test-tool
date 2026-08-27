@@ -1,5 +1,5 @@
 import {
-    buildScorecard, findSummary, groupRunsByAssistiveTechnology
+    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
@@ -30,11 +30,12 @@ export function renderAssistiveTechnologySummaries(): void {
         return;
     }
 
-    summaries.forEach((summary) => {
+    summaries.forEach((stored) => {
+        const summary = effectiveSummaryFor(evaluation, stored.assistiveTechnology);
         const block = document.createElement("div");
 
         const atHeading = document.createElement("h3");
-        atHeading.textContent = summary.assistiveTechnology;
+        atHeading.textContent = stored.assistiveTechnology;
         block.appendChild(atHeading);
 
         const rating = document.createElement("p");
@@ -94,12 +95,12 @@ function renderSignificantIssues(): void {
 
     const nodes: Node[] = [];
     groups.forEach((group) => {
-        const summary = findSummary(evaluation, group.assistiveTechnology);
+        const summary = effectiveSummaryFor(evaluation, group.assistiveTechnology);
         const rating = document.createElement("p");
         rating.textContent = `${group.assistiveTechnology} Overall Rating: `
-            + formatOverallRating(summary?.overallRating ?? -1);
+            + formatOverallRating(summary.overallRating);
         nodes.push(rating);
-        nodes.push(createUnorderedList(summary?.significantIssues, "No issues."));
+        nodes.push(createUnorderedList(summary.significantIssues, "No issues."));
     });
     replaceContents("eval-results-summary", nodes);
 }

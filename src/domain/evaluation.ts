@@ -12,6 +12,9 @@ import { isPerformed } from './test-run.js';
  * single test or run can answer on its own.
  */
 
+/** How many issues stand in for a summary nobody has written. */
+const TOP_ISSUE_COUNT = 3;
+
 /** The lowest and highest score a run can be given. */
 const LOWEST_SCORE = 1;
 const HIGHEST_SCORE = 5;
@@ -195,6 +198,28 @@ export function findSummary(
 }
 
 /**
+ * The rating and issues the report shows for one assistive technology.
+ *
+ * The tester's own where they have given them, and otherwise the same defaults
+ * their dialog would have offered: the worst score that technology reached, and
+ * its three most severe issues. A tester who never opened the dialog has still
+ * performed the tests, and the report knowing what happened should not depend
+ * on their having typed it out again.
+ */
+export function effectiveSummaryFor(
+    evaluation: Evaluation, assistiveTechnology: string
+): { overallRating: number; significantIssues: string[] } {
+    const stored = findSummary(evaluation, assistiveTechnology);
+    const rating = stored && stored.overallRating >= LOWEST_SCORE
+        ? stored.overallRating
+        : worstScoreFor(evaluation, assistiveTechnology);
+    const issues = stored && stored.significantIssues.length > 0
+        ? stored.significantIssues
+        : topIssuesFor(evaluation, assistiveTechnology, TOP_ISSUE_COUNT);
+    return { overallRating: rating, significantIssues: issues };
+}
+
+/**
  * Counts every performed run by score and averages the per-AT overall ratings.
  *
  * Runs nobody has scored yet are left out entirely rather than counted at their
@@ -219,7 +244,10 @@ export function buildScorecard(evaluation: Evaluation): Scorecard {
         });
     });
 
-    const ratings = (evaluation.assistiveTechnologySummaries || [])
+    // Effective ratings, so a technology the tester never wrote up still counts
+    // at the worst score it reached rather than dropping out of the average.
+    const ratings = collectAssistiveTechnologies(evaluation.tests || [])
+        .map((assistiveTechnology) => effectiveSummaryFor(evaluation, assistiveTechnology))
         .map((summary) => summary.overallRating)
         .filter((rating) => typeof rating === 'number' && rating >= LOWEST_SCORE);
     const overallRating = ratings.length > 0

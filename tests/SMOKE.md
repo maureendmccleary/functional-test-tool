@@ -278,6 +278,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       back as saved rather than being recomputed
 - [ ] **View Evaluation Results**: Significant Issues shows that rating and
       those comments for that technology
+- [ ] A technology whose overall comments were **never opened** still shows a
+      rating and issues there, being the worst score it reached and its three
+      most severe issues, rather than "Not rated" and "No issues."
+- [ ] Saving a summary for it and reopening the results shows what was saved
+      instead
 
 ## 8. Evaluation results and report
 
