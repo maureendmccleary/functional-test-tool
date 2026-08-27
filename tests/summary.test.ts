@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
 import {
-    SUMMARY_BANNERS, buildOverallCommentsText, buildSummaryText, splitSummaryComments
+    SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
+    splitSummaryComments
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -154,5 +155,27 @@ describe('buildOverallCommentsText', () => {
             score: 0
         } satisfies Evaluation;
         expect(buildOverallCommentsText(evaluation)).toBe('01 Empty\n\nNo issues.\n\n');
+    });
+});
+
+describe('buildOverallCommentsTextFor', () => {
+    test('covers one technology and leaves the others out', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        const text = buildOverallCommentsTextFor(evaluation, 'JAWS');
+
+        expect(text).toContain('01 Search the catalogue and place a hold - JAWS');
+        expect(text).not.toContain('- NVDA');
+    });
+
+    test('says "No issues." for a test with nothing written about it', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        const text = buildOverallCommentsTextFor(evaluation, 'NVDA');
+
+        expect(text).toContain('02 Renew a borrowed item - NVDA\n\nNo issues.');
+    });
+
+    test('is empty for a technology the evaluation does not use', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        expect(buildOverallCommentsTextFor(evaluation, 'Orca')).toBe('');
     });
 });

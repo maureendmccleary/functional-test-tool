@@ -176,9 +176,24 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       renumbered; cancelling leaves it in place
 - [ ] Deleting the last extension warns only that its issues will be lost
 
-## 5. Perform a functional test
+## 5. Perform a functional test (a screen, not a dialog)
 
-- [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**
+- [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**:
+      the perform **screen** replaces the landing screen, focus lands on
+      "Perform Functional Test", and there is no dialog to escape from
+- [ ] **Back** returns to the landing screen with the test list intact, and the
+      earlier "loaded successfully" message is **not** read out again
+- [ ] The page title follows the screen: "Perform Functional Test", "Evaluation",
+      "Functional Test Editor", and the app's name on the landing screen. Ask the
+      reader for the title on each
+- [ ] Opening a dialog titles the page for it, including "Add Issue Step 3" for
+      the step it was opened on, and closing it puts the screen's title back
+      whether closed by its button or by Escape
+- [ ] **Add Issue**, **View Results** and **View Summary** each open a single
+      dialog over the screen. Closing one returns to the perform screen, not to
+      another dialog
+- [ ] Nothing is announced twice on opening the perform screen, and the reader
+      does not read the whole screen back after focus moves inside it
 - [ ] Every step shows its instructions, its recorded issues, and an **Add Issue**
       button
 - [ ] Assistive Technology reads as **text**, showing NVDA. There is no
@@ -247,6 +262,28 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       "No Issues" entry
 - [ ] **View Results** shows the results table with the issues grouped by severity
 
+## 7a. Overall comments for an assistive technology
+
+- [ ] Perform a test that is **not** the last one for its technology: there is
+      no **View Overall Comments** button
+- [ ] Perform the last test for that technology: the button is there
+- [ ] Activating it opens a dialog titled "NVDA Overall comments" followed by
+      the evaluation's name, and the page title says the same
+- [ ] The rating starts at the **worst** score any of that technology's tests
+      reached, and the box holds the three most severe issues found with it
+- [ ] **Generate Overall Comments** appends that technology's per test comments
+      below whatever is already written, keeping the tester's own wording, and
+      lists only that technology's tests
+- [ ] Change the rating, edit the text, **Save**, close and reopen: both come
+      back as saved rather than being recomputed
+- [ ] **View Evaluation Results**: Significant Issues shows that rating and
+      those comments for that technology
+- [ ] A technology whose overall comments were **never opened** still shows a
+      rating and issues there, being the worst score it reached and its three
+      most severe issues, rather than "Not rated" and "No issues."
+- [ ] Saving a summary for it and reopening the results shows what was saved
+      instead
+
 ## 8. Evaluation results and report
 
 - [ ] **View Evaluation Results** opens the results dialog. Its sections are, in
@@ -266,12 +303,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(these comments are no longer displayed in the dialog or the report;
       see the note in `../ARCHITECTURE.md`)*
 - [ ] The **Assistive Technology Summaries** area shows one block per assistive
-      technology in the evaluation, each with a rating select and an issues
-      textarea
-- [ ] Editing a rating or issues there and reopening the dialog updates the
-      Significant Issues section and the Scorecard's Overall Rating
-- [ ] Set a rating and type two paragraphs of significant issues, close the
-      dialog, reopen it: both come back
+      technology in the evaluation, each with its rating and its comments as
+      text, and no controls for changing them
+- [ ] Those values match what was saved from the perform screen, and the
+      Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
       <br>*(needs network access -- `docx` loads from unpkg)*
 
@@ -362,12 +397,14 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
+- [ ] Save on the perform screen, then go **Back**: the save message is not read
+      out a second time on the landing screen, nor found there by browsing
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
 - [ ] **Save Evaluation File** puts focus back on that button and then
       announces, without the document title being read first
-- [ ] **Save Functional Test Results** from inside the Perform dialog does the
-      same, returning focus to that button rather than out of the dialog
+- [ ] **Save Functional Test Results** on the perform screen returns focus to
+      **Back** and announces, without reading on into the next button
 - [ ] Cancelling either picker also returns focus to the button, announcing
       nothing
 - [ ] Loading a file lands focus on "Select a Functional Test" and announces the
@@ -388,7 +425,14 @@ appear on screen, and the two are separate elements now.
 
 ## 9. Save and diff
 
-- [ ] **Save Evaluation File** over `/tmp/smoke.json`
+- [ ] The **first** save asks where to put the file; every save after it writes
+      straight there with no dialog, and says so at once
+- [ ] **Save Functional Test Results** on the perform screen, twice: the second
+      does not open a dialog
+- [ ] Load a different evaluation, then save: it asks again rather than writing
+      over the file the previous one came from
+- [ ] **New Evaluation**, then save: it asks again for the same reason
+- [ ] **Save Evaluation File** over `C:\Users\momcc\smoke.json`
 - [ ] With no edits made in this session, the saved file matches the golden:
 
 ```bash

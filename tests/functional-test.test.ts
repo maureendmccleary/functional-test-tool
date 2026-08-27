@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 import type { TestRun, FunctionalTest } from '../src/types.js';
 import {
     DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, buildTestReport, emptyFunctionalTest,
-    getTestComments, nextTestNumber, splitByAssistiveTechnology, testAssistiveTechnology,
-    testDisplayName
+    getTestComments, isLastTestForItsTechnology, nextTestNumber, splitByAssistiveTechnology,
+    testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
 import { emptyTestRun, ensureTestRunShape, isPerformed } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -452,5 +452,28 @@ describe('getTestComments', () => {
         // The first script was run with two assistive technologies, so loading
         // it yields two scripts, each holding the comments of its own run.
         expect(evaluation.tests.map((t) => getTestComments(t).length)).toEqual([2, 1, 0, 2]);
+    });
+});
+
+describe('isLastTestForItsTechnology', () => {
+    const script = (testNumber: number, at: string) =>
+        ({ testNumber, assistiveTechnologies: [at] }) as FunctionalTest;
+
+    test('the highest numbered script for that technology is the last', () => {
+        const tests = [script(1, 'NVDA'), script(2, 'NVDA'), script(3, 'JAWS')];
+        expect(isLastTestForItsTechnology(tests, tests[1])).toBe(true);
+        expect(isLastTestForItsTechnology(tests, tests[0])).toBe(false);
+    });
+
+    test('each technology has its own last, whatever the numbers are', () => {
+        // JAWS stops at 3 while NVDA runs to 5; both have a last test.
+        const tests = [script(3, 'JAWS'), script(5, 'NVDA')];
+        expect(isLastTestForItsTechnology(tests, tests[0])).toBe(true);
+        expect(isLastTestForItsTechnology(tests, tests[1])).toBe(true);
+    });
+
+    test('a technology with one test has that test as its last', () => {
+        const tests = [script(7, 'Orca')];
+        expect(isLastTestForItsTechnology(tests, tests[0])).toBe(true);
     });
 });

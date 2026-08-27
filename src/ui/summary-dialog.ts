@@ -2,6 +2,7 @@ import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildSummaryText, splitSummaryComments } from '../domain/summary.js';
 import { getCurrentRun, markEvaluationChanged } from '../state/store.js';
 import { requireEl } from './dom.js';
+import { setSectionTitle } from './screens.js';
 
 /** Fills the comment box with the run's issues grouped by severity, and updates its score. */
 export function generateSummary(): void {
@@ -48,6 +49,7 @@ export function saveGeneralComments(e: Event): void {
 export function viewSummaryButtonClicked(e: Event): void {
     e.preventDefault();
     const viewSummaryDialog = requireEl<HTMLDialogElement>("view-summary-dialog");
+    setSectionTitle('View Summary');
     viewSummaryDialog.showModal();
     requireEl('view-summary-dialog-title').focus();
     const viewSummaryDialogClose = requireEl("view-summary-dialog-close");

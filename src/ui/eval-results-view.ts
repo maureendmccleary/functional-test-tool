@@ -1,41 +1,23 @@
-import { defaults } from '../config/defaults.js';
 import {
-    buildScorecard, findSummary, groupRunsByAssistiveTechnology
+    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology
 } from '../domain/evaluation.js';
-import { buildOverallCommentsText } from '../domain/summary.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatOverallRating
 } from '../domain/report-format.js';
 import { renderEvalResultsDocx } from '../io/docx-report.js';
-import { getEvaluation, markEvaluationChanged } from '../state/store.js';
-import {
-    appendNewlines, createDataTable, createLabelValueTable, createUnorderedList, fillListbox
-} from './controls.js';
+import { getEvaluation } from '../state/store.js';
+import { createDataTable, createLabelValueTable, createUnorderedList } from './controls.js';
 import { requireEl } from './dom.js';
+import { setSectionTitle } from './screens.js';
 import { createResultsTable } from './results-view.js';
 
 /**
- * Element ids for one assistive technology's summary controls.
+ * Shows each assistive technology's rating and overall comments, as text.
  *
- * Generated from the summary's position, the way step ids are. They are read
- * back by the change handlers only, so nothing outside this module matches on
- * them.
- */
-function summaryRatingId(index: number): string {
-    return `at-summary-rating[${index}]`;
-}
-
-function summaryIssuesId(index: number): string {
-    return `at-summary-issues[${index}]`;
-}
-
-/**
- * Draws a rating select and an issues textarea for each assistive technology.
- *
- * Reads the stored summaries rather than the runs: normalizeEvaluation already
- * guarantees one entry per assistive technology the evaluation uses, and it
- * keeps entries whose AT is no longer assigned so their text is not lost.
+ * Read only, like the rest of this dialog. Both values are written on the
+ * perform screen, from the last functional test assigned to that technology,
+ * where the tester has just finished with it and knows what to say.
  */
 export function renderAssistiveTechnologySummaries(): void {
     const evaluation = getEvaluation();
@@ -48,51 +30,20 @@ export function renderAssistiveTechnologySummaries(): void {
         return;
     }
 
-    summaries.forEach((summary, index) => {
+    summaries.forEach((stored) => {
+        const summary = effectiveSummaryFor(evaluation, stored.assistiveTechnology);
         const block = document.createElement("div");
 
         const atHeading = document.createElement("h3");
-        atHeading.textContent = summary.assistiveTechnology;
+        atHeading.textContent = stored.assistiveTechnology;
         block.appendChild(atHeading);
 
-        const ratingId = summaryRatingId(index);
-        const ratingLabel = document.createElement("label");
-        ratingLabel.htmlFor = ratingId;
-        ratingLabel.textContent = "Overall Rating: ";
-        const rating = document.createElement("select");
-        rating.id = ratingId;
-        block.appendChild(ratingLabel);
+        const rating = document.createElement("p");
+        rating.textContent = `Overall Rating: ${formatOverallRating(summary.overallRating)}`;
         block.appendChild(rating);
-        appendNewlines(block);
 
-        const issuesId = summaryIssuesId(index);
-        const issuesLabel = document.createElement("label");
-        issuesLabel.htmlFor = issuesId;
-        issuesLabel.textContent = "Significant Issues (one per paragraph): ";
-        const issues = document.createElement("textarea");
-        issues.id = issuesId;
-        issues.className = "large-textarea";
-        issues.value = summary.significantIssues.join("\n\n");
-        block.appendChild(issuesLabel);
-        block.appendChild(document.createElement("br"));
-        block.appendChild(issues);
-        appendNewlines(block);
-
+        block.appendChild(createUnorderedList(summary.significantIssues, "No issues."));
         parentDiv.appendChild(block);
-
-        // Filled after the select is in the document: fillListbox looks it up by id.
-        fillListbox(defaults["scores"], ratingId);
-        rating.value = String(summary.overallRating);
-        rating.addEventListener("change", () => {
-            summary.overallRating = parseInt(rating.value, 10);
-            markEvaluationChanged();
-        });
-        issues.addEventListener("blur", () => {
-            summary.significantIssues = issues.value.split("\n\n")
-                .map((issue) => issue.trim())
-                .filter((issue) => issue !== "");
-            markEvaluationChanged();
-        });
     });
 }
 
@@ -144,12 +95,12 @@ function renderSignificantIssues(): void {
 
     const nodes: Node[] = [];
     groups.forEach((group) => {
-        const summary = findSummary(evaluation, group.assistiveTechnology);
+        const summary = effectiveSummaryFor(evaluation, group.assistiveTechnology);
         const rating = document.createElement("p");
         rating.textContent = `${group.assistiveTechnology} Overall Rating: `
-            + formatOverallRating(summary?.overallRating ?? -1);
+            + formatOverallRating(summary.overallRating);
         nodes.push(rating);
-        nodes.push(createUnorderedList(summary?.significantIssues, "No issues."));
+        nodes.push(createUnorderedList(summary.significantIssues, "No issues."));
     });
     replaceContents("eval-results-summary", nodes);
 }
@@ -206,58 +157,12 @@ export function renderEvalResults(): void {
     renderDetailedResults();
 }
 
-/** Replaces the overall comments with text assembled from every test. */
-export function generateOverallComments(e: Event): void {
-    e.preventDefault();
-    const overallCommentsTextarea = requireEl<HTMLTextAreaElement>("overall-comments");
-    overallCommentsTextarea.value = buildOverallCommentsText(getEvaluation());
-    overallCommentsTextarea.focus();
-}
-
-/** Stores the edited overall comments and redraws the results. */
-export function overallCommentsSaveClicked(e: Event): void {
-    e.preventDefault();
-    const overallCommentsTextarea = requireEl<HTMLTextAreaElement>("overall-comments");
-    getEvaluation().comments = overallCommentsTextarea.value.split("\n\n")
-        .map(comment => comment.trim())
-        .filter(comment => comment !== "");
-
-    markEvaluationChanged();
-    renderEvalResults();
-}
-
-/** Opens the overall comments dialog, seeding it from saved comments when there are any. */
-export function overallCommentsClicked(e: Event): void {
-    e.preventDefault();
-    const evaluation = getEvaluation();
-    const overallCommentsDialog = requireEl<HTMLDialogElement>("view-overall-comments-dialog");
-    const overallCommentsDialogClose = requireEl("view-overall-comments-dialog-close");
-    const generateOverallCommentsBtn = requireEl("generate-overall-comments");
-    const overallCommentsSaveBtn = requireEl("overall-comments-save");
-    generateOverallCommentsBtn.addEventListener("click", generateOverallComments);
-    overallCommentsSaveBtn.addEventListener("click", overallCommentsSaveClicked);
-    overallCommentsDialogClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        overallCommentsDialog.close();
-    });
-    overallCommentsDialog.showModal();
-    requireEl('view-overall-comments-dialog-title').focus();
-    const overallCommentsTextarea = requireEl<HTMLTextAreaElement>("overall-comments");
-    let commentsText = "";
-    if (evaluation.comments) {
-        commentsText = evaluation.comments.join("\n\n");
-    }
-    else {
-        commentsText = buildOverallCommentsText(evaluation);
-    }
-    overallCommentsTextarea.value = commentsText;
-}
-
 /** Opens the evaluation results dialog and renders it. */
 export function evalViewResultsButtonClicked(e: Event): void {
     e.preventDefault();
     const evalViewResultsDialog = requireEl<HTMLDialogElement>("eval-view-results-dialog");
     const evalViewResultsDialogClose = requireEl("eval-view-results-dialog-close");
+    setSectionTitle('Evaluation Results');
     evalViewResultsDialog.showModal();
     requireEl('eval-view-results-dialog-title').focus();
     evalViewResultsDialogClose.addEventListener("click", (e) => {
@@ -265,8 +170,6 @@ export function evalViewResultsButtonClicked(e: Event): void {
         evalViewResultsDialog.close();
     });
     renderEvalResults();
-    const overallCommentsBtn = requireEl("view-overall-comments");
-    overallCommentsBtn.addEventListener("click", overallCommentsClicked);
     const generatePDFBtn = requireEl("generate-pdf");
     generatePDFBtn.addEventListener("click", () => renderEvalResultsDocx(getEvaluation()));
 }

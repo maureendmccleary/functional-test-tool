@@ -42,6 +42,17 @@ const ANNOUNCE_DELAY_MS = 250;
 const DEFAULT_CLEAR_MS = 3000;
 
 /**
+ * How long the announcement is left in the region before it is emptied.
+ *
+ * A live region keeps whatever it last said, and the text stays in the
+ * accessibility tree as ordinary content: a message announced on the perform
+ * screen was still there to be read on returning to the landing screen, long
+ * after it stopped being true. Long enough for a reader to have spoken it,
+ * since emptying a region does not stop speech already under way.
+ */
+const ANNOUNCE_CLEAR_MS = 5000;
+
+/**
  * The region a screen reader can actually reach right now.
  *
  * Found through whatever holds focus, not by looking for an open dialog. The
@@ -73,6 +84,13 @@ export function announce(message: string): void {
     region.textContent = '';
     setTimeout(() => {
         region.textContent = message;
+
+        // Emptied again so it cannot be read later as though it still applied.
+        setTimeout(() => {
+            if (region.textContent === message) {
+                region.textContent = '';
+            }
+        }, ANNOUNCE_CLEAR_MS);
     }, ANNOUNCE_DELAY_MS);
 }
 

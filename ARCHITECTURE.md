@@ -61,6 +61,34 @@ changed.
   recognition through it, so a copy gets instructions of its own here.
 - **Functional test editor** — one script: its metadata, its assistive
   technologies, and its steps.
+- **Perform** — one run of one script: every step, every extension, an issue
+  list and Add Issue button per step, the score and the summary.
+
+Perform was a modal dialog, and Add Issue, View Results and View Summary all
+open from it, which made those nested modals. Nesting cost real bugs: a message
+went to the live region of whichever dialog was underneath, which the modal on
+top had made inert and no reader could reach, and the dialog re-announced its
+title and contents whenever focus moved inside it. As a screen it leaves each of
+those three as the only modal, opened over a screen, which is the ordinary case.
+It is also what a screen is for: a dialog is an interruption to dismiss, and
+performing a test is where a tester spends most of their time.
+
+**The page is named for what is on it.** `showScreen` sets `document.title` to
+the screen, and every dialog sets it on opening and hands it back on closing,
+wired once in `main.ts` from the `close` event so it does not matter what closed
+it. The title is the one thing a screen reader will read on request whatever
+focus is doing, and nothing else tells a tester which of four screens they are
+looking at. The issue dialog's is the step it was opened on, so "Add Issue Step
+3" and "View Issue Step 3" are distinguishable.
+
+**Showing a screen clears the status paragraphs.** A message belongs to the
+moment it was raised; left on a screen it is read out again as stale news the
+next time that screen appears, which is what returning from Perform to the
+landing screen did with the load confirmation.
+
+Escape does not leave a screen. None of the others offer it either, and Back is
+the way out; a document level Escape handler would have to know whether a dialog
+above it had already claimed the key.
 
 Both the evaluation screen and the editor have a Back. Nothing on either is held
 back until Save — the evaluation is changed in place as it is edited — so Back
@@ -281,6 +309,11 @@ moved focus afterwards, and each was silent in JAWS while NVDA happened to be
 forgiving enough to read it anyway. Move focus somewhere deliberate, then call
 `showStatusMessage` last.
 
+**The region is emptied again once the message has been spoken.** A live region
+keeps whatever it last said, and that text stays in the accessibility tree as
+ordinary content: a save announced on the perform screen was still there to be
+read on returning to the landing screen, long after it stopped being true.
+
 Two things it does deliberately. It never touches `aria-live` at run time: the
 attribute belongs on the region before the content changes, and the old code set
 it afterwards. And it empties the region before putting the message in, one task
@@ -296,6 +329,19 @@ that as a normal outcome, reports unreadable files and write failures in the
 status region belonging to whichever control was used, and checks
 `isFilePickerSupported()` before offering the action at all — a large share of
 screen reader users work in Firefox, where these APIs do not exist.
+
+**Saving asks where only once.** `io/file-picker.ts` keeps the handle from the
+first save and writes straight to it afterwards, so a tester performing a long
+evaluation can save often without a file dialog stealing focus every time, which
+is most of what makes saving disruptive with a screen reader. The handle is
+deliberately *not* taken from opening a file: Save would then overwrite whatever
+was loaded with no prompt, and the first thing anyone opens is a file they did
+not mean to write over. Replacing the evaluation, by loading or starting a new
+one, forgets it, or a new evaluation would be saved over the last one's file.
+
+A save that writes straight to the file announces at once rather than after the
+usual delay: nothing opened, so nothing stole focus and there is nothing to wait
+for.
 
 `event.currentTarget` is read *before* the first `await`. Once a picker opens,
 dispatch has finished and the browser has cleared it to null.
@@ -389,10 +435,32 @@ grouping runs with the same `groupRunsByAssistiveTechnology`. Changing one
 without the other is what the two are arranged to prevent, so add new sections
 to both.
 
-One loose end from that alignment: `Evaluation.comments`, written by the "View
-Overall Comments" dialog, is no longer displayed anywhere. Significant Issues
-now shows the per-AT ratings and issues instead, per the AMP layout. The control
-still stores its text, so nothing is lost, but it has no reader.
+**The results dialogs are read only.** Both the evaluation's results and a
+single use case's show values and nothing else. The two values they show per
+assistive technology, its overall rating and its significant issues, are written
+from the perform screen instead: the last functional test assigned to a
+technology carries a View Overall Comments button, which is where a tester has
+just finished with that technology and knows what to say about it.
+
+That dialog opens with the rating defaulted to the **worst** score any of that
+technology's tests reached, and with the three most severe issues already in the
+box when nothing has been written yet. Generate **appends** the per test
+comments rather than replacing, so a tester's own wording is never thrown away.
+It writes `overallRating` and `significantIssues`, which is what Significant
+Issues and Assistive Technology Summaries both render.
+
+**The report falls back to what the evaluation already knows.** A technology
+whose dialog was never opened still gets a rating and a list of issues, computed
+the same way the dialog would have offered them: the worst score it reached, and
+its three most severe issues. `effectiveSummaryFor` is the one place that rule
+lives, and the results dialog, the report and the scorecard's overall figure all
+read through it. A tester who performed every test but never wrote a summary
+should not produce a report that says "Not rated" and "No issues."
+
+One loose end remains: `Evaluation.comments`, which the old evaluation wide
+version of that dialog wrote, is displayed by nothing and now written by
+nothing. It is left in the model and in saved files rather than dropped, so text
+written by an older version is not silently discarded on load.
 
 The report says "use case" where the rest of the codebase says functional test.
 That is deliberate: the wording is output, matching the platform export the

@@ -1,6 +1,6 @@
 import type { Evaluation } from '../types.js';
 import { issuesText } from './scoring.js';
-import { getTestComments, testDisplayName } from './functional-test.js';
+import { getTestComments, testAssistiveTechnology, testDisplayName } from './functional-test.js';
 
 /**
  * Severity headings, in order, for scores 1 through 4.
@@ -63,5 +63,28 @@ export function buildOverallCommentsText(evaluation: Evaluation): string {
         }
         commentsText += "\n\n";
     });
+    return commentsText;
+}
+
+/**
+ * The comment block for one assistive technology: each of its functional tests,
+ * named, with whatever the tester wrote about it.
+ *
+ * The evaluation wide version above covers every test at once. This one is what
+ * Generate appends inside a technology's overall comments, so a tester
+ * summarising NVDA is not handed what happened under JAWS.
+ */
+export function buildOverallCommentsTextFor(
+    evaluation: Evaluation, assistiveTechnology: string
+): string {
+    let commentsText = "";
+    (evaluation.tests || [])
+        .filter((test) => testAssistiveTechnology(test) === assistiveTechnology)
+        .forEach((test) => {
+            commentsText += `${testDisplayName(test)}\n\n`;
+            const testComments = getTestComments(test);
+            commentsText += testComments.length === 0 ? "No issues." : testComments.join("\n\n");
+            commentsText += "\n\n";
+        });
     return commentsText;
 }

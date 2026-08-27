@@ -1,7 +1,9 @@
 import { testDisplayName } from '../domain/functional-test.js';
 import type { Evaluation } from '../types.js';
 import { normalizeEvaluation } from '../domain/migration.js';
-import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
+import {
+    forgetSavedFile, hasSavedFile, isFilePickerSupported, loadFile, saveEvaluation
+} from '../io/file-picker.js';
 import {
     getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
 } from '../state/store.js';
@@ -26,14 +28,13 @@ const SAVE_ANNOUNCE_DELAY_MS = 500;
 const SAVE_STATUS_TARGETS: Record<
     string, { elementId: string; message: string; focusId?: string }
 > = {
-    // Focus goes to the dialog's close button rather than back to Save. Landing
-    // on Save again made a reader re-announce the dialog and read on into the
-    // next button; the close button is both quieter and where the tester is
-    // heading once the results are saved.
+    // Focus goes to Back rather than to Save. Landing on Save again made a
+    // reader read on into the next button; Back is quieter, and it is where the
+    // tester is heading once the results are saved.
     'perform-save': {
         elementId: 'perform-msg',
         message: 'Functional Test data saved!',
-        focusId: 'perform-dialog-close'
+        focusId: 'perform-back'
     }
 };
 const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg', message: 'Evaluation data saved.' };
@@ -227,6 +228,7 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
         return;
     }
 
+    forgetSavedFile();
     setEvaluation(evaluation);
     refreshTestList();
     populateEvaluationDetails();
@@ -261,6 +263,9 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         return;
     }
 
+    // Whether this will write straight to the file, decided before the write
+    // stores a handle and makes the answer yes either way.
+    const silent = hasSavedFile();
     try {
         await saveEvaluation(getEvaluation());
     } catch (error) {
@@ -274,6 +279,12 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
     }
 
     markEvaluationSaved();
+    if (silent) {
+        // No dialog opened, so nothing stole focus and there is nothing to wait
+        // for. Announcing at once is what makes saving mid-test feel immediate.
+        showStatusMessage(status.elementId, status.message, 0);
+        return;
+    }
     reportAfterDialog(status.elementId, status.message,
         SAVE_ANNOUNCE_DELAY_MS, { focusId });
 }

@@ -1,4 +1,5 @@
 import { normalizeEvaluation } from '../domain/migration.js';
+import { forgetSavedFile } from '../io/file-picker.js';
 import { testDisplayName } from '../domain/functional-test.js';
 import {
     getEvaluation, hasUnsavedChanges, markEvaluationChanged, setEvaluation
@@ -30,6 +31,7 @@ export function newEvaluationButtonClicked(e: Event): void {
         return;
     }
 
+    forgetSavedFile();
     setEvaluation(normalizeEvaluation({}));
     populateEvaluationDetails();
     refreshTestList();

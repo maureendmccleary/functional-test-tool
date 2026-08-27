@@ -5,6 +5,7 @@ import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
 import { createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
+import { setSectionTitle } from './screens.js';
 
 /** The three most severe issue descriptions, or the recorded comments if any. */
 export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
@@ -155,6 +156,7 @@ export function viewResultsButtonClicked(e: Event): void {
     e.preventDefault();
     const viewResultsDialog = requireEl<HTMLDialogElement>("view-results-dialog");
     const viewResultsDialogClose = requireEl("view-results-dialog-close");
+    setSectionTitle('Functional Test Results');
     viewResultsDialog.showModal();
     requireEl('view-results-dialog-title').focus();
     viewResultsDialogClose.addEventListener("click", (e) => {

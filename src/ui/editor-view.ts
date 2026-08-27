@@ -13,7 +13,7 @@ import {
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
 import { refreshTestList } from './evaluation-view.js';
-import { type ScreenName, showScreen } from './screens.js';
+import { type ScreenName, setSectionTitle, showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
 import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
 
@@ -549,6 +549,7 @@ export function newStepButtonClick(e: Event): void {
     const newStepDialog = requireEl<HTMLDialogElement>("new-step-dialog");
     const test = getCurrentTest();
     const newStepCloseBtn = requireEl("new-step-dialog-close");
+    setSectionTitle('Select Step Number To Add');
     newStepDialog.showModal();
     requireEl('add-step-heading').focus();
     newStepCloseBtn.addEventListener("click", (e) => {

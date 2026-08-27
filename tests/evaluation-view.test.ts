@@ -10,6 +10,8 @@ vi.mock('../src/io/file-picker.js', () => ({
     isFilePickerSupported: vi.fn(() => true),
     loadFile: vi.fn(),
     saveEvaluation: vi.fn(),
+    forgetSavedFile: vi.fn(),
+    hasSavedFile: vi.fn(() => false),
     fileopts: {}
 }));
 
@@ -21,7 +23,7 @@ const ELEMENT_IDS = [
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
     'test-editor-msg',
     'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save', 'perform-dialog-close'
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save', 'perform-back'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -136,7 +138,7 @@ describe('loading', () => {
         });
 
         await loadEvalButtonClicked(clickEvent());
-        vi.runAllTimers();
+        vi.advanceTimersByTime(500);
 
         expect(documentStub.getElementById('app-status')!.textContent)
             .toBe('Q3 2026 Accessibility Evaluation loaded successfully. 1 functional test.');
@@ -242,16 +244,14 @@ describe('saving', () => {
         expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
     });
 
-    test('saving results sends focus to the dialog close button', async () => {
+    test('saving results sends focus to Back, not to Save', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('perform-save'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
-        // Saving results sends focus to the dialog's close button, not back to
-        // Save: landing on Save re-announced the dialog and read on into the
-        // next button.
-        expect(documentStub.getElementById('perform-dialog-close')!.focused).toBe(true);
+        // Landing on Save again made a reader read on into the next button.
+        expect(documentStub.getElementById('perform-back')!.focused).toBe(true);
         expect(documentStub.getElementById('perform-save')!.focused).toBe(false);
     });
 
@@ -261,6 +261,28 @@ describe('saving', () => {
         await saveFileButtonClick(clickEvent('eval-save-file'));
 
         expect(documentStub.getElementById('eval-save-file')!.focused).toBe(true);
+    });
+
+    test('a save with a file already chosen announces at once, with no delay', async () => {
+        // Nothing opened, so nothing stole focus and there is nothing to wait
+        // for. Waiting would make saving mid-test feel like it had not worked.
+        vi.mocked(picker.hasSavedFile).mockReturnValue(true);
+        vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
+
+        await saveFileButtonClick(clickEvent('perform-save'));
+
+        expect(documentStub.getElementById('perform-msg')!.textContent)
+            .toBe('Functional Test data saved!');
+    });
+
+    test('loading forgets where the last evaluation was saved', async () => {
+        // Otherwise saving the newly loaded one would write it over the file
+        // the previous evaluation came from, without asking.
+        vi.mocked(picker.loadFile).mockResolvedValue({ evalUCs: [] });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(picker.forgetSavedFile).toHaveBeenCalled();
     });
 
     test('an unrecognised control falls back to the evaluation status region', async () => {
