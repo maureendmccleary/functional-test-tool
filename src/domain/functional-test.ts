@@ -161,6 +161,25 @@ export function addAssistiveTechnologyCopies(
     return added;
 }
 
+/**
+ * True when this is the last functional test assigned to its own assistive
+ * technology, by script number.
+ *
+ * Where the overall comments for that technology are reached from: having just
+ * finished the last of its tests is when a tester knows what to say about it.
+ * By number rather than by what has been performed, so the button does not
+ * appear and disappear as scores are filled in.
+ */
+export function isLastTestForItsTechnology(
+    tests: FunctionalTest[], test: FunctionalTest
+): boolean {
+    const technology = testAssistiveTechnology(test);
+    const numbers = (Array.isArray(tests) ? tests : [])
+        .filter((other) => testAssistiveTechnology(other) === technology)
+        .map((other) => other.testNumber);
+    return numbers.length > 0 && test.testNumber === Math.max(...numbers);
+}
+
 /** Every comment recorded across all performances of this functional test. */
 export function getTestComments(test: FunctionalTest): string[] {
     if (!Array.isArray(test.runs)) {

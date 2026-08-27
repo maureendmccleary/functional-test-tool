@@ -262,6 +262,23 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       "No Issues" entry
 - [ ] **View Results** shows the results table with the issues grouped by severity
 
+## 7a. Overall comments for an assistive technology
+
+- [ ] Perform a test that is **not** the last one for its technology: there is
+      no **View Overall Comments** button
+- [ ] Perform the last test for that technology: the button is there
+- [ ] Activating it opens a dialog titled "NVDA Overall comments" followed by
+      the evaluation's name, and the page title says the same
+- [ ] The rating starts at the **worst** score any of that technology's tests
+      reached, and the box holds the three most severe issues found with it
+- [ ] **Generate Overall Comments** appends that technology's per test comments
+      below whatever is already written, keeping the tester's own wording, and
+      lists only that technology's tests
+- [ ] Change the rating, edit the text, **Save**, close and reopen: both come
+      back as saved rather than being recomputed
+- [ ] **View Evaluation Results**: Significant Issues shows that rating and
+      those comments for that technology
+
 ## 8. Evaluation results and report
 
 - [ ] **View Evaluation Results** opens the results dialog. Its sections are, in
@@ -281,12 +298,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(these comments are no longer displayed in the dialog or the report;
       see the note in `../ARCHITECTURE.md`)*
 - [ ] The **Assistive Technology Summaries** area shows one block per assistive
-      technology in the evaluation, each with a rating select and an issues
-      textarea
-- [ ] Editing a rating or issues there and reopening the dialog updates the
-      Significant Issues section and the Scorecard's Overall Rating
-- [ ] Set a rating and type two paragraphs of significant issues, close the
-      dialog, reopen it: both come back
+      technology in the evaluation, each with its rating and its comments as
+      text, and no controls for changing them
+- [ ] Those values match what was saved from the perform screen, and the
+      Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
       <br>*(needs network access -- `docx` loads from unpkg)*
 

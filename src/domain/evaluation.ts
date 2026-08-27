@@ -138,6 +138,54 @@ export function stepScore(step: { issues: Issue[] }): number {
     return Math.floor(total / issues.length);
 }
 
+/** Every performed run recorded with one assistive technology. */
+function performedRunsFor(evaluation: Evaluation, assistiveTechnology: string): TestRun[] {
+    return groupRunsByAssistiveTechnology(evaluation)
+        .filter((group) => group.assistiveTechnology === assistiveTechnology)
+        .flatMap((group) => group.pairings.map((pairing) => pairing.run))
+        .filter((run) => runScore(run) >= LOWEST_SCORE);
+}
+
+/**
+ * The lowest score any test reached with one assistive technology, or -1 when
+ * none has been performed.
+ *
+ * Offered as the starting point for that technology's overall rating. The
+ * tester can raise it, but the worst result is the honest place to begin: an
+ * evaluation where one task cannot be completed at all is not a pass whatever
+ * the others did.
+ */
+export function worstScoreFor(evaluation: Evaluation, assistiveTechnology: string): number {
+    const scores = performedRunsFor(evaluation, assistiveTechnology).map(runScore);
+    return scores.length === 0 ? -1 : Math.min(...scores);
+}
+
+/**
+ * The most severe issue descriptions recorded with one assistive technology,
+ * worst first and deduplicated.
+ *
+ * Fills the overall comments the first time they are opened, so the tester
+ * starts from what actually went wrong rather than an empty box.
+ */
+export function topIssuesFor(
+    evaluation: Evaluation, assistiveTechnology: string, limit: number
+): string[] {
+    const runs = performedRunsFor(evaluation, assistiveTechnology);
+    const bySeverity = new Map<number, Set<string>>();
+    runs.forEach((run) => {
+        issuesMap(run).forEach((descriptions, severity) => {
+            const bucket = bySeverity.get(severity) || new Set<string>();
+            descriptions.forEach((description) => bucket.add(description));
+            bySeverity.set(severity, bucket);
+        });
+    });
+
+    return [...bySeverity.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .flatMap(([, descriptions]) => [...descriptions])
+        .slice(0, limit);
+}
+
 /** The summary stored for one assistive technology, or undefined when none is. */
 export function findSummary(
     evaluation: Evaluation, assistiveTechnology: string

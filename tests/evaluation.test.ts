@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Evaluation, FunctionalTest, Issue } from '../src/types.js';
 import {
     buildScorecard, collectAssistiveTechnologies, findSummary,
-    groupRunsByAssistiveTechnology, runScore, stepScore
+    groupRunsByAssistiveTechnology, runScore, stepScore, topIssuesFor, worstScoreFor
 } from '../src/domain/evaluation.js';
 
 /** An issue at the given severity, which is all the scoring cares about. */
@@ -231,5 +231,65 @@ describe('findSummary', () => {
         ];
         expect(findSummary(evaluation, 'JAWS')?.overallRating).toBe(4);
         expect(findSummary(evaluation, 'NVDA')).toBeUndefined();
+    });
+});
+
+describe('worstScoreFor', () => {
+    test('is the lowest score any of that technology\'s tests reached', () => {
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [issue('3')] }),
+            testWithRuns('two', { NVDA: [issue('1')] }),
+            testWithRuns('three', { JAWS: [issue('4')] })
+        ]);
+        expect(worstScoreFor(evaluation, 'NVDA')).toBe(1);
+        expect(worstScoreFor(evaluation, 'JAWS')).toBe(4);
+    });
+
+    test('a clean run counts as the 5 it scores', () => {
+        const evaluation = evaluationOf([testWithRuns('one', { NVDA: [] })]);
+        expect(worstScoreFor(evaluation, 'NVDA')).toBe(5);
+    });
+
+    test('leaves out tests nobody has scored', () => {
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [issue('4')] }),
+            unperformed('two', { NVDA: [issue('1')] })
+        ]);
+        expect(worstScoreFor(evaluation, 'NVDA')).toBe(4);
+    });
+
+    test('reports -1 when the technology has not been performed', () => {
+        expect(worstScoreFor(evaluationOf([]), 'NVDA')).toBe(-1);
+        expect(worstScoreFor(evaluationOf([unperformed('one', { NVDA: [] })]), 'NVDA')).toBe(-1);
+    });
+});
+
+describe('topIssuesFor', () => {
+    test('takes the most severe first, across that technology only', () => {
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [issue('3'), issue('1')] }),
+            testWithRuns('two', { NVDA: [issue('2')] }),
+            testWithRuns('three', { JAWS: [issue('1')] })
+        ]);
+        expect(topIssuesFor(evaluation, 'NVDA', 3))
+            .toEqual(['issue scored 1', 'issue scored 2', 'issue scored 3']);
+    });
+
+    test('takes fewer than asked for when fewer exist', () => {
+        const evaluation = evaluationOf([testWithRuns('one', { NVDA: [issue('2')] })]);
+        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual(['issue scored 2']);
+    });
+
+    test('reports the same description once', () => {
+        const evaluation = evaluationOf([
+            testWithRuns('one', { NVDA: [issue('2')] }),
+            testWithRuns('two', { NVDA: [issue('2')] })
+        ]);
+        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual(['issue scored 2']);
+    });
+
+    test('has nothing to offer for a technology with no issues', () => {
+        expect(topIssuesFor(evaluationOf([testWithRuns('one', { NVDA: [] })]), 'NVDA', 3))
+            .toEqual([]);
     });
 });

@@ -236,6 +236,12 @@
       <ul id="summary-list"></ul>
       <br><br>
       <button type="button" id="view-summary">View Summary</button>
+      <!--
+        Only on the last functional test assigned to this assistive technology,
+        which is where the tester has just finished with it. Shown and hidden by
+        showOverallCommentsButton in perform-view.
+      -->
+      <button type="button" id="view-overall-comments" class="inactive">View Overall Comments</button>
     </div>
   </div>
   <dialog id="view-summary-dialog" aria-labelledby="view-summary-dialog-title">
@@ -265,13 +271,19 @@
             class="fa fa-times"></span></button>
       </div>
       <br><br>
-      <p>The following is a list of the most important issues encountered while testing the evaluation.</p>
+      <p>The most important problems encountered with this assistive technology across the whole
+        evaluation, and the rating it is given.</p>
+      <br><br>
+      <p id="overall-comments-msg" class="status-text"></p>
+      <br>
+      <label id="overall-score-label" for="overall-score">Overall Rating: </label>
+      <select name="scores" id="overall-score"></select>
       <br><br>
       <label for="overall-comments">Overall Comments</label>
       <textarea class="large-textarea" id="overall-comments"></textarea>
       <br><br>
-      <button type="button" id="generate-overall-comments" type="button">Generate Overall Comments</button>
-      <button type="button" id="overall-comments-save">Save </button>
+      <button type="button" id="generate-overall-comments">Generate Overall Comments</button>
+      <button type="button" id="overall-comments-save">Save</button>
     </form>
   </dialog>
   <dialog id="add-issue-dialog" aria-labelledby="add-issue-dialog-title">
@@ -334,7 +346,6 @@
     <div class="app-status visually-hidden" role="alert"></div>
     <form id="eval-view-results-form" name="evaluationViewResults">
       <div>
-        <button id="view-overall-comments" type="button">View Overall Comments</button>
         <button id="generate-pdf" type="button">Generate Report (.docx)</button>
         <br>
         <p id="generate-pdf-status" class="status-text"></p>

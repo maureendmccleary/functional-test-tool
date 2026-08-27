@@ -1,11 +1,14 @@
 import type { FunctionalTest, TestRunStep } from '../types.js';
 import { defaults } from '../config/defaults.js';
-import { testAssistiveTechnology } from '../domain/functional-test.js';
+import {
+    isLastTestForItsTechnology, testAssistiveTechnology
+} from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
 import { emptyTestRun, ensureTestRunShape } from '../domain/test-run.js';
 import {
-    getCurrentRun, getCurrentTest, markEvaluationChanged, setCurrentRunIndex, setCurrentTestIndex
+    getCurrentRun, getCurrentTest, getEvaluation, markEvaluationChanged, setCurrentRunIndex,
+    setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
@@ -274,11 +277,23 @@ export function populatePerform(): void {
         }
     }
     renderExtensionsForPerform(test);
+    showOverallCommentsButton(test);
 
     requireEl("add-issue-btn[0]").addEventListener('click', addIssueButtonClick);
     openTestRun();
 
     showScreen('perform');
+}
+
+/**
+ * Shows View Overall Comments only on the last test of its technology.
+ *
+ * On every test it would invite summarising the technology before the testing
+ * is done; on the last one it is where the tester has just finished with it.
+ */
+function showOverallCommentsButton(test: FunctionalTest): void {
+    const last = isLastTestForItsTechnology(getEvaluation().tests, test);
+    requireEl("view-overall-comments").classList.toggle("inactive", !last);
 }
 
 /** Leaves the perform screen for the one it was opened from. */

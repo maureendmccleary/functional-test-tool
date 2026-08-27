@@ -417,10 +417,24 @@ grouping runs with the same `groupRunsByAssistiveTechnology`. Changing one
 without the other is what the two are arranged to prevent, so add new sections
 to both.
 
-One loose end from that alignment: `Evaluation.comments`, written by the "View
-Overall Comments" dialog, is no longer displayed anywhere. Significant Issues
-now shows the per-AT ratings and issues instead, per the AMP layout. The control
-still stores its text, so nothing is lost, but it has no reader.
+**The results dialogs are read only.** Both the evaluation's results and a
+single use case's show values and nothing else. The two values they show per
+assistive technology, its overall rating and its significant issues, are written
+from the perform screen instead: the last functional test assigned to a
+technology carries a View Overall Comments button, which is where a tester has
+just finished with that technology and knows what to say about it.
+
+That dialog opens with the rating defaulted to the **worst** score any of that
+technology's tests reached, and with the three most severe issues already in the
+box when nothing has been written yet. Generate **appends** the per test
+comments rather than replacing, so a tester's own wording is never thrown away.
+It writes `overallRating` and `significantIssues`, which is what Significant
+Issues and Assistive Technology Summaries both render.
+
+One loose end remains: `Evaluation.comments`, which the old evaluation wide
+version of that dialog wrote, is displayed by nothing and now written by
+nothing. It is left in the model and in saved files rather than dropped, so text
+written by an older version is not silently discarded on load.
 
 The report says "use case" where the rest of the codebase says functional test.
 That is deliberate: the wording is output, matching the platform export the

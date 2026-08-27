@@ -19,6 +19,7 @@ import {
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { restoreScreenTitle } from './ui/screens.js';
+import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
@@ -49,6 +50,7 @@ function initialize(): void {
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
     addPerformScreenEvents();
+    addOverallCommentsDialogEvents();
     requireEl("new-step-btn").addEventListener('click', newStepButtonClick);
     requireEl("new-extension-btn").addEventListener('click', newExtensionButtonClicked);
 
