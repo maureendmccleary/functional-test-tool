@@ -181,7 +181,14 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Select `01 Search the catalogue and place a hold - NVDA`, then **Perform**:
       the perform **screen** replaces the landing screen, focus lands on
       "Perform Functional Test", and there is no dialog to escape from
-- [ ] **Back** returns to the landing screen with the test list intact
+- [ ] **Back** returns to the landing screen with the test list intact, and the
+      earlier "loaded successfully" message is **not** read out again
+- [ ] The page title follows the screen: "Perform Functional Test", "Evaluation",
+      "Functional Test Editor", and the app's name on the landing screen. Ask the
+      reader for the title on each
+- [ ] Opening a dialog titles the page for it, including "Add Issue Step 3" for
+      the step it was opened on, and closing it puts the screen's title back
+      whether closed by its button or by Escape
 - [ ] **Add Issue**, **View Results** and **View Summary** each open a single
       dialog over the screen. Closing one returns to the perform screen, not to
       another dialog

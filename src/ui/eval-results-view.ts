@@ -13,6 +13,7 @@ import {
     appendNewlines, createDataTable, createLabelValueTable, createUnorderedList, fillListbox
 } from './controls.js';
 import { requireEl } from './dom.js';
+import { setSectionTitle } from './screens.js';
 import { createResultsTable } from './results-view.js';
 
 /**
@@ -240,6 +241,7 @@ export function overallCommentsClicked(e: Event): void {
         e.preventDefault();
         overallCommentsDialog.close();
     });
+    setSectionTitle('View Overall Comments');
     overallCommentsDialog.showModal();
     requireEl('view-overall-comments-dialog-title').focus();
     const overallCommentsTextarea = requireEl<HTMLTextAreaElement>("overall-comments");
@@ -258,6 +260,7 @@ export function evalViewResultsButtonClicked(e: Event): void {
     e.preventDefault();
     const evalViewResultsDialog = requireEl<HTMLDialogElement>("eval-view-results-dialog");
     const evalViewResultsDialogClose = requireEl("eval-view-results-dialog-close");
+    setSectionTitle('Evaluation Results');
     evalViewResultsDialog.showModal();
     requireEl('eval-view-results-dialog-title').focus();
     evalViewResultsDialogClose.addEventListener("click", (e) => {

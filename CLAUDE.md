@@ -87,6 +87,9 @@ tested commit.
 
 - **Wire a dialog's own controls once at startup.** An inline handler registered in the
   open path is a new closure every time and they accumulate; a named one is deduplicated.
+- **Name the page for what is on it.** `showScreen` titles the screen; a dialog calls
+  `setSectionTitle` on opening and the `close` event hands it back. Showing a screen also
+  clears the status paragraphs, so a stale message is not read out as news.
 - **Perform is a screen, not a dialog**, so Add Issue, View Results and View Summary open
   over a screen rather than stacking modals. Do not put it back in a `<dialog>`.
 - **Fill a dialog before `showModal()`.** Its accessible name comes from its heading, and a

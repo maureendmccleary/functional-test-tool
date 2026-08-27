@@ -73,6 +73,19 @@ those three as the only modal, opened over a screen, which is the ordinary case.
 It is also what a screen is for: a dialog is an interruption to dismiss, and
 performing a test is where a tester spends most of their time.
 
+**The page is named for what is on it.** `showScreen` sets `document.title` to
+the screen, and every dialog sets it on opening and hands it back on closing,
+wired once in `main.ts` from the `close` event so it does not matter what closed
+it. The title is the one thing a screen reader will read on request whatever
+focus is doing, and nothing else tells a tester which of four screens they are
+looking at. The issue dialog's is the step it was opened on, so "Add Issue Step
+3" and "View Issue Step 3" are distinguishable.
+
+**Showing a screen clears the status paragraphs.** A message belongs to the
+moment it was raised; left on a screen it is read out again as stale news the
+next time that screen appears, which is what returning from Perform to the
+landing screen did with the load confirmation.
+
 Escape does not leave a screen. None of the others offer it either, and Back is
 the way out; a document level Escape handler would have to know whether a dialog
 above it had already claimed the key.

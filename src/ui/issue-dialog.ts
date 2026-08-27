@@ -8,6 +8,7 @@ import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
 import { showStatusMessage } from './status.js';
 import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
+import { setSectionTitle } from './screens.js';
 import { getIssueListId, getStepNumber, isExtensionElementId } from './step-ids.js';
 
 /*
@@ -343,6 +344,7 @@ export function addIssueButtonClick(e: Event): void {
 
     requireEl("add-issue-msg").textContent = "";
     heading.textContent = empty ? `Add Issue ${label}` : `View Issue ${label}`;
+    setSectionTitle(heading.textContent);
     requireEl("add-issue-step-label").textContent = label;
     requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
     setCurrentIssue(0);

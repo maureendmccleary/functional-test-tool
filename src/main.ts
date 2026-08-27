@@ -18,6 +18,7 @@ import {
     addIssueDialogEvents, confirmDiscardUnsavedIssueEntry, onAddIssueDialogClosed
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
+import { restoreScreenTitle } from './ui/screens.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
@@ -69,6 +70,12 @@ function initialize(): void {
     }
 
     addIssueDialogEvents();
+    // Whatever closes a dialog -- its button, Escape, or code -- the page is
+    // named for the screen underneath again.
+    for (const dialog of document.querySelectorAll('dialog')) {
+        dialog.addEventListener('close', restoreScreenTitle);
+    }
+
     const addIssueDialog = requireEl("add-issue-dialog");
     addIssueDialog.addEventListener('close', onAddIssueDialogClosed);
     addIssueDialog.addEventListener('cancel', (e) => {
