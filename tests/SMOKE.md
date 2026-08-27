@@ -418,7 +418,14 @@ appear on screen, and the two are separate elements now.
 
 ## 9. Save and diff
 
-- [ ] **Save Evaluation File** over `/tmp/smoke.json`
+- [ ] The **first** save asks where to put the file; every save after it writes
+      straight there with no dialog, and says so at once
+- [ ] **Save Functional Test Results** on the perform screen, twice: the second
+      does not open a dialog
+- [ ] Load a different evaluation, then save: it asks again rather than writing
+      over the file the previous one came from
+- [ ] **New Evaluation**, then save: it asks again for the same reason
+- [ ] **Save Evaluation File** over `C:\Users\momcc\smoke.json`
 - [ ] With no edits made in this session, the saved file matches the golden:
 
 ```bash

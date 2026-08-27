@@ -53,10 +53,50 @@ export async function loadFile(): Promise<unknown> {
     return JSON.parse(jobjtext);
 }
 
-/** Prompts for a location and writes the evaluation as JSON. */
+/**
+ * The file this evaluation has been saved to, once it has been saved once.
+ *
+ * Kept so that saving again during a session writes straight to it. A tester
+ * performing a long evaluation should be able to save often without a file
+ * dialog stealing focus each time, which is most of what makes saving
+ * disruptive for a screen reader.
+ *
+ * Deliberately not taken from `loadFile`. A handle from opening a file would
+ * let Save overwrite it with no prompt at all, and the first thing anyone loads
+ * is a file they did not mean to write over.
+ */
+let savedFileHandle: FileSystemFileHandleLike | null = null;
+
+/**
+ * Forgets where the evaluation was saved.
+ *
+ * Called when the evaluation is replaced. Without it, starting a new evaluation
+ * and saving would write it over the previous one's file without asking.
+ */
+export function forgetSavedFile(): void {
+    savedFileHandle = null;
+}
+
+/** True when saving will write straight to a file rather than ask for one. */
+export function hasSavedFile(): boolean {
+    return savedFileHandle !== null;
+}
+
+/**
+ * Writes the evaluation as JSON, asking where only the first time.
+ *
+ * A failed write clears the handle, so the next attempt asks again rather than
+ * retrying somewhere the browser has stopped letting us write.
+ */
 export async function saveEvaluation(evaluation: Evaluation): Promise<void> {
-    const fileHandle = await window.showSaveFilePicker(fileopts);
-    const fp = await fileHandle.createWritable();
-    await fp.write(JSON.stringify(evaluation));
-    await fp.close();
+    const fileHandle = savedFileHandle ?? await window.showSaveFilePicker(fileopts);
+    try {
+        const fp = await fileHandle.createWritable();
+        await fp.write(JSON.stringify(evaluation));
+        await fp.close();
+    } catch (error) {
+        savedFileHandle = null;
+        throw error;
+    }
+    savedFileHandle = fileHandle;
 }

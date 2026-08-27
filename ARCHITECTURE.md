@@ -325,6 +325,19 @@ status region belonging to whichever control was used, and checks
 `isFilePickerSupported()` before offering the action at all — a large share of
 screen reader users work in Firefox, where these APIs do not exist.
 
+**Saving asks where only once.** `io/file-picker.ts` keeps the handle from the
+first save and writes straight to it afterwards, so a tester performing a long
+evaluation can save often without a file dialog stealing focus every time, which
+is most of what makes saving disruptive with a screen reader. The handle is
+deliberately *not* taken from opening a file: Save would then overwrite whatever
+was loaded with no prompt, and the first thing anyone opens is a file they did
+not mean to write over. Replacing the evaluation, by loading or starting a new
+one, forgets it, or a new evaluation would be saved over the last one's file.
+
+A save that writes straight to the file announces at once rather than after the
+usual delay: nothing opened, so nothing stole focus and there is nothing to wait
+for.
+
 `event.currentTarget` is read *before* the first `await`. Once a picker opens,
 dispatch has finished and the browser has cleared it to null.
 

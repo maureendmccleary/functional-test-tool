@@ -1,7 +1,9 @@
 import { testDisplayName } from '../domain/functional-test.js';
 import type { Evaluation } from '../types.js';
 import { normalizeEvaluation } from '../domain/migration.js';
-import { isFilePickerSupported, loadFile, saveEvaluation } from '../io/file-picker.js';
+import {
+    forgetSavedFile, hasSavedFile, isFilePickerSupported, loadFile, saveEvaluation
+} from '../io/file-picker.js';
 import {
     getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
 } from '../state/store.js';
@@ -226,6 +228,7 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
         return;
     }
 
+    forgetSavedFile();
     setEvaluation(evaluation);
     refreshTestList();
     populateEvaluationDetails();
@@ -260,6 +263,9 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
         return;
     }
 
+    // Whether this will write straight to the file, decided before the write
+    // stores a handle and makes the answer yes either way.
+    const silent = hasSavedFile();
     try {
         await saveEvaluation(getEvaluation());
     } catch (error) {
@@ -273,6 +279,12 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
     }
 
     markEvaluationSaved();
+    if (silent) {
+        // No dialog opened, so nothing stole focus and there is nothing to wait
+        // for. Announcing at once is what makes saving mid-test feel immediate.
+        showStatusMessage(status.elementId, status.message, 0);
+        return;
+    }
     reportAfterDialog(status.elementId, status.message,
         SAVE_ANNOUNCE_DELAY_MS, { focusId });
 }

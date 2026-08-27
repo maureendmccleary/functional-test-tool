@@ -10,6 +10,8 @@ vi.mock('../src/io/file-picker.js', () => ({
     isFilePickerSupported: vi.fn(() => true),
     loadFile: vi.fn(),
     saveEvaluation: vi.fn(),
+    forgetSavedFile: vi.fn(),
+    hasSavedFile: vi.fn(() => false),
     fileopts: {}
 }));
 
@@ -259,6 +261,28 @@ describe('saving', () => {
         await saveFileButtonClick(clickEvent('eval-save-file'));
 
         expect(documentStub.getElementById('eval-save-file')!.focused).toBe(true);
+    });
+
+    test('a save with a file already chosen announces at once, with no delay', async () => {
+        // Nothing opened, so nothing stole focus and there is nothing to wait
+        // for. Waiting would make saving mid-test feel like it had not worked.
+        vi.mocked(picker.hasSavedFile).mockReturnValue(true);
+        vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
+
+        await saveFileButtonClick(clickEvent('perform-save'));
+
+        expect(documentStub.getElementById('perform-msg')!.textContent)
+            .toBe('Functional Test data saved!');
+    });
+
+    test('loading forgets where the last evaluation was saved', async () => {
+        // Otherwise saving the newly loaded one would write it over the file
+        // the previous evaluation came from, without asking.
+        vi.mocked(picker.loadFile).mockResolvedValue({ evalUCs: [] });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(picker.forgetSavedFile).toHaveBeenCalled();
     });
 
     test('an unrecognised control falls back to the evaluation status region', async () => {
