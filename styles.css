@@ -64,11 +64,6 @@ dialog {
     padding: 20px;
 }
 
-.issue-aggregate {
-    width: 600px;
-    height: 400px;
-}
-
 .large-textarea {
     width: 600px;
     height: 400px;
@@ -142,10 +137,7 @@ tr {
 .fa-pencil {
     color: darkgreen;
 }
-.checkboxContainer {
-  display: flex;
-  align-items: center;
-}
+
 /*
  * Replaces style attributes the view modules used to set by hand. Inline styles
  * would force style-src 'unsafe-inline' on anything stricter than the policy in
