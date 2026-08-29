@@ -111,7 +111,6 @@ tr {
     height: 40px;
     background-color: #006B74;
     color: #ffffff;
-    border: 2px solid #ffffff;
     font-size: 16px;
     cursor: pointer;
     justify-content: center;
@@ -127,6 +126,7 @@ tr {
  */
 .close-button button:hover {
     background-color: #B00020;
+    border-color: #B00020;
     color: #ffffff;
 }
 
