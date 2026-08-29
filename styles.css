@@ -40,27 +40,28 @@ button:disabled {
     display: none;
 }
 
-#perform-dialog::backdrop,
-#add-issue-dialog::backdrop,
-#generate-summary-dialog::backdrop,
-#eval-view-results-dialog::backdrop,
-#new-step-dialog::backdrop {
+/*
+ * Every dialog, matched by element rather than by a list of ids.
+ *
+ * The lists these two rules used to carry had drifted apart from index.html:
+ * between them they named three dialogs that no longer exist (perform moved to
+ * a screen, the other two were renamed) and missed three that do, so
+ * view-summary and view-overall-comments were styled by neither rule,
+ * new-step got a backdrop but no size, and view-results a size but no
+ * backdrop. Nothing here is per-dialog, so nothing needs to name them.
+ */
+dialog::backdrop {
     background-image: linear-gradient(45deg,
             magenta, rebeccapurple,
             dodgerblue, green);
     opacity: 0.75;
 }
 
-#perform-dialog,
-#add-issue-dialog,
-#view-results-dialog,
-#generate-summary-dialog,
-#eval-view-results-dialog,
-#add-step-dialog {
+dialog {
     width: 70%;
     height: 70%;
     border: 1px solid #000;
-padding: 20px;
+    padding: 20px;
 }
 
 .issue-aggregate {
