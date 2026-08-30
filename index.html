@@ -103,19 +103,25 @@
         <button id="eval-delete-test" type="button" disabled>Delete Functional Test</button>
       </div>
       <br><br>
-      <button id="eval-editor-save" type="button">Save</button>
-      <button id="evaluation-editor-back" type="button">Back</button>
+      <div role="group" aria-label="Evaluation Editor Actions">
+        <button id="eval-editor-save" type="button">Save</button>
+        <button id="evaluation-editor-back" type="button">Back</button>
+      </div>
       <br><br>
     </div>
   </form>
   <form id="test-editor-form" class="inactive" name="testEditor">
-    <button type="button" disabled id="test-save">Save</button>
-    <button type="button" id="test-editor-back">Back</button>
+    <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
+    <div role="group" aria-label="Functional Test Editor Actions">
+      <button type="button" disabled id="test-save">Save</button>
+      <button type="button" id="test-editor-back">Back</button>
+    </div>
+    <p id="test-editor-msg" class="status-text"></p>
+    <!--
+      The screen's own heading used to sit inside this group, which named the
+      group twice over and drew the section's box around the whole screen.
+    -->
     <div role="group" id="test-edit" aria-labelledby="test-header-edit">
-      <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
-      <br><br>
-      <p id="test-editor-msg" class="status-text"></p>
-      <br><br>
       <h2 id="test-header-edit">Functional Test Information</h2>
       <label for="test-edit-name">Name: </label>
       <input name="name" type="text" id="test-edit-name">
@@ -170,9 +176,17 @@
     </p>
     <div id="extension-list">
     </div>
-    <button type="button" id="new-extension-btn">New Extension</button>
+    <!--
+      Both editor actions on one row. New Step used to sit outside the form,
+      which put it on a line of its own and made it a screen of its own for
+      showScreen to hide. It needs type="button" in here: the form has no
+      action, so a submit button would reload the page.
+    -->
+    <div class="button-row">
+      <button type="button" id="new-step-btn">New Step</button>
+      <button type="button" id="new-extension-btn">New Extension</button>
+    </div>
   </form>
-  <button id="new-step-btn" class="inactive">New Step</button>
   <dialog id="new-step-dialog" aria-labelledby="add-step-heading">
     <div class="app-status visually-hidden" role="alert"></div>
     <br><br>
@@ -197,9 +211,11 @@
   <div id="perform-screen" class="inactive">
     <form id="perform-form" name="performForm">
       <h2 id="perform-heading" tabindex="-1">Perform Functional Test</h2>
-      <button type="button" id="perform-back">Back</button>
-      <button type="button" id="perform-save">Save Functional Test Results</button>
-      <button type="button" id="view-test-results">View Results</button>
+      <div role="group" aria-label="Perform Actions">
+        <button type="button" id="perform-back">Back</button>
+        <button type="button" id="perform-save">Save Functional Test Results</button>
+        <button type="button" id="view-test-results">View Results</button>
+      </div>
       <br><br>
       <p id="perform-msg" class="status-text"></p>
       <h3>Overview Information: <span id="perform-name"></span></h3>
@@ -346,15 +362,16 @@
     <div class="app-status visually-hidden" role="alert"></div>
     <form id="eval-view-results-form" name="evaluationViewResults">
       <div>
-        <button id="generate-pdf" type="button">Generate Report (.docx)</button>
-        <br>
-        <p id="generate-pdf-status" class="status-text"></p>
+        <!-- Heading first, as in every other dialog: it is what the dialog is named by. -->
         <h1 id="eval-view-results-dialog-title" tabindex="-1">Evaluation Results</h1>
         <div class="close-button">
           <button type="button" id="eval-view-results-dialog-close" aria-label="close"><span
               class="fa fa-times"></span></button>
         </div>
-        <br><br>
+        <div role="group" aria-label="Report Actions">
+          <button id="generate-pdf" type="button">Generate Report (.docx)</button>
+        </div>
+        <p id="generate-pdf-status" class="status-text"></p>
         <h2>Use Case Results Summary</h2>
         <h3>Scorecard</h3>
         <div id="eval-results-scorecard"></div>
