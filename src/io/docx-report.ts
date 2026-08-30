@@ -4,9 +4,9 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, SCORING_KEY_PARAGRAPHS,
-    SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatOverallRating, formatReportTimestamp,
-    formatScore, scoreKeyRows
+    HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
+    SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, TABLE_RULE_COLOR, buildCoverSubtitle,
+    formatOverallRating, formatReportTimestamp, formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
 
@@ -40,8 +40,8 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
 }
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
-    const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
-            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
+    const { AlignmentType, Bookmark, BorderStyle, Document, HeadingLevel, InternalHyperlink,
+            PageBreak, Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
             XmlComponent } = docx;
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
@@ -79,13 +79,32 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         return new TableCell({ children: paragraphs, ...(options.shading ? { shading: options.shading } : {}) });
     }
 
-    // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
-    function headerCell(content: unknown) {
+    /**
+     * A heading cell, shaded unless the table asks for it plain.
+     *
+     * The text colour is set only when the fill is, per REPORT_TEXT_COLOR: an
+     * unshaded cell is left on Word's "auto" so it still follows the reader's
+     * theme. Dropping the fill does not stop the cell being a heading, which is
+     * carried by `w:tblLook`.
+     */
+    function headerCell(content: unknown, shaded = true) {
+        if (!shaded) {
+            return new TableCell({ children: [text(content, { bold: true })] });
+        }
         return new TableCell({
             children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
             shading: { type: ShadingType.CLEAR, fill: HEADER_FILL, color: 'auto' }
         });
     }
+
+    /** A light blue rule on every edge, so a row can be followed across its columns. */
+    const ruledBorders = (() => {
+        const rule = { style: BorderStyle.SINGLE, size: 8, color: TABLE_RULE_COLOR };
+        return {
+            top: rule, bottom: rule, left: rule, right: rule,
+            insideHorizontal: rule, insideVertical: rule
+        };
+    })();
 
     /**
      * Records which of a table's first row and first column are headings.
@@ -121,17 +140,37 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      *
      * `rowHeadings` turns each row's first cell into a heading, which is what
      * a label and value table like the scorecard needs: without it a screen
-     * reader reads the value with nothing to say what it is.
+     * reader reads the value with nothing to say what it is. `shadeRowHeadings`
+     * says whether those cells carry a fill; `ruled` puts the light blue rule
+     * on the table.
+     *
+     * The header row is mapped through an arrow rather than passed `headerCell`
+     * directly, because `Array.map` hands the index in as the second argument
+     * and would read it as the shading flag.
      */
-    function makeTable(headers: unknown[], dataRows: unknown[][], rowHeadings = false) {
+    function makeTable(
+        headers: unknown[],
+        dataRows: unknown[][],
+        rowHeadings = false,
+        { shadeRowHeadings = true, ruled = false } = {}
+    ) {
         const rows = dataRows.map((row) => new TableRow({
-            children: row.map((c, index) => (rowHeadings && index === 0 ? headerCell(c) : cell(c)))
+            children: row.map((c, index) => (
+                rowHeadings && index === 0 ? headerCell(c, shadeRowHeadings) : cell(c)
+            ))
         }));
         const table = new Table({
             rows: headers.length > 0
-                ? [new TableRow({ tableHeader: true, children: headers.map(headerCell) }), ...rows]
+                ? [
+                    new TableRow({
+                        tableHeader: true,
+                        children: headers.map((header) => headerCell(header))
+                    }),
+                    ...rows
+                ]
                 : rows,
-            width: { size: 100, type: WidthType.PERCENTAGE }
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            ...(ruled ? { borders: ruledBorders } : {})
         });
         applyTableLook(table, headers.length > 0, rowHeadings);
         return table;
@@ -147,24 +186,34 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     const children: unknown[] = [];
 
-    // Cover.
+    // Cover. The titles are centred; the timestamp follows them smaller and set
+    // to the right, so it reads as the date the report was produced rather than
+    // as one more line of the title.
     const subtitle = buildCoverSubtitle(evaluation.asset, evaluation.name);
-    const cover = [
-        String(evaluation.workspace || ''),
-        subtitle,
-        'Use Case Results',
-        formatReportTimestamp(now),
-        'Produced by Functional Test Tool, Level Access Inc.'
+    const titles = [
+        { line: String(evaluation.workspace || ''), bold: true, size: 40 },
+        { line: subtitle, bold: false, size: 28 },
+        { line: 'Use Case Results', bold: false, size: 28 }
     ];
-    cover.forEach((line, index) => {
+    titles.forEach(({ line, bold, size }) => {
         if (line === '') {
             return;
         }
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: line, bold: index === 0, size: index === 0 ? 40 : 28 })]
+            children: [new TextRun({ text: line, bold, size })]
         }));
     });
+    children.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [new TextRun({ text: formatReportTimestamp(now), size: 20 })]
+    }));
+    children.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({
+            text: 'Produced by Functional Test Tool, Level Access Inc.', size: 28
+        })]
+    }));
     children.push(new Paragraph({ children: [new PageBreak()] }));
 
     const scorecard = buildScorecard(evaluation);
@@ -205,7 +254,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         ['4', String(scorecard.countsByScore.get(4) || 0)],
         ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
         ['Overall Rating', formatOverallRating(scorecard.overallRating)]
-    ], true));
+    ], true, { shadeRowHeadings: false }));
 
     children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
     if (groups.length > 0) {
@@ -277,7 +326,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Start Location', String(report.startLocation || '')],
             ['Operating System', String(report.operatingSystem || '')],
             ['Application', String(report.application || '')]
-        ], true));
+        ], true, { ruled: true }));
 
         children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
         const stepRows = report.steps.map((step, stepIndex) => {
@@ -290,7 +339,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ];
         });
         children.push(makeTable(
-            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
+            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
+            false, { ruled: true }
         ));
 
         // Numbered from 1 within the use case, which is how a step refers to
@@ -309,7 +359,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                         String(stepScore({ issues: extension.issues || [] })),
                         issueLines.length > 0 ? issueLines : ['No issues']
                     ];
-                })
+                }),
+                false, { ruled: true }
             ));
         }
 
@@ -330,7 +381,40 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         }));
     }
 
-    return new Document({ sections: [{ children }] });
+    /*
+     * Arial everywhere and black headings, with room above and below each one.
+     *
+     * The space is set on the heading styles rather than written in as empty
+     * paragraphs: an empty paragraph is a blank line a screen reader stops on
+     * and announces, and this report is a deliverable of an accessibility
+     * evaluation. Spacing puts the same gap on the page with nothing in it to
+     * read.
+     *
+     * Naming a heading level here replaces the library's own style for it
+     * outright rather than adding to it, so each level repeats the size docx
+     * gave it and level four its italic. Leaving those out flattens every
+     * heading to body size, which is how the hierarchy goes missing. Only the
+     * four levels the report actually uses are named.
+     */
+    function headingStyle(size?: number, italics = false) {
+        return {
+            run: { font: REPORT_FONT, color: HEADING_COLOR, ...(size ? { size } : {}), italics },
+            paragraph: { spacing: { before: 240, after: 240 } }
+        };
+    }
+
+    return new Document({
+        styles: {
+            default: {
+                document: { run: { font: REPORT_FONT } },
+                heading1: headingStyle(32),
+                heading2: headingStyle(26),
+                heading3: headingStyle(24),
+                heading4: headingStyle(undefined, true)
+            }
+        },
+        sections: [{ children }]
+    });
 }
 
 /**

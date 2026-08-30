@@ -77,6 +77,30 @@ const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
 export const HEADER_FILL = 'EEEEEE';
 
 /**
+ * The font the whole report is set in, headings and tables included.
+ *
+ * Word's own default is a serif, which is not what the rest of the deliverables
+ * this report sits with are set in.
+ */
+export const REPORT_FONT = 'Arial';
+
+/**
+ * Heading colour. Word's built-in heading styles are a blue that this report
+ * does not want; every heading is plain black.
+ */
+export const HEADING_COLOR = '000000';
+
+/**
+ * The rule on the detailed results tables, to follow a row across its columns.
+ *
+ * Office's "Blue, Accent 1". At 2.96:1 on white it is a hair under the 3:1 that
+ * 1.4.11 asks of a meaningful graphic, which is the price of it reading as a
+ * light blue; the tables do not lean on it, because their structure is carried
+ * by the heading cells and `w:tblLook` rather than by anything drawn.
+ */
+export const TABLE_RULE_COLOR = '5B9BD5';
+
+/**
  * Text colour for anything the report gives a background of its own.
  *
  * Word's "auto" adapts the text to the theme, which is right for ordinary
