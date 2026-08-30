@@ -326,9 +326,7 @@ dialog {
  */
 #perform-form div[id^="step-div"],
 #perform-screen div[id^="extension-div"] {
-    margin-bottom: var(--stack);
-    padding-top: var(--stack);
-    border-top: 1px solid var(--border);
+    margin-bottom: calc(var(--stack) * 1.6);
 }
 
 #perform-form div[id^="step-div"] ul,

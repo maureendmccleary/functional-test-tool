@@ -111,7 +111,7 @@ export function scoreChanged(): void {
 }
 
 function createStepLabelForPerform(stepNumber: number): HTMLElement {
-    const newStepLabel = document.createElement('H3');
+    const newStepLabel = document.createElement('H2');
     newStepLabel.textContent = `Step ${stepNumber + 1}`;
     newStepLabel.setAttribute("id", getStepLabelIdForPerform(stepNumber));
     return newStepLabel;
@@ -126,9 +126,9 @@ function createStepInstructionsForPerform(stepNumber: number): HTMLElement {
 }
 
 function createIssueListHeading(): HTMLElement {
-    const issueListH4 = document.createElement('H4');
-    issueListH4.textContent = "Issues";
-    return issueListH4;
+    const issueListHeading = document.createElement('H3');
+    issueListHeading.textContent = "Issues";
+    return issueListHeading;
 }
 
 function createStepResultsForPerform(stepNumber: number): HTMLElement {
@@ -155,14 +155,14 @@ export function addStepToPerform(test: FunctionalTest, stepNumber: number): void
     stepDiv.setAttribute("id", `step-div[${stepNumber}]`);
     const newStepLabel = createStepLabelForPerform(stepNumber);
     const newStep = createStepInstructionsForPerform(stepNumber);
-    const issueListH4 = createIssueListHeading();
+    const issueListHeading = createIssueListHeading();
     const stepResults = createStepResultsForPerform(stepNumber);
     const addIssueButton = createAddIssueButtonForPerform(stepNumber);
 
     appendNewlines(form);
     stepDiv.appendChild(newStepLabel);
     stepDiv.appendChild(newStep);
-    stepDiv.appendChild(issueListH4);
+    stepDiv.appendChild(issueListHeading);
     stepDiv.appendChild(stepResults);
     appendNewlines(stepDiv);
     stepDiv.appendChild(addIssueButton);
@@ -196,7 +196,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
         const extensionDiv = document.createElement("DIV");
         extensionDiv.setAttribute("id", `extension-div[${index}]`);
 
-        const label = document.createElement("H3");
+        const label = document.createElement("H2");
         label.textContent = `Extension ${index + 1}`;
         label.setAttribute("id", getExtensionLabelIdForPerform(index));
 
@@ -204,7 +204,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
         instructions.setAttribute("id", `perform-extension-contents[${index}]`);
         instructions.textContent = extension.instructions;
 
-        const issuesHeading = document.createElement("H4");
+        const issuesHeading = document.createElement("H3");
         issuesHeading.textContent = "Issues";
 
         const results = document.createElement("UL");
