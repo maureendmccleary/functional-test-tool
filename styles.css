@@ -22,7 +22,10 @@
     --border: #C9CBDE;
     --text: #111215;
     --text-muted: #4A4D66;
-    --radius: 4px;
+    --radius: 6px;
+    --field: 360px;
+    --gap: 12px;
+    --stack: 20px;
 }
 
 /*
@@ -37,7 +40,7 @@ html {
 
 body {
     box-sizing: border-box;
-    max-width: 1100px;
+    max-width: 1200px;
     min-height: 100vh;
     margin: 0 auto;
     padding: 32px 40px 64px;
@@ -50,12 +53,32 @@ body {
     line-height: 1.5;
 }
 
+/*
+ * Every br in this app is a pair of them used as a spacer, both the ones in
+ * index.html and the ones appendNewlines adds; none of them breaks a line of
+ * prose. Margins do the job properly and to a consistent measure, and they do
+ * not collapse to nothing when an element between them is hidden.
+ */
+br {
+    display: none;
+}
+
 h1,
 h2,
 h3,
 h4 {
     color: var(--text);
     line-height: 1.25;
+    margin: 0 0 var(--gap);
+}
+
+h2,
+h3 {
+    margin-top: calc(var(--stack) * 1.6);
+}
+
+p {
+    margin: 0 0 var(--gap);
 }
 
 /*
@@ -88,7 +111,7 @@ button {
     background-color: var(--brand);
     color: #ffffff;
     border: 2px solid var(--brand);
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-family: inherit;
     font-size: 1rem;
     font-weight: 600;
@@ -129,9 +152,27 @@ textarea {
 }
 
 input[type="text"],
-input:not([type]) {
-    width: 320px;
+input:not([type]),
+select {
+    width: var(--field);
     max-width: 100%;
+}
+
+/*
+ * Label over control, which is what the rest of the web does and what makes a
+ * column of fields line up without a table. The labels that name a control
+ * sitting beside them opt out through .label-inline.
+ */
+label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+label + input,
+label + select,
+label + textarea {
+    margin-bottom: var(--stack);
 }
 
 input:focus-visible,
@@ -139,10 +180,6 @@ select:focus-visible,
 textarea:focus-visible {
     outline: 3px solid var(--brand);
     outline-offset: 1px;
-}
-
-label {
-    font-weight: 600;
 }
 
 /*
@@ -200,6 +237,144 @@ dialog {
     padding: 20px 24px;
 }
 
+/*
+ * A section that names itself with a heading is a card. The screens already
+ * mark those with role="group" and aria-labelledby, so the grouping the markup
+ * describes and the grouping the page shows are the same thing, and neither
+ * needs a list of ids to keep in step with the other. The action groups are
+ * named with aria-label instead, and are rows rather than cards.
+ */
+[role="group"][aria-labelledby] {
+    margin-bottom: var(--stack);
+    padding: 4px 20px 20px;
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+[role="group"][aria-labelledby] > h2:first-child,
+[role="group"][aria-labelledby] > h1:first-child {
+    margin-top: var(--gap);
+}
+
+/* Inside a card the fields sit on the card's own fill, so they need their own. */
+[role="group"][aria-labelledby] input,
+[role="group"][aria-labelledby] select,
+[role="group"][aria-labelledby] textarea {
+    background-color: var(--surface);
+}
+
+/*
+ * The screens group their actions in a role="group" already, so those groups
+ * are the button rows and need no new markup. .button-row is for the two the
+ * test editor puts under the extension list, which have no group of their own.
+ */
+[role="group"][aria-label$="Actions"],
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    margin-bottom: var(--stack);
+}
+
+.button-row {
+    justify-content: center;
+    margin-top: calc(var(--stack) * 1.6);
+}
+
+/* The gap draws the spacing here, so the margin every button carries would double it. */
+[role="group"][aria-label$="Actions"] button,
+.button-row button {
+    margin: 0;
+}
+
+/*
+ * In the editor a step or an extension is a label, the text of it, and the
+ * control that deletes it: a row, not three things in a stack.
+ *
+ * Matched on the generated id rather than on position, because the steps sit
+ * inside an unnamed wrapper div that the extensions do not have and a child
+ * selector catches the wrapper on one list and the rows on the other. Scoped
+ * to the editor's two lists, because the perform screen builds step-div and
+ * extension-div ids of its own with quite different contents in them.
+ */
+#step-list div[id^="step-div"],
+#extension-list div[id^="extension-div"] {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--gap);
+    margin-bottom: var(--stack);
+}
+
+#step-list div[id^="step-div"] > label,
+#extension-list div[id^="extension-div"] > label {
+    margin: 0;
+    padding-top: 10px;
+}
+
+#step-list div[id^="step-div"] > textarea,
+#extension-list div[id^="extension-div"] > textarea {
+    width: 100%;
+    height: 120px;
+    margin: 0;
+}
+
+/*
+ * On the perform screen a step is a block the tester reads and then records
+ * against, so it is separated from the next one rather than laid out as a row.
+ */
+#perform-form div[id^="step-div"],
+#perform-screen div[id^="extension-div"] {
+    margin-bottom: var(--stack);
+    padding-top: var(--stack);
+    border-top: 1px solid var(--border);
+}
+
+#perform-form div[id^="step-div"] ul,
+#perform-screen div[id^="extension-div"] ul {
+    margin: 0 0 var(--gap);
+}
+
+/*
+ * A disclosure holding a column of checkboxes. It carries no role and no name
+ * on purpose, so it is matched by id.
+ */
+#test-edit-at-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px var(--stack);
+    margin-top: var(--gap);
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+#test-edit-at-menu label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: 400;
+}
+
+/*
+ * The checkbox is written after the text it belongs to, which reads as a
+ * trailing box rather than a checkbox with a label. Only the input is
+ * focusable and it stays inside its own label, so ordering it first moves
+ * nothing a keyboard or a screen reader follows.
+ */
+#test-edit-at-menu label input {
+    order: -1;
+}
+
+/* The disclosure that opens the list, on a line of its own rather than beside the last field. */
+#test-edit-at-btn {
+    display: block;
+    margin-top: var(--gap);
+}
+
 .large-textarea {
     width: 600px;
     height: 400px;
@@ -231,6 +406,15 @@ th {
     color: var(--text);
     padding: 10px 12px;
     text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+/*
+ * Only a column heading gets the heavy rule, because it sits over the column it
+ * names. The scorecard's headings are row headings and a rule under each one
+ * draws a line through the middle of the table for every row.
+ */
+th[scope="col"] {
     border-bottom: 2px solid var(--brand);
 }
 
