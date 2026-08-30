@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
-    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreKeyRows, scoreRowStyle
+    BAND_FILL, HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreKeyRows, scoreRowStyle
 } from '../src/domain/report-format.js';
 
 /**
@@ -121,6 +121,18 @@ describe('table headings', () => {
     });
 });
 
+describe('banded rows', () => {
+    test('text is legible on the band', () => {
+        expect(contrastRatio(REPORT_TEXT_COLOR, BAND_FILL)).toBeGreaterThanOrEqual(NORMAL_TEXT);
+    });
+
+    test('the band is not so dark that it reads as a heading fill', () => {
+        // Banding is an aid to the eye and nothing more. If it ever grew darker
+        // than the fill behind a heading cell it would start to look like one.
+        expect(relativeLuminance(BAND_FILL)).toBeGreaterThan(relativeLuminance('808080'));
+    });
+});
+
 /*
  * The same arithmetic pointed at the stylesheet.
  *
@@ -163,7 +175,24 @@ describe('the stylesheet palette', () => {
         }
     });
 
-    test('the focus ring is visible against the surface it is drawn on', () => {
-        expect(contrastRatio(token('brand'), token('surface'))).toBeGreaterThanOrEqual(NON_TEXT);
+    /*
+     * The ring is two tones, so both edges of it are checked: the dark ring
+     * against the page it is drawn on, and the white spacer against each fill
+     * it can hug. One of the two carries the indicator whichever side a given
+     * edge falls on, which is what lets one rule serve every control.
+     */
+    describe('the focus ring', () => {
+        const pairs: [string, string, string][] = [
+            ['the ring against the page', token('focus-ring'), token('surface')],
+            ['the ring against a card', token('focus-ring'), token('surface-muted')],
+            ['the spacer against a button', WHITE, token('brand')],
+            ['the spacer against a delete button', WHITE, token('danger')]
+        ];
+
+        for (const [what, foreground, background] of pairs) {
+            test(`${what} clears 3 to 1`, () => {
+                expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(NON_TEXT);
+            });
+        }
     });
 });

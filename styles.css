@@ -22,6 +22,7 @@
     --border: #C9CBDE;
     --text: #111215;
     --text-muted: #4A4D66;
+    --focus-ring: #111215;
     --radius: 6px;
     --field: 360px;
     --gap: 12px;
@@ -127,12 +128,6 @@ button:hover {
     border-color: var(--brand-hover);
 }
 
-button:focus-visible {
-    outline: 3px solid #ffffff;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 5px var(--brand);
-}
-
 button:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -175,22 +170,26 @@ label + textarea {
     margin-bottom: var(--stack);
 }
 
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-    outline: 3px solid var(--brand);
-    outline-offset: 1px;
-}
-
 /*
- * Every screen and dialog opens by moving focus to its heading, so that heading
- * is a focus target and needs to look like one. Chromium does draw its default
- * hairline here, but a ring the width of the ones on the controls is easier to
- * catch on the one element focus arrives at without being asked for.
+ * One focus ring for everything, built the way a browser builds its own: a
+ * white spacer hugging the component, then a near-black ring outside it.
+ *
+ * Two tones because one cannot do it. A ring has to stand out from the thing it
+ * surrounds and from the page behind it, and this app draws white pages, pale
+ * cards, indigo buttons and red ones. --focus-ring on white is 18.7:1 and the
+ * white spacer on the indigo is 7.7:1, so whichever side a given edge falls on,
+ * it clears the 3:1 that 1.4.11 asks. A single indigo ring managed 7.7:1 on the
+ * page but 1.0:1 against an indigo button, which is to say nothing at all.
+ *
+ * The rule this replaced on buttons put a white outline at a 2px offset over a
+ * brand shadow spread 5px, so the shadow only showed in the 2px the outline did
+ * not cover and the rest of it was white on a white page: a 2px ring, where
+ * 8px was intended. The pairs are checked in tests/contrast.test.ts.
  */
-[tabindex="-1"]:focus-visible {
-    outline: 3px solid var(--brand);
-    outline-offset: 4px;
+:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
 }
 
 .status-text {
