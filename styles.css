@@ -1,24 +1,113 @@
+/*
+ * Palette and metrics sampled from the platform this app is meant to sit
+ * alongside: the indigo it uses for every primary action and link, and the pale
+ * periwinkle it rules its tables with. Every colour that carries meaning is
+ * named here so two rules cannot quietly disagree about it. The literals left
+ * in the sheet are the ones that carry none: white as the label on a fill, and
+ * two translucent shades of --text for the backdrop and the dialog's shadow,
+ * which rgba() cannot take a custom property for.
+ *
+ * The pairs these get put into are checked by arithmetic in
+ * tests/contrast.test.ts rather than asserted in a comment here, because a
+ * comment cannot fail when somebody nudges one of them. This is a tool for
+ * finding the places where contrast does not hold; it should hold in the tool.
+ */
+:root {
+    --brand: #1F2DF5;
+    --brand-hover: #1622C4;
+    --danger: #B00020;
+    --danger-hover: #8A0019;
+    --surface: #ffffff;
+    --surface-muted: #F7F7FB;
+    --border: #C9CBDE;
+    --text: #111215;
+    --text-muted: #4A4D66;
+    --radius: 4px;
+}
+
+/*
+ * The page is the muted ground and the body is the sheet of content laid on it.
+ * There is no wrapper element to make the card out of -- every screen is a
+ * top-level form or div -- so the body itself is the card, which also spares
+ * this rule a list of screen ids to drift out of date.
+ */
+html {
+    background-color: var(--surface-muted);
+}
+
+body {
+    box-sizing: border-box;
+    max-width: 1100px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 32px 40px 64px;
+    background-color: var(--surface);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    color: var(--text);
+    font-family: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--text);
+    line-height: 1.25;
+}
+
+/*
+ * The rule under a heading is the platform's active-tab underline: brand weight
+ * for the screen's own title, a hairline for the sections under it.
+ */
+h1 {
+    font-size: 1.75rem;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--brand);
+}
+
+h2 {
+    font-size: 1.25rem;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+h3 {
+    font-size: 1.0625rem;
+}
+
+a {
+    color: var(--brand);
+}
+
 button {
     appearance: none;
     -webkit-appearance: none;
-    background-color: #006B74;
+    background-color: var(--brand);
     color: #ffffff;
-    border: 2px solid #006B74;
+    border: 2px solid var(--brand);
     padding: 8px 16px;
+    font-family: inherit;
     font-size: 1rem;
-    border-radius: 4px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-radius: var(--radius);
+    /* Rows of these wrap on a narrow screen, and without it the rows touch. */
+    margin: 0 2px 6px 0;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #005860;
-    border-color: #005860;
+    background-color: var(--brand-hover);
+    border-color: var(--brand-hover);
 }
 
 button:focus-visible {
     outline: 3px solid #ffffff;
     outline-offset: 2px;
-    box-shadow: 0 0 0 5px #006B74;
+    box-shadow: 0 0 0 5px var(--brand);
 }
 
 button:disabled {
@@ -26,14 +115,59 @@ button:disabled {
     cursor: not-allowed;
 }
 
+input,
+select,
+textarea {
+    box-sizing: border-box;
+    padding: 7px 10px;
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+input[type="text"],
+input:not([type]) {
+    width: 320px;
+    max-width: 100%;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 1px;
+}
+
+label {
+    font-weight: 600;
+}
+
+/*
+ * Every screen and dialog opens by moving focus to its heading, so that heading
+ * is a focus target and needs to look like one. Chromium does draw its default
+ * hairline here, but a ring the width of the ones on the controls is easier to
+ * catch on the one element focus arrives at without being asked for.
+ */
+[tabindex="-1"]:focus-visible {
+    outline: 3px solid var(--brand);
+    outline-offset: 4px;
+}
+
+.status-text {
+    color: var(--text-muted);
+}
+
 .field-error {
-    color: #B00020;
+    color: var(--danger);
     font-weight: bold;
     margin: 4px 0;
 }
 
 [aria-invalid="true"] {
-    border: 2px solid #B00020;
+    border: 2px solid var(--danger);
 }
 
 .inactive {
@@ -51,17 +185,19 @@ button:disabled {
  * backdrop. Nothing here is per-dialog, so nothing needs to name them.
  */
 dialog::backdrop {
-    background-image: linear-gradient(45deg,
-            magenta, rebeccapurple,
-            dodgerblue, green);
-    opacity: 0.75;
+    background-color: rgba(17, 18, 21, 0.55);
 }
 
 dialog {
+    box-sizing: border-box;
     width: 70%;
     height: 70%;
-    border: 1px solid #000;
-    padding: 20px;
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(17, 18, 21, 0.22);
+    padding: 20px 24px;
 }
 
 .large-textarea {
@@ -79,38 +215,41 @@ dialog {
     height: 200px;
 }
 
+/*
+ * Ruled rows rather than a boxed grid, as the platform's tables are: the
+ * header carries the weight and everything below it is separated by a single
+ * hairline.
+ */
 table {
-    width: 75%;
+    width: 100%;
     border-collapse: collapse;
-    margin: 20px auto;
+    margin: 20px 0;
 }
 
 th {
-    background-color: #333;
-    color: #fff;
-    padding: 10px;
-    text-align: center;
+    background-color: var(--surface-muted);
+    color: var(--text);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--brand);
 }
 
 td {
-    border: 1px solid #000;
-    padding: 10px;
-}
-
-tr {
-    height: 40px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
 }
 
 .close-button button {
     position: absolute;
     display: flex;
+    /* Positioned exactly, so it opts out of the margin every other button carries. */
+    margin: 0;
     padding: 0px;
     top: 10px;
     right: 10px;
     width: 40px;
     height: 40px;
-    background-color: #006B74;
-    color: #ffffff;
     font-size: 16px;
     cursor: pointer;
     justify-content: center;
@@ -125,17 +264,27 @@ tr {
  * already uses.
  */
 .close-button button:hover {
-    background-color: #B00020;
-    border-color: #B00020;
+    background-color: var(--danger);
+    border-color: var(--danger);
     color: #ffffff;
 }
 
-.fa-trash {
-    color: darkred;
+/*
+ * Every delete control is an icon-only button, and the icon used to be dark red
+ * on the button's own fill, which was unreadable against either the old teal or
+ * the brand indigo. The colour belongs to the button, and the icon inherits the
+ * white that comes with it. Matched by the icon it contains because none of
+ * these buttons is given a class, and :has failing to match would only leave
+ * them looking like every other button rather than breaking anything.
+ */
+button:has(.fa-trash) {
+    background-color: var(--danger);
+    border-color: var(--danger);
 }
 
-.fa-pencil {
-    color: darkgreen;
+button:has(.fa-trash):hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
 }
 
 /*
