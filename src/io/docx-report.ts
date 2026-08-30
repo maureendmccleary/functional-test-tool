@@ -193,14 +193,20 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             children: [new TextRun({ text: line, bold, size })]
         }));
     });
+    // Both footing lines share a size, so they are set from one constant rather
+    // than from two that can drift. The gap above them is paragraph spacing for
+    // the same reason the headings' is: an empty paragraph is a blank line a
+    // screen reader stops on and reads out.
+    const footingSize = 20;
     children.push(new Paragraph({
         alignment: AlignmentType.RIGHT,
-        children: [new TextRun({ text: formatReportTimestamp(now), size: 20 })]
+        spacing: { before: 720 },
+        children: [new TextRun({ text: formatReportTimestamp(now), size: footingSize })]
     }));
     children.push(new Paragraph({
         alignment: AlignmentType.RIGHT,
         children: [new TextRun({
-            text: 'Produced by Functional Test Tool, Level Access Inc.', size: 28
+            text: 'Produced by Functional Test Tool, Level Access Inc.', size: footingSize
         })]
     }));
     children.push(new Paragraph({ children: [new PageBreak()] }));
