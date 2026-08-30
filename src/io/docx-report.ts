@@ -4,9 +4,9 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, SCORING_KEY_PARAGRAPHS,
-    SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle, formatOverallRating, formatReportTimestamp,
-    formatScore, scoreKeyRows
+    BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
+    SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
+    formatOverallRating, formatReportTimestamp, formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
 
@@ -87,6 +87,9 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
+    /** The shading a banded row's cells carry, and the text colour that goes with it. */
+    const bandShading = { type: ShadingType.CLEAR, fill: BAND_FILL, color: 'auto' };
+
     /**
      * Records which of a table's first row and first column are headings.
      *
@@ -121,15 +124,40 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      *
      * `rowHeadings` turns each row's first cell into a heading, which is what
      * a label and value table like the scorecard needs: without it a screen
-     * reader reads the value with nothing to say what it is.
+     * reader reads the value with nothing to say what it is. `banded` shades
+     * every other row, so a wide row can be followed across its columns.
+     *
+     * A banded cell is given REPORT_TEXT_COLOR for the same reason a heading
+     * cell is: it has a fill of its own, and Word's "auto" can turn the text
+     * pale in a dark theme and leave pale on pale.
      */
-    function makeTable(headers: unknown[], dataRows: unknown[][], rowHeadings = false) {
-        const rows = dataRows.map((row) => new TableRow({
-            children: row.map((c, index) => (rowHeadings && index === 0 ? headerCell(c) : cell(c)))
-        }));
+    function makeTable(
+        headers: unknown[],
+        dataRows: unknown[][],
+        rowHeadings = false,
+        { banded = false } = {}
+    ) {
+        const rows = dataRows.map((row, rowIndex) => {
+            const shaded = banded && rowIndex % 2 === 1;
+            return new TableRow({
+                children: row.map((c, index) => (
+                    rowHeadings && index === 0
+                        ? headerCell(c)
+                        : cell(c, shaded
+                            ? { color: REPORT_TEXT_COLOR, shading: bandShading }
+                            : {})
+                ))
+            });
+        });
         const table = new Table({
             rows: headers.length > 0
-                ? [new TableRow({ tableHeader: true, children: headers.map(headerCell) }), ...rows]
+                ? [
+                    new TableRow({
+                        tableHeader: true,
+                        children: headers.map((header) => headerCell(header))
+                    }),
+                    ...rows
+                ]
                 : rows,
             width: { size: 100, type: WidthType.PERCENTAGE }
         });
@@ -147,24 +175,40 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     const children: unknown[] = [];
 
-    // Cover.
+    // Cover. The titles are centred; the timestamp follows them smaller, and it
+    // and the credit line below it are both set to the right, so the two read as
+    // a footing to the titles rather than as more of them.
     const subtitle = buildCoverSubtitle(evaluation.asset, evaluation.name);
-    const cover = [
-        String(evaluation.workspace || ''),
-        subtitle,
-        'Use Case Results',
-        formatReportTimestamp(now),
-        'Produced by Functional Test Tool, Level Access Inc.'
+    const titles = [
+        { line: String(evaluation.workspace || ''), bold: true, size: 40 },
+        { line: subtitle, bold: false, size: 28 },
+        { line: 'Use Case Results', bold: false, size: 28 }
     ];
-    cover.forEach((line, index) => {
+    titles.forEach(({ line, bold, size }) => {
         if (line === '') {
             return;
         }
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: line, bold: index === 0, size: index === 0 ? 40 : 28 })]
+            children: [new TextRun({ text: line, bold, size })]
         }));
     });
+    // Both footing lines share a size, so they are set from one constant rather
+    // than from two that can drift. The gap above them is paragraph spacing for
+    // the same reason the headings' is: an empty paragraph is a blank line a
+    // screen reader stops on and reads out.
+    const footingSize = 20;
+    children.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { before: 720 },
+        children: [new TextRun({ text: formatReportTimestamp(now), size: footingSize })]
+    }));
+    children.push(new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [new TextRun({
+            text: 'Produced by Functional Test Tool, Level Access Inc.', size: footingSize
+        })]
+    }));
     children.push(new Paragraph({ children: [new PageBreak()] }));
 
     const scorecard = buildScorecard(evaluation);
@@ -290,7 +334,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ];
         });
         children.push(makeTable(
-            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows
+            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
+            false, { banded: true }
         ));
 
         // Numbered from 1 within the use case, which is how a step refers to
@@ -309,7 +354,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                         String(stepScore({ issues: extension.issues || [] })),
                         issueLines.length > 0 ? issueLines : ['No issues']
                     ];
-                })
+                }),
+                false, { banded: true }
             ));
         }
 
@@ -330,7 +376,40 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         }));
     }
 
-    return new Document({ sections: [{ children }] });
+    /*
+     * Arial everywhere and black headings, with room above and below each one.
+     *
+     * The space is set on the heading styles rather than written in as empty
+     * paragraphs: an empty paragraph is a blank line a screen reader stops on
+     * and announces, and this report is a deliverable of an accessibility
+     * evaluation. Spacing puts the same gap on the page with nothing in it to
+     * read.
+     *
+     * Naming a heading level here replaces the library's own style for it
+     * outright rather than adding to it, so each level repeats the size docx
+     * gave it and level four its italic. Leaving those out flattens every
+     * heading to body size, which is how the hierarchy goes missing. Only the
+     * four levels the report actually uses are named.
+     */
+    function headingStyle(size?: number, italics = false) {
+        return {
+            run: { font: REPORT_FONT, color: HEADING_COLOR, ...(size ? { size } : {}), italics },
+            paragraph: { spacing: { before: 240, after: 240 } }
+        };
+    }
+
+    return new Document({
+        styles: {
+            default: {
+                document: { run: { font: REPORT_FONT } },
+                heading1: headingStyle(32),
+                heading2: headingStyle(26),
+                heading3: headingStyle(24),
+                heading4: headingStyle(undefined, true)
+            }
+        },
+        sections: [{ children }]
+    });
 }
 
 /**

@@ -77,6 +77,31 @@ const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
 export const HEADER_FILL = 'EEEEEE';
 
 /**
+ * The font the whole report is set in, headings and tables included.
+ *
+ * Word's own default is a serif, which is not what the rest of the deliverables
+ * this report sits with are set in.
+ */
+export const REPORT_FONT = 'Arial';
+
+/**
+ * Heading colour. Word's built-in heading styles are a blue that this report
+ * does not want; every heading is plain black.
+ */
+export const HEADING_COLOR = '000000';
+
+/**
+ * Shading on every other row of the detailed results tables, so a row can be
+ * followed across its columns.
+ *
+ * Office's "Blue, Accent 1, Lighter 60%". It reads at 1.5:1 against the unbanded
+ * rows, which is what banding is: an aid to the eye, not a carrier of meaning,
+ * so it is not held to 3:1. What does matter is the text sitting on it, and
+ * REPORT_TEXT_COLOR on this is 14:1. Checked in tests/contrast.test.ts.
+ */
+export const BAND_FILL = 'BDD7EE';
+
+/**
  * Text colour for anything the report gives a background of its own.
  *
  * Word's "auto" adapts the text to the theme, which is right for ordinary

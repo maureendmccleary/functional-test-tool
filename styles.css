@@ -1,24 +1,131 @@
+/*
+ * Palette and metrics sampled from the platform this app is meant to sit
+ * alongside: the indigo it uses for every primary action and link, and the pale
+ * periwinkle it rules its tables with. Every colour that carries meaning is
+ * named here so two rules cannot quietly disagree about it. The literals left
+ * in the sheet are the ones that carry none: white as the label on a fill, and
+ * two translucent shades of --text for the backdrop and the dialog's shadow,
+ * which rgba() cannot take a custom property for.
+ *
+ * The pairs these get put into are checked by arithmetic in
+ * tests/contrast.test.ts rather than asserted in a comment here, because a
+ * comment cannot fail when somebody nudges one of them. This is a tool for
+ * finding the places where contrast does not hold; it should hold in the tool.
+ */
+:root {
+    --brand: #1F2DF5;
+    --brand-hover: #1622C4;
+    --danger: #B00020;
+    --danger-hover: #8A0019;
+    --surface: #ffffff;
+    --surface-muted: #F7F7FB;
+    --border: #C9CBDE;
+    --text: #111215;
+    --text-muted: #4A4D66;
+    --focus-ring: #111215;
+    --radius: 6px;
+    --field: 360px;
+    --gap: 12px;
+    --stack: 20px;
+}
+
+/*
+ * The page is the muted ground and the body is the sheet of content laid on it.
+ * There is no wrapper element to make the card out of -- every screen is a
+ * top-level form or div -- so the body itself is the card, which also spares
+ * this rule a list of screen ids to drift out of date.
+ */
+html {
+    background-color: var(--surface-muted);
+}
+
+body {
+    box-sizing: border-box;
+    max-width: 1200px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 32px 40px 64px;
+    background-color: var(--surface);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    color: var(--text);
+    font-family: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/*
+ * Every br in this app is a pair of them used as a spacer, both the ones in
+ * index.html and the ones appendNewlines adds; none of them breaks a line of
+ * prose. Margins do the job properly and to a consistent measure, and they do
+ * not collapse to nothing when an element between them is hidden.
+ */
+br {
+    display: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--text);
+    line-height: 1.25;
+    margin: 0 0 var(--gap);
+}
+
+h2,
+h3 {
+    margin-top: calc(var(--stack) * 1.6);
+}
+
+p {
+    margin: 0 0 var(--gap);
+}
+
+/*
+ * The rule under a heading is the platform's active-tab underline: brand weight
+ * for the screen's own title, a hairline for the sections under it.
+ */
+h1 {
+    font-size: 1.75rem;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--brand);
+}
+
+h2 {
+    font-size: 1.25rem;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+h3 {
+    font-size: 1.0625rem;
+}
+
+a {
+    color: var(--brand);
+}
+
 button {
     appearance: none;
     -webkit-appearance: none;
-    background-color: #006B74;
+    background-color: var(--brand);
     color: #ffffff;
-    border: 2px solid #006B74;
-    padding: 8px 16px;
+    border: 2px solid var(--brand);
+    padding: 8px 14px;
+    font-family: inherit;
     font-size: 1rem;
-    border-radius: 4px;
+    font-weight: 600;
+    line-height: 1.25;
+    border-radius: var(--radius);
+    /* Rows of these wrap on a narrow screen, and without it the rows touch. */
+    margin: 0 2px 6px 0;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #005860;
-    border-color: #005860;
-}
-
-button:focus-visible {
-    outline: 3px solid #ffffff;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 5px #006B74;
+    background-color: var(--brand-hover);
+    border-color: var(--brand-hover);
 }
 
 button:disabled {
@@ -26,46 +133,243 @@ button:disabled {
     cursor: not-allowed;
 }
 
+input,
+select,
+textarea {
+    box-sizing: border-box;
+    padding: 7px 10px;
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+input[type="text"],
+input:not([type]),
+select {
+    width: var(--field);
+    max-width: 100%;
+}
+
+/*
+ * Label over control, which is what the rest of the web does and what makes a
+ * column of fields line up without a table. The labels that name a control
+ * sitting beside them opt out through .label-inline.
+ */
+label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+label + input,
+label + select,
+label + textarea {
+    margin-bottom: var(--stack);
+}
+
+/*
+ * One focus ring for everything, built the way a browser builds its own: a
+ * white spacer hugging the component, then a near-black ring outside it.
+ *
+ * Two tones because one cannot do it. A ring has to stand out from the thing it
+ * surrounds and from the page behind it, and this app draws white pages, pale
+ * cards, indigo buttons and red ones. --focus-ring on white is 18.7:1 and the
+ * white spacer on the indigo is 7.7:1, so whichever side a given edge falls on,
+ * it clears the 3:1 that 1.4.11 asks. A single indigo ring managed 7.7:1 on the
+ * page but 1.0:1 against an indigo button, which is to say nothing at all.
+ *
+ * The rule this replaced on buttons put a white outline at a 2px offset over a
+ * brand shadow spread 5px, so the shadow only showed in the 2px the outline did
+ * not cover and the rest of it was white on a white page: a 2px ring, where
+ * 8px was intended. The pairs are checked in tests/contrast.test.ts.
+ */
+:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+.status-text {
+    color: var(--text-muted);
+}
+
 .field-error {
-    color: #B00020;
+    color: var(--danger);
     font-weight: bold;
     margin: 4px 0;
 }
 
 [aria-invalid="true"] {
-    border: 2px solid #B00020;
+    border: 2px solid var(--danger);
 }
 
 .inactive {
     display: none;
 }
 
-#perform-dialog::backdrop,
-#add-issue-dialog::backdrop,
-#generate-summary-dialog::backdrop,
-#eval-view-results-dialog::backdrop,
-#new-step-dialog::backdrop {
-    background-image: linear-gradient(45deg,
-            magenta, rebeccapurple,
-            dodgerblue, green);
-    opacity: 0.75;
+/*
+ * Every dialog, matched by element rather than by a list of ids.
+ *
+ * The lists these two rules used to carry had drifted apart from index.html:
+ * between them they named three dialogs that no longer exist (perform moved to
+ * a screen, the other two were renamed) and missed three that do, so
+ * view-summary and view-overall-comments were styled by neither rule,
+ * new-step got a backdrop but no size, and view-results a size but no
+ * backdrop. Nothing here is per-dialog, so nothing needs to name them.
+ */
+dialog::backdrop {
+    background-color: rgba(17, 18, 21, 0.55);
 }
 
-#perform-dialog,
-#add-issue-dialog,
-#view-results-dialog,
-#generate-summary-dialog,
-#eval-view-results-dialog,
-#add-step-dialog {
+dialog {
+    box-sizing: border-box;
     width: 70%;
     height: 70%;
-    border: 1px solid #000;
-padding: 20px;
+    background-color: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(17, 18, 21, 0.22);
+    padding: 20px 24px;
 }
 
-.issue-aggregate {
-    width: 600px;
-    height: 400px;
+/*
+ * A section that names itself with a heading is a card. The screens already
+ * mark those with role="group" and aria-labelledby, so the grouping the markup
+ * describes and the grouping the page shows are the same thing, and neither
+ * needs a list of ids to keep in step with the other. The action groups are
+ * named with aria-label instead, and are rows rather than cards.
+ */
+[role="group"][aria-labelledby] {
+    margin-bottom: var(--stack);
+    padding: 4px 20px 20px;
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+[role="group"][aria-labelledby] > h2:first-child,
+[role="group"][aria-labelledby] > h1:first-child {
+    margin-top: var(--gap);
+}
+
+/* Inside a card the fields sit on the card's own fill, so they need their own. */
+[role="group"][aria-labelledby] input,
+[role="group"][aria-labelledby] select,
+[role="group"][aria-labelledby] textarea {
+    background-color: var(--surface);
+}
+
+/*
+ * The screens group their actions in a role="group" already, so those groups
+ * are the button rows and need no new markup. .button-row is for the two the
+ * test editor puts under the extension list, which have no group of their own.
+ */
+[role="group"][aria-label$="Actions"],
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+    margin-bottom: var(--stack);
+}
+
+.button-row {
+    justify-content: center;
+    margin-top: calc(var(--stack) * 1.6);
+}
+
+/* The gap draws the spacing here, so the margin every button carries would double it. */
+[role="group"][aria-label$="Actions"] button,
+.button-row button {
+    margin: 0;
+}
+
+/*
+ * In the editor a step or an extension is a label, the text of it, and the
+ * control that deletes it: a row, not three things in a stack.
+ *
+ * Matched on the generated id rather than on position, because the steps sit
+ * inside an unnamed wrapper div that the extensions do not have and a child
+ * selector catches the wrapper on one list and the rows on the other. Scoped
+ * to the editor's two lists, because the perform screen builds step-div and
+ * extension-div ids of its own with quite different contents in them.
+ */
+#step-list div[id^="step-div"],
+#extension-list div[id^="extension-div"] {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--gap);
+    margin-bottom: var(--stack);
+}
+
+#step-list div[id^="step-div"] > label,
+#extension-list div[id^="extension-div"] > label {
+    margin: 0;
+    padding-top: 10px;
+}
+
+#step-list div[id^="step-div"] > textarea,
+#extension-list div[id^="extension-div"] > textarea {
+    width: 100%;
+    height: 120px;
+    margin: 0;
+}
+
+/*
+ * On the perform screen a step is a block the tester reads and then records
+ * against, so it is separated from the next one rather than laid out as a row.
+ */
+#perform-form div[id^="step-div"],
+#perform-screen div[id^="extension-div"] {
+    margin-bottom: calc(var(--stack) * 1.6);
+}
+
+#perform-form div[id^="step-div"] ul,
+#perform-screen div[id^="extension-div"] ul {
+    margin: 0 0 var(--gap);
+}
+
+/*
+ * A disclosure holding a column of checkboxes. It carries no role and no name
+ * on purpose, so it is matched by id.
+ */
+#test-edit-at-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px var(--stack);
+    margin-top: var(--gap);
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+#test-edit-at-menu label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: 400;
+}
+
+/*
+ * The checkbox is written after the text it belongs to, which reads as a
+ * trailing box rather than a checkbox with a label. Only the input is
+ * focusable and it stays inside its own label, so ordering it first moves
+ * nothing a keyboard or a screen reader follows.
+ */
+#test-edit-at-menu label input {
+    order: -1;
+}
+
+/* The disclosure that opens the list, on a line of its own rather than beside the last field. */
+#test-edit-at-btn {
+    display: block;
+    margin-top: var(--gap);
 }
 
 .large-textarea {
@@ -83,61 +387,87 @@ padding: 20px;
     height: 200px;
 }
 
+/*
+ * Ruled rows rather than a boxed grid, as the platform's tables are: the
+ * header carries the weight and everything below it is separated by a single
+ * hairline.
+ */
 table {
-    width: 75%;
+    width: 100%;
     border-collapse: collapse;
-    margin: 20px auto;
+    margin: 20px 0;
 }
 
 th {
-    background-color: #333;
-    color: #fff;
-    padding: 10px;
-    text-align: center;
+    background-color: var(--surface-muted);
+    color: var(--text);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+/*
+ * Only a column heading gets the heavy rule, because it sits over the column it
+ * names. The scorecard's headings are row headings and a rule under each one
+ * draws a line through the middle of the table for every row.
+ */
+th[scope="col"] {
+    border-bottom: 2px solid var(--brand);
 }
 
 td {
-    border: 1px solid #000;
-    padding: 10px;
-}
-
-tr {
-    height: 40px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
 }
 
 .close-button button {
     position: absolute;
     display: flex;
+    /* Positioned exactly, so it opts out of the margin every other button carries. */
+    margin: 0;
     padding: 0px;
     top: 10px;
     right: 10px;
     width: 40px;
     height: 40px;
-    background-color: #006B74;
-    color: #ffffff;
-    border: 2px solid #ffffff;
     font-size: 16px;
     cursor: pointer;
     justify-content: center;
     align-items: center;
 }
 
-.close-button button :hover {
-    background-color: red;
-    color: white;
+/*
+ * The space in ".close-button button :hover" made this a descendant selector,
+ * so the hover state landed on the icon inside the button and never on the
+ * button itself. Fixing that shows the colour for the first time, and plain
+ * red on white falls under 4.5:1, so it is the error red the rest of the sheet
+ * already uses.
+ */
+.close-button button:hover {
+    background-color: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
 }
 
-.fa-trash {
-    color: darkred;
+/*
+ * Every delete control is an icon-only button, and the icon used to be dark red
+ * on the button's own fill, which was unreadable against either the old teal or
+ * the brand indigo. The colour belongs to the button, and the icon inherits the
+ * white that comes with it. Matched by the icon it contains because none of
+ * these buttons is given a class, and :has failing to match would only leave
+ * them looking like every other button rather than breaking anything.
+ */
+button:has(.fa-trash) {
+    background-color: var(--danger);
+    border-color: var(--danger);
 }
 
-.fa-pencil {
-    color: darkgreen;
+button:has(.fa-trash):hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
 }
-.checkboxContainer {
-  display: flex;
-  align-items: center;
-}
+
 /*
  * Replaces style attributes the view modules used to set by hand. Inline styles
  * would force style-src 'unsafe-inline' on anything stricter than the policy in

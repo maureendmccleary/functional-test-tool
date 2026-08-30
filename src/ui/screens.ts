@@ -25,8 +25,7 @@ const SCREENS = {
         title: 'Evaluation'
     },
     test: {
-        // New Step sits outside the form in the markup, so it has to be listed.
-        elementIds: ['test-editor-form', 'new-step-btn'],
+        elementIds: ['test-editor-form'],
         headingId: 'test-editor-heading',
         title: 'Functional Test Editor'
     },
