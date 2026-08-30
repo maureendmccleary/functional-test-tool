@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
     HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreKeyRows, scoreRowStyle
@@ -35,6 +36,9 @@ function contrastRatio(foreground: string, background: string): number {
 
 /** 1.4.3 Contrast (Minimum), for text below 18pt and not bold. */
 const NORMAL_TEXT = 4.5;
+
+/** 1.4.11 Non-text Contrast, for a focus ring and other meaningful shapes. */
+const NON_TEXT = 3;
 
 describe('contrastRatio', () => {
     test('black on white is the maximum of 21 to 1', () => {
@@ -114,5 +118,52 @@ describe('which row the score key marks', () => {
 describe('table headings', () => {
     test('heading text is legible on the heading fill', () => {
         expect(contrastRatio(REPORT_TEXT_COLOR, HEADER_FILL)).toBeGreaterThanOrEqual(NORMAL_TEXT);
+    });
+});
+
+/*
+ * The same arithmetic pointed at the stylesheet.
+ *
+ * styles.css names its palette once in :root and then only ever refers to those
+ * tokens, so the pairs the sheet actually puts together are a short list and
+ * checking them is the same calculation the report's colours already get. The
+ * alternative is a comment claiming a ratio, which is exactly the kind of claim
+ * that goes stale the first time somebody nudges a colour.
+ */
+describe('the stylesheet palette', () => {
+    const stylesheet = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+
+    /** The value of a custom property declared in the sheet's :root block. */
+    function token(name: string): string {
+        const match = new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6});`).exec(stylesheet);
+        if (match === null) {
+            throw new Error(`styles.css no longer declares --${name}`);
+        }
+        return match[1];
+    }
+
+    const WHITE = '#ffffff';
+
+    describe('text on a fill', () => {
+        const pairs: [string, string, string][] = [
+            ['a button label', WHITE, token('brand')],
+            ['a hovered button label', WHITE, token('brand-hover')],
+            ['a delete button icon', WHITE, token('danger')],
+            ['a hovered delete button icon', WHITE, token('danger-hover')],
+            ['body text', token('text'), token('surface')],
+            ['a table heading', token('text'), token('surface-muted')],
+            ['a status line', token('text-muted'), token('surface')],
+            ['a link', token('brand'), token('surface')]
+        ];
+
+        for (const [what, foreground, background] of pairs) {
+            test(`${what} is legible`, () => {
+                expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(NORMAL_TEXT);
+            });
+        }
+    });
+
+    test('the focus ring is visible against the surface it is drawn on', () => {
+        expect(contrastRatio(token('brand'), token('surface'))).toBeGreaterThanOrEqual(NON_TEXT);
     });
 });
