@@ -4,8 +4,8 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
-    SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, TABLE_RULE_COLOR, buildCoverSubtitle,
+    BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
+    SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
     formatOverallRating, formatReportTimestamp, formatScore, scoreKeyRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
@@ -40,8 +40,8 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
 }
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
-    const { AlignmentType, Bookmark, BorderStyle, Document, HeadingLevel, InternalHyperlink,
-            PageBreak, Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
+    const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
+            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
             XmlComponent } = docx;
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
@@ -79,32 +79,16 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         return new TableCell({ children: paragraphs, ...(options.shading ? { shading: options.shading } : {}) });
     }
 
-    /**
-     * A heading cell, shaded unless the table asks for it plain.
-     *
-     * The text colour is set only when the fill is, per REPORT_TEXT_COLOR: an
-     * unshaded cell is left on Word's "auto" so it still follows the reader's
-     * theme. Dropping the fill does not stop the cell being a heading, which is
-     * carried by `w:tblLook`.
-     */
-    function headerCell(content: unknown, shaded = true) {
-        if (!shaded) {
-            return new TableCell({ children: [text(content, { bold: true })] });
-        }
+    // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
+    function headerCell(content: unknown) {
         return new TableCell({
             children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
             shading: { type: ShadingType.CLEAR, fill: HEADER_FILL, color: 'auto' }
         });
     }
 
-    /** A light blue rule on every edge, so a row can be followed across its columns. */
-    const ruledBorders = (() => {
-        const rule = { style: BorderStyle.SINGLE, size: 8, color: TABLE_RULE_COLOR };
-        return {
-            top: rule, bottom: rule, left: rule, right: rule,
-            insideHorizontal: rule, insideVertical: rule
-        };
-    })();
+    /** The shading a banded row's cells carry, and the text colour that goes with it. */
+    const bandShading = { type: ShadingType.CLEAR, fill: BAND_FILL, color: 'auto' };
 
     /**
      * Records which of a table's first row and first column are headings.
@@ -140,25 +124,31 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      *
      * `rowHeadings` turns each row's first cell into a heading, which is what
      * a label and value table like the scorecard needs: without it a screen
-     * reader reads the value with nothing to say what it is. `shadeRowHeadings`
-     * says whether those cells carry a fill; `ruled` puts the light blue rule
-     * on the table.
+     * reader reads the value with nothing to say what it is. `banded` shades
+     * every other row, so a wide row can be followed across its columns.
      *
-     * The header row is mapped through an arrow rather than passed `headerCell`
-     * directly, because `Array.map` hands the index in as the second argument
-     * and would read it as the shading flag.
+     * A banded cell is given REPORT_TEXT_COLOR for the same reason a heading
+     * cell is: it has a fill of its own, and Word's "auto" can turn the text
+     * pale in a dark theme and leave pale on pale.
      */
     function makeTable(
         headers: unknown[],
         dataRows: unknown[][],
         rowHeadings = false,
-        { shadeRowHeadings = true, ruled = false } = {}
+        { banded = false } = {}
     ) {
-        const rows = dataRows.map((row) => new TableRow({
-            children: row.map((c, index) => (
-                rowHeadings && index === 0 ? headerCell(c, shadeRowHeadings) : cell(c)
-            ))
-        }));
+        const rows = dataRows.map((row, rowIndex) => {
+            const shaded = banded && rowIndex % 2 === 1;
+            return new TableRow({
+                children: row.map((c, index) => (
+                    rowHeadings && index === 0
+                        ? headerCell(c)
+                        : cell(c, shaded
+                            ? { color: REPORT_TEXT_COLOR, shading: bandShading }
+                            : {})
+                ))
+            });
+        });
         const table = new Table({
             rows: headers.length > 0
                 ? [
@@ -169,8 +159,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                     ...rows
                 ]
                 : rows,
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            ...(ruled ? { borders: ruledBorders } : {})
+            width: { size: 100, type: WidthType.PERCENTAGE }
         });
         applyTableLook(table, headers.length > 0, rowHeadings);
         return table;
@@ -186,9 +175,9 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     const children: unknown[] = [];
 
-    // Cover. The titles are centred; the timestamp follows them smaller and set
-    // to the right, so it reads as the date the report was produced rather than
-    // as one more line of the title.
+    // Cover. The titles are centred; the timestamp follows them smaller, and it
+    // and the credit line below it are both set to the right, so the two read as
+    // a footing to the titles rather than as more of them.
     const subtitle = buildCoverSubtitle(evaluation.asset, evaluation.name);
     const titles = [
         { line: String(evaluation.workspace || ''), bold: true, size: 40 },
@@ -209,7 +198,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children: [new TextRun({ text: formatReportTimestamp(now), size: 20 })]
     }));
     children.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
+        alignment: AlignmentType.RIGHT,
         children: [new TextRun({
             text: 'Produced by Functional Test Tool, Level Access Inc.', size: 28
         })]
@@ -254,7 +243,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         ['4', String(scorecard.countsByScore.get(4) || 0)],
         ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
         ['Overall Rating', formatOverallRating(scorecard.overallRating)]
-    ], true, { shadeRowHeadings: false }));
+    ], true));
 
     children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
     if (groups.length > 0) {
@@ -326,7 +315,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Start Location', String(report.startLocation || '')],
             ['Operating System', String(report.operatingSystem || '')],
             ['Application', String(report.application || '')]
-        ], true, { ruled: true }));
+        ], true));
 
         children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
         const stepRows = report.steps.map((step, stepIndex) => {
@@ -340,7 +329,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
         children.push(makeTable(
             ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
-            false, { ruled: true }
+            false, { banded: true }
         ));
 
         // Numbered from 1 within the use case, which is how a step refers to
@@ -360,7 +349,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                         issueLines.length > 0 ? issueLines : ['No issues']
                     ];
                 }),
-                false, { ruled: true }
+                false, { banded: true }
             ));
         }
 

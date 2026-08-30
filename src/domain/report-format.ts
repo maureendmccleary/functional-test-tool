@@ -91,14 +91,15 @@ export const REPORT_FONT = 'Arial';
 export const HEADING_COLOR = '000000';
 
 /**
- * The rule on the detailed results tables, to follow a row across its columns.
+ * Shading on every other row of the detailed results tables, so a row can be
+ * followed across its columns.
  *
- * Office's "Blue, Accent 1". At 2.96:1 on white it is a hair under the 3:1 that
- * 1.4.11 asks of a meaningful graphic, which is the price of it reading as a
- * light blue; the tables do not lean on it, because their structure is carried
- * by the heading cells and `w:tblLook` rather than by anything drawn.
+ * Office's "Blue, Accent 1, Lighter 60%". It reads at 1.5:1 against the unbanded
+ * rows, which is what banding is: an aid to the eye, not a carrier of meaning,
+ * so it is not held to 3:1. What does matter is the text sitting on it, and
+ * REPORT_TEXT_COLOR on this is 14:1. Checked in tests/contrast.test.ts.
  */
-export const TABLE_RULE_COLOR = '5B9BD5';
+export const BAND_FILL = 'BDD7EE';
 
 /**
  * Text colour for anything the report gives a background of its own.
