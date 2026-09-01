@@ -61,13 +61,19 @@ export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
 /**
  * Shading behind each score in the key, palest for the scores not achieved.
  *
+ * One colour per score and nothing else: green for 5 down through blue, yellow
+ * and orange to red for 1. Neither shade is ever asked to carry the meaning on
+ * its own -- the score's label sits on every fill, in the key and on the badge
+ * alike -- which is what keeps the report readable to anyone who does not see
+ * the colour, and in greyscale.
+ *
  * Kept here with the rest of the report's presentation so the contrast of every
  * pairing can be asserted without building a document. See
  * `tests/contrast.test.ts`.
  */
 const SCORE_FILLS: Record<number, { plain: string; achieved: string }> = {
     5: { plain: 'EAF4EA', achieved: '92D050' },
-    4: { plain: 'EFF6E7', achieved: 'C6E0B4' },
+    4: { plain: 'EAEFF9', achieved: '8EAADB' },
     3: { plain: 'FFF8E5', achieved: 'FFD966' },
     2: { plain: 'FDEEE3', achieved: 'F4B183' },
     1: { plain: 'FBE9E9', achieved: 'E06666' }
@@ -127,23 +133,35 @@ export function scoreRowStyle(score: number, achieved: boolean): { fill: string;
 }
 
 /**
- * The five rows of the score key, in the order the report prints them, with the
- * one this use case reached marked.
+ * The Scorecard's rows, label and value, in the order both the report and the
+ * results dialog print them.
  *
- * Which row is marked is a question about the data, not about how the document
- * looks, so it is settled here where a test can ask it. A score outside 1..5
- * marks nothing, which is what an unperformed run gets: `runScore` returns -1
- * for it, and no row should claim it was reached.
+ * Shared for the same reason SIGNIFICANT_ISSUES_INTRO is: the two were keeping
+ * their own copies of this list, and the copies had already drifted into
+ * labelling three rows "2", "3" and "4" beside two that spelled out "Use Cases
+ * that Scored a 5 (best)".
+ *
+ * Structurally typed rather than importing Scorecard, so this module still
+ * needs nothing but the types it is given.
  */
-export function scoreKeyRows(
-    achievedScore: number
-): Array<{ score: number; label: string; fill: string; bold: boolean }> {
-    return SCORE_LABELS.map((entry) => ({
-        score: entry.score,
-        label: entry.label,
-        ...scoreRowStyle(entry.score, entry.score === achievedScore)
-    }));
+export function scorecardRows(scorecard: {
+    totalRuns: number;
+    countsByScore: Map<number, number>;
+    overallRating: number;
+}): Array<[string, string]> {
+    const scored = (score: number): [string, string] => [
+        `Use Cases that Scored a ${score}${SCORE_EXTREMES[score] || ''}`,
+        String(scorecard.countsByScore.get(score) || 0)
+    ];
+    return [
+        ['Total Number of Use Cases', String(scorecard.totalRuns)],
+        scored(1), scored(2), scored(3), scored(4), scored(5),
+        ['Overall Rating', formatOverallRating(scorecard.overallRating)]
+    ];
 }
+
+/** Which ends of the scale the scorecard names, so the reader knows its direction. */
+const SCORE_EXTREMES: Record<number, string> = { 1: ' (worst)', 5: ' (best)' };
 
 /** The label for a score, or an empty string when it is not one of the five. */
 export function scoreLabel(score: number): string {
