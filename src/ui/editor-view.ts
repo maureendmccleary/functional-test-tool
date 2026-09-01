@@ -13,6 +13,7 @@ import {
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
 import { refreshTestList } from './evaluation-view.js';
+import { createIcon } from './icons.js';
 import { type ScreenName, setSectionTitle, showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
 import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
@@ -61,9 +62,7 @@ function addStepToEditor(stepNumber: number): HTMLElement {
     deleteBtn.type = "button";
     deleteBtn.setAttribute("id", `step-delete[${stepNumber}]`);
     deleteBtn.setAttribute("aria-label", "delete");
-    const deleteIcon = document.createElement("span");
-    deleteIcon.classList.add("fa", "fa-trash");
-    deleteBtn.appendChild(deleteIcon);
+    deleteBtn.appendChild(createIcon("trash"));
     deleteBtn.addEventListener("click", deleteStepButtonClicked);
     deleteBtn.setAttribute("aria-labelledby", `${deleteBtn.id} ${newStepLabel.id}`);
     appendNewlines(stepDiv);
@@ -104,9 +103,7 @@ function addExtensionToEditor(index: number): HTMLElement {
     deleteBtn.type = "button";
     deleteBtn.setAttribute("id", `extension-delete[${index}]`);
     deleteBtn.setAttribute("aria-label", "delete");
-    const deleteIcon = document.createElement("span");
-    deleteIcon.classList.add("fa", "fa-trash");
-    deleteBtn.appendChild(deleteIcon);
+    deleteBtn.appendChild(createIcon("trash"));
     deleteBtn.addEventListener("click", deleteExtensionButtonClicked);
     deleteBtn.setAttribute("aria-labelledby", `${deleteBtn.id} ${label.id}`);
 

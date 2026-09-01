@@ -28,7 +28,6 @@
     form-action 'none'">
   <title>Functional Accessibility Testing Tool</title>
   <link rel="stylesheet" type="text/css" href="styles.css">
-  <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
   <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"
           integrity="sha384-4xaIisuLEy2lo2HkB2C4rEf7v8jbTb2kuogX6TkuEt9feTWKBSFSOzsqNNbV+sKh"
           crossorigin="anonymous"></script>
@@ -192,7 +191,7 @@
     <br><br>
     <h1 id="add-step-heading" tabindex="-1">Select Step Number To Add</h1>
     <div class="close-button">
-      <button type="button" id="new-step-dialog-close" aria-label="close"><span class="fa fa-times"></span></button>
+      <button type="button" id="new-step-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
     </div>
     <label for="step-number">Step Number</label>
     <select id="step-number"></select>
@@ -265,8 +264,7 @@
     <form id="view-summary-" name="viewSummary">
       <h1 id="view-summary-dialog-title" tabindex="-1">View Summary</h1>
       <div class="close-button">
-        <button type="button" id="view-summary-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button type="button" id="view-summary-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <p>The following is a list of the most important issues encountered while testing this Functional Test.</p>
@@ -283,8 +281,7 @@
     <form id="view-overall-comments-form" name="viewOverallComments">
       <h1 id="view-overall-comments-dialog-title" tabindex="-1">View Overall Comments</h1>
       <div class="close-button">
-        <button type="button" id="view-overall-comments-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button type="button" id="view-overall-comments-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <p>The most important problems encountered with this assistive technology across the whole
@@ -307,8 +304,7 @@
     <form id="add-issue-btn-dialog-form" name="ucAddIssueDialog">
       <h2 id="add-issue-dialog-title" tabindex="-1"></h2>
       <div class="close-button">
-        <button type="button" id="add-issue-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button type="button" id="add-issue-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br>
       <p id="add-issue-msg" class="status-text"></p>
@@ -351,8 +347,7 @@
       <br>
       <h1 id="view-results-dialog-title" tabindex="-1">Functional Test Results</h1>
       <div class="close-button">
-        <button type="button" id="view-results-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+          <button type="button" id="view-results-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <div id="test-results-issues"></div>
@@ -365,8 +360,7 @@
         <!-- Heading first, as in every other dialog: it is what the dialog is named by. -->
         <h1 id="eval-view-results-dialog-title" tabindex="-1">Evaluation Results</h1>
         <div class="close-button">
-          <button type="button" id="eval-view-results-dialog-close" aria-label="close"><span
-              class="fa fa-times"></span></button>
+            <button type="button" id="eval-view-results-dialog-close" aria-label="close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
         </div>
         <div role="group" aria-label="Report Actions">
           <button id="generate-pdf" type="button">Generate Report (.docx)</button>

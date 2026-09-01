@@ -6,6 +6,7 @@ import {
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
+import { createIcon } from './icons.js';
 import { showStatusMessage } from './status.js';
 import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
@@ -128,16 +129,12 @@ export function insertIssueTable(newIssue: Issue): void {
     cell4.classList.add("cell-centered");
     const deleteIssueButton = document.createElement('button');
     deleteIssueButton.setAttribute("aria-label", "delete");
-    const deleteIssueIcon = document.createElement("span");
-    deleteIssueIcon.classList.add("fa", "fa-trash");
-    deleteIssueButton.appendChild(deleteIssueIcon);
+    deleteIssueButton.appendChild(createIcon("trash"));
     deleteIssueButton.type = "button";
     deleteIssueButton.addEventListener("click", deleteIssue);
     const editIssueButton = document.createElement('button');
     editIssueButton.setAttribute("aria-label", "edit");
-    const editIssueIcon = document.createElement("span");
-    editIssueIcon.classList.add("fa", "fa-edit");
-    editIssueButton.appendChild(editIssueIcon);
+    editIssueButton.appendChild(createIcon("edit"));
     editIssueButton.type = "button";
     editIssueButton.addEventListener("click", editIssue);
     cell5.appendChild(editIssueButton);
