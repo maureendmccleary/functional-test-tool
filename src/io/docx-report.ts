@@ -6,7 +6,7 @@ import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
-    formatOverallRating, formatReportTimestamp, formatScore, scoreKeyRows
+    formatOverallRating, formatReportTimestamp, formatScore, scoreRowStyle, scorecardRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
 
@@ -41,8 +41,28 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
     const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
-            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, WidthType,
-            XmlComponent } = docx;
+            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, VerticalAlign,
+            WidthType, XmlComponent } = docx;
+
+    /*
+     * The width of the text on a Letter page inside Word's default one inch
+     * margins, in twentieths of a point. Every table is laid out against it, so
+     * the columns of one line up with the columns of the next.
+     */
+    const CONTENT_WIDTH = 9360;
+
+    /*
+     * Room inside every cell, so the text is not pressed against the rules.
+     * More at the sides than above and below, which is how a cell reads as
+     * padded rather than as merely tall.
+     */
+    const CELL_MARGINS = { top: 80, bottom: 80, left: 120, right: 120 };
+
+    /*
+     * The step and extension tables hold the same four kinds of thing, so they
+     * are given the same four columns and line up with each other down the page.
+     */
+    const STEP_COLUMNS = [800, 3600, 900, 4060];
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
         return new Paragraph({ children: [new TextRun({ text: String(content ?? ''), ...options })] });
@@ -76,13 +96,18 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         const paragraphs = lines.length > 0
             ? lines.map((line: unknown) => text(line, options))
             : [new Paragraph({ text: '' })];
-        return new TableCell({ children: paragraphs, ...(options.shading ? { shading: options.shading } : {}) });
+        return new TableCell({
+            children: paragraphs,
+            verticalAlign: VerticalAlign.TOP,
+            ...(options.shading ? { shading: options.shading } : {})
+        });
     }
 
     // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
     function headerCell(content: unknown) {
         return new TableCell({
             children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
+            verticalAlign: VerticalAlign.TOP,
             shading: { type: ShadingType.CLEAR, fill: HEADER_FILL, color: 'auto' }
         });
     }
@@ -125,7 +150,11 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      * `rowHeadings` turns each row's first cell into a heading, which is what
      * a label and value table like the scorecard needs: without it a screen
      * reader reads the value with nothing to say what it is. `banded` shades
-     * every other row, so a wide row can be followed across its columns.
+     * every other row, so a wide row can be followed across its columns, and
+     * `columns` fixes the column widths so tables of the same shape line up
+     * with each other rather than each being measured from its own contents.
+     * `emphasiseLastRow` bolds the last row's values, for a table whose closing
+     * row is its headline rather than one more entry.
      *
      * A banded cell is given REPORT_TEXT_COLOR for the same reason a heading
      * cell is: it has a fill of its own, and Word's "auto" can turn the text
@@ -135,17 +164,21 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         headers: unknown[],
         dataRows: unknown[][],
         rowHeadings = false,
-        { banded = false } = {}
+        { banded = false, columns, emphasiseLastRow = false }: {
+            banded?: boolean; columns?: number[]; emphasiseLastRow?: boolean;
+        } = {}
     ) {
         const rows = dataRows.map((row, rowIndex) => {
             const shaded = banded && rowIndex % 2 === 1;
+            const bold = emphasiseLastRow && rowIndex === dataRows.length - 1;
             return new TableRow({
                 children: row.map((c, index) => (
                     rowHeadings && index === 0
                         ? headerCell(c)
-                        : cell(c, shaded
-                            ? { color: REPORT_TEXT_COLOR, shading: bandShading }
-                            : {})
+                        : cell(c, {
+                            ...(bold ? { bold: true } : {}),
+                            ...(shaded ? { color: REPORT_TEXT_COLOR, shading: bandShading } : {})
+                        })
                 ))
             });
         });
@@ -159,7 +192,9 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                     ...rows
                 ]
                 : rows,
-            width: { size: 100, type: WidthType.PERCENTAGE }
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            margins: CELL_MARGINS,
+            ...(columns ? { columnWidths: columns } : {})
         });
         applyTableLook(table, headers.length > 0, rowHeadings);
         return table;
@@ -175,32 +210,40 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     const children: unknown[] = [];
 
-    // Cover. The titles are centred; the timestamp follows them smaller, and it
-    // and the credit line below it are both set to the right, so the two read as
-    // a footing to the titles rather than as more of them.
+    /*
+     * Cover.
+     *
+     * Three steps down in size rather than two lines at the same one, so the
+     * client's name reads first and the evaluation and "Use Case Results" read
+     * as its subtitle. The date and the credit line sit together at the foot,
+     * smaller and to the right, as a metadata block rather than more title.
+     *
+     * All of the spacing is paragraph spacing. An empty paragraph is a blank
+     * line a screen reader stops on and reads out, and this is the front page of
+     * an accessibility deliverable.
+     */
     const subtitle = buildCoverSubtitle(evaluation.asset, evaluation.name);
     const titles = [
-        { line: String(evaluation.workspace || ''), bold: true, size: 40 },
-        { line: subtitle, bold: false, size: 28 },
-        { line: 'Use Case Results', bold: false, size: 28 }
+        { line: String(evaluation.workspace || ''), bold: true, size: 52, before: 2400 },
+        { line: subtitle, bold: false, size: 32, before: 240 },
+        { line: 'Use Case Results', bold: false, size: 26, before: 120 }
     ];
-    titles.forEach(({ line, bold, size }) => {
+    titles.forEach(({ line, bold, size, before }) => {
         if (line === '') {
             return;
         }
         children.push(new Paragraph({
             alignment: AlignmentType.CENTER,
+            spacing: { before },
             children: [new TextRun({ text: line, bold, size })]
         }));
     });
     // Both footing lines share a size, so they are set from one constant rather
-    // than from two that can drift. The gap above them is paragraph spacing for
-    // the same reason the headings' is: an empty paragraph is a blank line a
-    // screen reader stops on and reads out.
+    // than from two that can drift.
     const footingSize = 20;
     children.push(new Paragraph({
         alignment: AlignmentType.RIGHT,
-        spacing: { before: 720 },
+        spacing: { before: 1440 },
         children: [new TextRun({ text: formatReportTimestamp(now), size: footingSize })]
     }));
     children.push(new Paragraph({
@@ -241,22 +284,20 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     children.push(heading('Use Case Results Summary', HeadingLevel.HEADING_1));
     children.push(heading('Scorecard', HeadingLevel.HEADING_2));
-    children.push(makeTable([], [
-        ['Total Number of Use Cases', String(scorecard.totalRuns)],
-        ['1 (worst)', String(scorecard.countsByScore.get(1) || 0)],
-        ['2', String(scorecard.countsByScore.get(2) || 0)],
-        ['3', String(scorecard.countsByScore.get(3) || 0)],
-        ['4', String(scorecard.countsByScore.get(4) || 0)],
-        ['Use Cases that Scored a 5 (best)', String(scorecard.countsByScore.get(5) || 0)],
-        ['Overall Rating', formatOverallRating(scorecard.overallRating)]
-    ], true));
+    // Overall Rating is the last row and the one a reader looks for first, so it
+    // is the row that carries the weight.
+    children.push(makeTable(
+        [], scorecardRows(scorecard), true,
+        { columns: [6000, 3360], emphasiseLastRow: true }
+    ));
 
     children.push(heading('Assistive Technologies Used', HeadingLevel.HEADING_2));
     if (groups.length > 0) {
         // No versions: testing is always done with the current release.
         children.push(makeTable(
             ['Assistive Technologies'],
-            groups.map((group) => [group.assistiveTechnology])
+            groups.map((group) => [group.assistiveTechnology]),
+            false, { columns: [CONTENT_WIDTH] }
         ));
     } else {
         children.push(new Paragraph({ text: 'No use cases have been performed yet.' }));
@@ -270,8 +311,12 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     }
     groups.forEach((group) => {
         const summary = effectiveSummaryFor(evaluation, group.assistiveTechnology);
+        // A real Heading 2, as everywhere else an assistive technology opens a
+        // section. It was a bold paragraph, which looked like a heading to a
+        // sighted reader and like nothing at all to anyone navigating by them.
+        children.push(heading(group.assistiveTechnology, HeadingLevel.HEADING_2));
         children.push(text(
-            `${group.assistiveTechnology} Overall Rating: ${formatOverallRating(summary.overallRating)}`,
+            `Overall Rating: ${formatOverallRating(summary.overallRating)}`,
             { bold: true }
         ));
         bullets(summary.significantIssues).forEach((paragraph) => children.push(paragraph));
@@ -280,10 +325,45 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     // Scoring key.
     children.push(heading('Testing and Scoring Key', HeadingLevel.HEADING_1));
     SCORING_KEY_PARAGRAPHS.forEach((paragraph) => children.push(new Paragraph({ text: paragraph })));
-    children.push(makeTable(
-        ['Score', 'Meaning', 'Explanation'],
-        SCORE_LABELS.map((entry) => [String(entry.score), entry.label, entry.definition])
-    ));
+    /*
+     * The one full legend in the report, and so the one place the colours are
+     * given their meaning. Each score's own fill sits behind its number here and
+     * behind the score row of every use case, and the label is written out
+     * beside it in both places, so the colour is a second cue and never the
+     * only one.
+     */
+    const scoringKey = new Table({
+        rows: [
+            new TableRow({
+                tableHeader: true,
+                children: ['Score', 'Meaning', 'Explanation'].map((h) => headerCell(h))
+            }),
+            ...SCORE_LABELS.map((entry) => new TableRow({
+                children: [
+                    new TableCell({
+                        children: [text(String(entry.score), {
+                            bold: true, color: REPORT_TEXT_COLOR
+                        })],
+                        verticalAlign: VerticalAlign.TOP,
+                        shading: {
+                            type: ShadingType.CLEAR,
+                            fill: scoreRowStyle(entry.score, true).fill,
+                            color: 'auto'
+                        }
+                    }),
+                    cell(entry.label),
+                    cell(entry.definition)
+                ]
+            }))
+        ],
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        margins: CELL_MARGINS,
+        columnWidths: [900, 3000, 5460]
+    });
+    // Built by hand for the shading, so it needs the heading row marking that
+    // makeTable would have given it.
+    applyTableLook(scoringKey, true, false);
+    children.push(scoringKey);
 
     // Detailed results, grouped by assistive technology.
     children.push(heading('Detailed Use Case Results', HeadingLevel.HEADING_1));
@@ -321,7 +401,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             ['Start Location', String(report.startLocation || '')],
             ['Operating System', String(report.operatingSystem || '')],
             ['Application', String(report.application || '')]
-        ], true));
+        ], true, { columns: [2600, 6760] }));
 
         children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
         const stepRows = report.steps.map((step, stepIndex) => {
@@ -335,7 +415,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
         children.push(makeTable(
             ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
-            false, { banded: true }
+            false, { banded: true, columns: STEP_COLUMNS }
         ));
 
         // Numbered from 1 within the use case, which is how a step refers to
@@ -355,25 +435,52 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                         issueLines.length > 0 ? issueLines : ['No issues']
                     ];
                 }),
-                false, { banded: true }
+                false, { banded: true, columns: STEP_COLUMNS }
             ));
         }
 
-        children.push(text(`Score: ${formatScore(score)}`, { bold: true }));
+        children.push(scoreRow(score));
 
         children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));
         bullets(report.comments).forEach((paragraph) => children.push(paragraph));
+    }
 
-        // The five scores, with the one this use case reached filled in.
-        children.push(new Table({
-            rows: scoreKeyRows(score).map((row) => new TableRow({
-                children: [new TableCell({
-                    children: [text(row.label, { bold: row.bold, color: REPORT_TEXT_COLOR })],
-                    shading: { type: ShadingType.CLEAR, fill: row.fill, color: 'auto' }
-                })]
-            })),
-            width: { size: 100, type: WidthType.PERCENTAGE }
-        }));
+    /*
+     * The score this use case reached, as one labelled row.
+     *
+     * This replaces the full five score legend that used to follow every use
+     * case. Printed once per use case it was the bulk of the detailed section
+     * and said the same thing each time; the reader who wants it has it in full,
+     * once, under Testing and Scoring Key. What belongs here is which score this
+     * use case got, and that is a row: the heading cell names it, the value
+     * spells the score out in words and figures, and the fill is the same one
+     * the key gave that score.
+     *
+     * An unperformed run scores -1, which formatScore renders "Not rated" and
+     * scoreRowStyle has no fill for, so it is left unshaded rather than being
+     * coloured as though somebody had judged it.
+     */
+    function scoreRow(score: number) {
+        const style = SCORE_LABELS.some((entry) => entry.score === score)
+            ? scoreRowStyle(score, true)
+            : null;
+        const valueCell = new TableCell({
+            children: [text(formatScore(score), {
+                bold: true, ...(style ? { color: REPORT_TEXT_COLOR } : {})
+            })],
+            verticalAlign: VerticalAlign.TOP,
+            ...(style
+                ? { shading: { type: ShadingType.CLEAR, fill: style.fill, color: 'auto' } }
+                : {})
+        });
+        const table = new Table({
+            rows: [new TableRow({ children: [headerCell('Score'), valueCell] })],
+            width: { size: 60, type: WidthType.PERCENTAGE },
+            margins: CELL_MARGINS,
+            columnWidths: [1400, 4216]
+        });
+        applyTableLook(table, false, true);
+        return table;
     }
 
     /*
@@ -391,10 +498,10 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      * heading to body size, which is how the hierarchy goes missing. Only the
      * four levels the report actually uses are named.
      */
-    function headingStyle(size?: number, italics = false) {
+    function headingStyle(size: number | undefined, before: number, italics = false) {
         return {
             run: { font: REPORT_FONT, color: HEADING_COLOR, ...(size ? { size } : {}), italics },
-            paragraph: { spacing: { before: 240, after: 240 } }
+            paragraph: { spacing: { before, after: 160 } }
         };
     }
 
@@ -402,10 +509,10 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         styles: {
             default: {
                 document: { run: { font: REPORT_FONT } },
-                heading1: headingStyle(32),
-                heading2: headingStyle(26),
-                heading3: headingStyle(24),
-                heading4: headingStyle(undefined, true)
+                heading1: headingStyle(32, 640),
+                heading2: headingStyle(26, 480),
+                heading3: headingStyle(24, 400),
+                heading4: headingStyle(undefined, 280, true)
             }
         },
         sections: [{ children }]

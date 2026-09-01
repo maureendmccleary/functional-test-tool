@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
-    BAND_FILL, HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreKeyRows, scoreRowStyle
+    BAND_FILL, HEADER_FILL, REPORT_TEXT_COLOR, SCORE_LABELS, scoreRowStyle, scorecardRows
 } from '../src/domain/report-format.js';
 
 /**
@@ -87,31 +87,39 @@ describe('the score key', () => {
     });
 });
 
-describe('which row the score key marks', () => {
-    for (const { score, label } of SCORE_LABELS) {
-        test(`a use case scoring ${score} marks "${label}" and nothing else`, () => {
-            const marked = scoreKeyRows(score).filter((row) => row.bold);
-            expect(marked).toHaveLength(1);
-            expect(marked[0].score).toBe(score);
-        });
-    }
+describe('the scorecard rows', () => {
+    const scorecard = {
+        totalRuns: 7,
+        countsByScore: new Map([[1, 1], [2, 0], [3, 2], [4, 3], [5, 1]]),
+        overallRating: 3.5
+    };
 
-    test('an unperformed use case marks no row at all', () => {
-        // runScore returns -1 for a run nobody has scored. Marking a row would
-        // claim a result the tester never gave.
-        expect(scoreKeyRows(-1).some((row) => row.bold)).toBe(false);
+    test('every score gets a row, between the total and the rating', () => {
+        expect(scorecardRows(scorecard).map(([label]) => label)).toEqual([
+            'Total Number of Use Cases',
+            'Use Cases that Scored a 1 (worst)',
+            'Use Cases that Scored a 2',
+            'Use Cases that Scored a 3',
+            'Use Cases that Scored a 4',
+            'Use Cases that Scored a 5 (best)',
+            'Overall Rating'
+        ]);
     });
 
-    test('the rows read from best to worst', () => {
-        expect(scoreKeyRows(3).map((row) => row.score)).toEqual([5, 4, 3, 2, 1]);
+    test('it reports the count held for each score', () => {
+        const rows = scorecardRows(scorecard);
+        expect(rows[1][1]).toBe('1');
+        expect(rows[3][1]).toBe('2');
+        expect(rows[5][1]).toBe('1');
     });
 
-    test('the marked row is filled more strongly than when it is not marked', () => {
-        for (const { score } of SCORE_LABELS) {
-            const marked = scoreKeyRows(score).find((row) => row.score === score)!;
-            const unmarked = scoreKeyRows(-1).find((row) => row.score === score)!;
-            expect(marked.fill).not.toBe(unmarked.fill);
-        }
+    test('a score nobody reached reads as zero rather than as blank', () => {
+        expect(scorecardRows(scorecard)[2][1]).toBe('0');
+    });
+
+    test('the rating is formatted, not printed raw', () => {
+        expect(scorecardRows(scorecard)[6][1]).toBe('3.5');
+        expect(scorecardRows({ ...scorecard, overallRating: -1 })[6][1]).toBe('Not rated');
     });
 });
 
