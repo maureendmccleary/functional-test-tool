@@ -204,64 +204,6 @@ export function formatUseCaseName(
     return technology === '' ? numbered : `${numbered} - ${technology}`;
 }
 
-/** What the report is called when the evaluation has no name to add. */
-const REPORT_FILE_STEM = 'evaluation-results';
-
-/**
- * Characters a file name cannot carry on Windows, and the two path separators.
- *
- * A separator is the one that matters here: the evaluation name comes out of a
- * saved file, and a name holding "../" must not be able to steer the download
- * anywhere. Browsers flatten a download name themselves, but this does not
- * depend on that.
- */
-const ILLEGAL_FILE_NAME_CHARACTERS = '<>:"/\\|?*';
-
-/** How much of the evaluation name the file name carries. */
-const MAX_NAME_LENGTH = 120;
-
-/** Drops the dots and spaces a file name cannot usefully end on. */
-function trimNameEnd(value: string): string {
-    return value.replace(/[. ]+$/, '').trim();
-}
-
-/**
- * The name the report downloads as, carrying the evaluation's own name.
- *
- * Every report used to arrive as "evaluation-results.docx", so a second one
- * landed beside the first as a copy and neither said which engagement it was
- * for. The evaluation name is appended where there is one, and where there is
- * not -- files written before the cover fields existed, or simply not filled in
- * -- the stem is used on its own rather than leaving a dangling separator.
- *
- * The name is scrubbed rather than trusted. Anything a file name cannot carry
- * becomes a space and runs of whitespace collapse, so a name holding a path
- * separator cannot steer the download anywhere. It is then cut to
- * MAX_NAME_LENGTH, which keeps the whole thing well inside the 255 bytes file
- * systems allow, and the cut end is tidied: Windows drops a trailing dot or
- * space, which would rename the deliverable behind the tester's back, and a
- * trailing dot would read as "Audit..docx" in any case.
- *
- * Nothing is done about a leading dot. The name always follows the stem and its
- * separator, so the file itself cannot begin with one.
- */
-export function reportFileName(evaluationName: string | undefined): string {
-    const scrubbed = [...String(evaluationName ?? '')]
-        .map((character) => (
-            character < ' ' || character === '\u007f'
-                || ILLEGAL_FILE_NAME_CHARACTERS.includes(character)
-                ? ' '
-                : character
-        ))
-        .join('')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const name = trimNameEnd(scrubbed.slice(0, MAX_NAME_LENGTH));
-    return name === ''
-        ? `${REPORT_FILE_STEM}.docx`
-        : `${REPORT_FILE_STEM} - ${name}.docx`;
-}
-
 /** Joins the cover's asset and evaluation name, skipping whichever is blank. */
 export function buildCoverSubtitle(asset: string | undefined, name: string | undefined): string {
     return [asset, name]

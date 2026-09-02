@@ -2,13 +2,13 @@ import type { Evaluation, FunctionalTest, Issue, TestRun } from '../types.js';
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
+import { reportFileName } from '../domain/file-names.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { issueRows } from '../domain/test-run.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
-    formatOverallRating, formatReportTimestamp, formatScore, reportFileName, scoreRowStyle,
-    scorecardRows
+    formatOverallRating, formatReportTimestamp, formatScore, scoreRowStyle, scorecardRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
 
