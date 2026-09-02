@@ -1,9 +1,9 @@
-import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
+import type { Evaluation, FunctionalTest, Issue, TestRun } from '../types.js';
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
-import { issueLines, issueScoreLines } from '../domain/test-run.js';
+import { issueRows } from '../domain/test-run.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
@@ -43,7 +43,7 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
     const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
             Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, VerticalAlign,
-            WidthType, XmlComponent } = docx;
+            VerticalMergeType, WidthType, XmlComponent } = docx;
 
     /*
      * The width of the text on a Letter page inside Word's default one inch
@@ -100,7 +100,59 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         return new TableCell({
             children: paragraphs,
             verticalAlign: VerticalAlign.TOP,
-            ...(options.shading ? { shading: options.shading } : {})
+            ...(options.shading ? { shading: options.shading } : {}),
+            ...(options.verticalMerge ? { verticalMerge: options.verticalMerge } : {})
+        });
+    }
+
+    /**
+     * A table of steps or extensions, with one row per issue recorded.
+     *
+     * Each score shares a row with the finding it belongs to, so Word reads it
+     * under the "Score" heading and beside the right description. The step's
+     * number and instructions are written on its first row and merged down the
+     * rest, which is the report's equivalent of the rowspan the results dialog
+     * uses: the step stays identifiable from any of its rows without being
+     * repeated on each.
+     *
+     * Banding follows the step rather than the row, so one step's issues read
+     * as one block rather than striping within it.
+     */
+    function makeIssueTable(
+        headers: string[],
+        entries: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>
+    ) {
+        const rows = entries.flatMap((entry, index) => {
+            const issues = issueRows(entry);
+            const shaded = index % 2 === 1;
+            const shading = shaded
+                ? { color: REPORT_TEXT_COLOR, shading: bandShading }
+                : {};
+            // A merged run of cells: the first carries the content, the rest
+            // continue it. Word wants a cell in every row either way.
+            const spanning = (content: unknown, first: boolean) => cell(first ? content : [], {
+                ...shading,
+                verticalMerge: first ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE
+            });
+            return issues.map((issueRow, rowIndex) => new TableRow({
+                children: [
+                    spanning(String(index + 1), rowIndex === 0),
+                    spanning(String(entry.instructions || ''), rowIndex === 0),
+                    cell(issueRow.score, shading),
+                    cell(issueRow.description, shading)
+                ]
+            }));
+        });
+        return new Table({
+            rows: [
+                new TableRow({
+                    tableHeader: true,
+                    children: headers.map((header) => headerCell(header))
+                }),
+                ...rows
+            ],
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            columnWidths: STEP_COLUMNS
         });
     }
 
@@ -405,15 +457,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         ], true, { columns: [2600, 6760] }));
 
         children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
-        const stepRows = report.steps.map((step, stepIndex) => [
-            String(stepIndex + 1),
-            String(step.instructions || ''),
-            issueScoreLines(step),
-            issueLines(step)
-        ]);
-        children.push(makeTable(
-            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
-            false, { banded: true, columns: STEP_COLUMNS }
+        children.push(makeIssueTable(
+            ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], report.steps
         ));
 
         // Numbered from 1 within the use case, which is how a step refers to
@@ -421,15 +466,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         const extensions = report.extensions || [];
         if (extensions.length > 0) {
             children.push(heading('Extensions', HeadingLevel.HEADING_4));
-            children.push(makeTable(
-                ['Extension #', 'Extension', 'Score', 'Issues Encountered'],
-                extensions.map((extension, extensionIndex) => [
-                    String(extensionIndex + 1),
-                    String(extension.instructions || ''),
-                    issueScoreLines(extension),
-                    issueLines(extension)
-                ]),
-                false, { banded: true, columns: STEP_COLUMNS }
+            children.push(makeIssueTable(
+                ['Extension #', 'Extension', 'Score', 'Issues Encountered'], extensions
             ));
         }
 

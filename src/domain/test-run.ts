@@ -50,23 +50,50 @@ export function isOutOfScope(record: { outOfScope?: boolean } | undefined): bool
     return record !== undefined && record.outOfScope === true;
 }
 
+/** One reported line about a record: a score and the finding it belongs to. */
+export interface IssueRow {
+    score: string;
+    description: string;
+}
+
 /**
- * The lines a record's issue list shows: what was found, or the one line that
- * stands in for it.
+ * What a record has to report, as score-and-description pairs.
  *
- * Out of scope wins over anything recorded. A step the tester never performed
- * has no findings to report whatever is stored against it, which is the same
- * reason issuesMap leaves those issues out of the totals; they are kept in the
- * file, and the View Issues button still reaches them.
+ * One row per issue, each carrying its own score rather than an average, so a
+ * step holding a stopper and two minor issues reports all three. The score and
+ * the description travel together because the report has to put them in the
+ * same table row: kept as two parallel lists, nothing said which number went
+ * with which finding, and a description long enough to wrap took the columns
+ * out of alignment as well.
+ *
+ * Out of scope wins over anything recorded, and collapses to a single row: a
+ * step the tester never performed has no findings to report whatever is stored
+ * against it, which is the same reason issuesMap leaves those issues out of the
+ * totals. They are kept in the file, and the View Issues button still reaches
+ * them.
  */
-export function issueLines(record: { issues?: Issue[]; outOfScope?: boolean }): string[] {
+export function issueRows(record: { issues?: Issue[]; outOfScope?: boolean }): IssueRow[] {
     if (isOutOfScope(record)) {
-        return [OUT_OF_SCOPE_TEXT];
+        return [{ score: OUT_OF_SCOPE_SCORE_TEXT, description: OUT_OF_SCOPE_TEXT }];
     }
     const issues = Array.isArray(record.issues) ? record.issues : [];
-    return issues.length === 0
-        ? [NO_ISSUES_TEXT]
-        : issues.map((issue) => String(issue.description || ''));
+    if (issues.length === 0) {
+        return [{ score: CLEAN_PASS_SCORE, description: NO_ISSUES_TEXT }];
+    }
+    return issues.map((issue) => ({
+        score: String(issue.score ?? ''),
+        description: String(issue.description || '')
+    }));
+}
+
+/**
+ * Just the descriptions, for the perform screen's issue list.
+ *
+ * That list has no score column, so it takes the descriptions from the same
+ * rows the report is built from rather than working them out again.
+ */
+export function issueLines(record: { issues?: Issue[]; outOfScope?: boolean }): string[] {
+    return issueRows(record).map((row) => row.description);
 }
 
 /**
@@ -82,25 +109,6 @@ export function setOutOfScope(record: TestRunStep, outOfScope: boolean): void {
     } else {
         delete record.outOfScope;
     }
-}
-
-/**
- * The scores a record's Score column shows, one per line of issueLines.
- *
- * Every issue is reported at the score the tester gave it, with nothing
- * averaged: a step holding a stopper and a minor issue says so, rather than
- * printing the one number a mean of the two rounds to. The two lists are built
- * to the same length and order, so line i of the Score column belongs to line i
- * of the issues beside it.
- */
-export function issueScoreLines(record: { issues?: Issue[]; outOfScope?: boolean }): string[] {
-    if (isOutOfScope(record)) {
-        return [OUT_OF_SCOPE_SCORE_TEXT];
-    }
-    const issues = Array.isArray(record.issues) ? record.issues : [];
-    return issues.length === 0
-        ? [CLEAN_PASS_SCORE]
-        : issues.map((issue) => String(issue.score ?? ''));
 }
 
 /** Creates an unscored run with an empty record per step and per extension. */

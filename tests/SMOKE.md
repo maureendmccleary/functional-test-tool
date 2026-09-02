@@ -313,9 +313,16 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(the list is on the perform screen; populateEditor used to write to
       it from a screen it is not on, which is what left it stale)*
 - [ ] **View Results** shows the results table with the issues grouped by severity
-- [ ] A step carrying several issues shows each issue's own score on its own
-      line, beside the issue it belongs to, in both the results table and the
+- [ ] A step carrying several issues gives each issue a row of its own, with its
+      score in the Score cell of that row, in both the results table and the
       generated `.docx`
+- [ ] With a screen reader in that table, moving to a score announces it under
+      the "Score" column heading, and the step number is still reported for the
+      second and third issues of a step -- it heads the row group
+      <br>*(this is the association the old stacked-lines layout could not make:
+      "1 3 3" in one cell said nothing about which finding each belonged to)*
+- [ ] A description long enough to wrap does not take the columns out of
+      alignment, since the pairing is the row rather than the line
 
 ## 7a. Overall comments for an assistive technology
 
@@ -405,10 +412,15 @@ Open that document and check:
 - [ ] A use case nobody has scored reads "Not rated" rather than scoring 5
 - [ ] The step table's columns are Step #, Main Success Case, Score, Issues
       Encountered, in that order
-- [ ] A step with no issues scores 5. A step with issues shows **one score per
-      issue**, in the same order and lined up with the issues beside it, so a
-      step holding a stopper and two minor issues reads `1`, `3`, `3` rather
-      than the single `2` an average rounded down used to print
+- [ ] A step with no issues is one row scoring 5. A step with issues gets **one
+      row per issue**, each score in the same row as the finding it belongs to,
+      so a step holding a stopper and two minor issues reads `1`, `3`, `3` on
+      three rows rather than the single `2` an average rounded down used to
+      print
+- [ ] The step number and its instructions are written once and merged down that
+      step's rows, rather than repeated on each
+- [ ] In Word, moving through the merged cells still reaches the step number
+      once per step, and each score sits beside its own issue
 - [ ] Nothing is averaged: the use case's own score is still the most severe
       issue anywhere in it, so that step's stopper takes the use case to 1
 - [ ] With a screen reader in the metadata table, moving to a value announces

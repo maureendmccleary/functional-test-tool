@@ -386,18 +386,30 @@ Three consequences worth knowing:
   "03" under every AT it was performed with even where it is the first one
   listed, and stays "03" after an earlier script is deleted.
 
-The detailed section prints **one score per issue**, not one per step.
-`issueScoreLines` gives back the score the tester assigned to each issue, in
-order, and is built to the same length as `issueLines` beside it, so line *i* of
-the Score column belongs to line *i* of the issues. A step with none reads 5,
-and one out of scope reads `N/A`.
+The detailed section gives each issue **its own table row**, carrying the score
+the tester assigned to it. `issueRows` returns those score-and-description pairs
+for a step or extension: one row per issue, a single row reading 5 and "No
+issues" for a record with none, and a single row reading `N/A` and "Out of
+scope" for a record marked out of the test's scope.
+
+The score and the description are one object rather than two lists because they
+have to end up in the same table row. Kept apart, nothing said which number went
+with which finding: a reader met "1 3 3" in one cell and three sentences in the
+next, and a description long enough to wrap took even the visual pairing apart.
+
+Each step's rows are grouped: the results dialog gives every step its own
+`tbody`, headed by the step number in a `th` with `scope="rowgroup"` spanning
+its rows, and the report merges the number and instructions cells down the same
+span. So a reader on the third issue is still told which step it belongs to,
+without the number being repeated on every line. The report's banding follows
+the step rather than the row, so one step's issues read as one block.
 
 Nothing is averaged. A step used to report the mean of its issue scores rounded
 down, so a stopper sitting beside two minor issues printed a single "2" -- which
 read as the score of the first issue, and lost the rest (issue #27). The run's
 own score is still `runScore`, the most severe issue anywhere in it, so that
-step's stopper takes the use case to 1 while the step itself shows a 1 and a 3
-side by side.
+step's stopper takes the use case to 1 while the step itself shows a 1 and two
+3s on rows of their own.
 
 The table of contents is written out from the evaluation, not left to a Word
 `TableOfContents` field. A field would carry page numbers, but only after Word
