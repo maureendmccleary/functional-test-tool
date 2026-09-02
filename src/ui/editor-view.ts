@@ -124,6 +124,15 @@ function redrawExtensions(test: FunctionalTest): void {
     });
 }
 
+/** Gets the id of the control that owns a click handler. */
+export function getEventControlId(e: Event): string {
+    // A delete button contains an SVG icon, so event.target may be the SVG or
+    // one of its paths. currentTarget is the element that owns the handler.
+    return (e.currentTarget as HTMLElement | null)?.id
+        || (e.target as HTMLElement | null)?.id
+        || "";
+}
+
 /**
  * Removes an extension, after warning that the ones after it are renumbered.
  *
@@ -132,7 +141,7 @@ function redrawExtensions(test: FunctionalTest): void {
  */
 export function deleteExtensionButtonClicked(e: Event): void {
     const test = getCurrentTest();
-    const index = getStepNumber((e.target as HTMLElement).id);
+    const index = getStepNumber(getEventControlId(e));
     const later = test.extensions.length - index - 1;
     const warning = later > 0
         ? `Delete extension ${index + 1}? The ${later} after it are renumbered, and any step that refers to them by number will need updating.`
@@ -177,7 +186,7 @@ function redrawSteps(test: FunctionalTest): void {
 
 /** Removes a step, redraws the list, and moves focus to the step that took its place. */
 export function deleteStepButtonClicked(e: Event): void {
-    const stepId = (e.target as HTMLElement).id;
+    const stepId = getEventControlId(e);
     const test = getCurrentTest();
     const i = getStepNumber(stepId);
     test.steps.splice(i, 1);

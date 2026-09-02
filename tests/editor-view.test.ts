@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import { emptyFunctionalTest } from '../src/domain/functional-test.js';
-import { blurFormField } from '../src/ui/editor-view.js';
+import { blurFormField, getEventControlId } from '../src/ui/editor-view.js';
 import { setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
 
 /**
@@ -72,5 +72,16 @@ describe('blurFormField', () => {
 
         expect(test.steps[0].instructions).toBe('do the thing');
         expect(test.steps[0].issues).toHaveLength(1);
+    });
+});
+
+describe('delete button events', () => {
+    test('uses the button id when a nested icon is clicked', () => {
+        const event = {
+            currentTarget: { id: 'step-delete[3]' },
+            target: { id: '' }
+        } as unknown as Event;
+
+        expect(getEventControlId(event)).toBe('step-delete[3]');
     });
 });
