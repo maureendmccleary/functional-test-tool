@@ -4,7 +4,7 @@ import {
     collectSelectedValues, findTypeAheadIndex, normalizeSelectionValues, stepIndex
 } from '../domain/selection-utils.js';
 import {
-    DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest, getTestComments,
+    DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, emptyFunctionalTest,
     nextTestNumber, testDisplayName
 } from '../domain/functional-test.js';
 import {
@@ -384,23 +384,9 @@ export function populateEditor(): void {
     showAssistiveTechnologies(test);
     redrawSteps(test);
     redrawExtensions(test);
-    const summaryList = requireEl("summary-list");
-    while (summaryList.firstChild) {
-        summaryList.removeChild(summaryList.firstChild);
-    }
-    const testComments = getTestComments(test);
-    if (testComments.length > 0) {
-        testComments.forEach((comment) => {
-            const summaryLi = document.createElement("LI");
-            summaryLi.textContent = comment;
-            summaryList.appendChild(summaryLi);
-        });
-    }
-    else {
-        const summaryLi = document.createElement("LI");
-        summaryLi.textContent = "No Issues";
-        summaryList.appendChild(summaryLi);
-    }
+    // The Summary list is not on this screen. Filling it from here wrote the
+    // comments of whichever test was last edited onto the perform screen, where
+    // openTestRun now fills it from the run actually being performed.
 }
 
 /**

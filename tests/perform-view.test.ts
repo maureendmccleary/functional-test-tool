@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import { clearDocumentStub, installDocumentStub, type DocumentStub } from './helpers/dom-stub.js';
 import { setCurrentRunIndex, setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
-import { outOfScopeChanged, populateIssuesList } from '../src/ui/perform-view.js';
+import {
+    openTestRun, outOfScopeChanged, populateIssuesList, populateSummaryList
+} from '../src/ui/perform-view.js';
 
 /**
  * What the tester reads under each step, which is the one thing the "Out of
@@ -11,7 +13,9 @@ import { outOfScopeChanged, populateIssuesList } from '../src/ui/perform-view.js
  */
 
 const ELEMENT_IDS = [
-    'perform-step-results[0]', 'perform-step-results[1]', 'perform-extension-results[0]'
+    'perform-step-results[0]', 'perform-step-results[1]', 'perform-extension-results[0]',
+    'summary-list', 'perform-score', 'perform-screen', 'out-of-scope[0]', 'out-of-scope[1]',
+    'extension-out-of-scope[0]'
 ];
 
 /** A script with two steps and one extension, all recorded against one run. */
@@ -42,6 +46,32 @@ function evaluationWithRun(): FunctionalTest {
     setCurrentTestIndex(0);
     setCurrentRunIndex(0);
     return test;
+}
+
+/** Replaces the evaluation with two scripts, and selects the one at `index`. */
+function twoTests(comments: string[][], index: number): void {
+    const tests = comments.map((runComments, testNumber) => ({
+        name: `Script ${testNumber + 1}`,
+        testNumber: testNumber + 1,
+        goal: '',
+        startLocation: '',
+        operatingSystem: 'Windows',
+        assistiveTechnologies: ['NVDA'],
+        steps: [{ instructions: 'a step', issues: [] }, { instructions: 'another', issues: [] }],
+        extensions: [{ instructions: 'Credentials' }],
+        comments: [],
+        runs: [{
+            assistiveTechnology: 'NVDA',
+            operatingSystem: 'Windows',
+            score: -1,
+            comments: runComments,
+            steps: [{ issues: [] }, { issues: [] }],
+            extensions: [{ issues: [] }]
+        }]
+    }));
+    setEvaluation({ tests: tests as unknown as FunctionalTest[], score: 0 });
+    setCurrentTestIndex(index);
+    setCurrentRunIndex(0);
 }
 
 /** A change event from one checkbox, which is all the handler reads. */
@@ -90,6 +120,50 @@ describe('populateIssuesList', () => {
         populateIssuesList();
         populateIssuesList();
         expect(linesIn(documentStub, 'perform-step-results[0]')).toEqual(['no label']);
+    });
+});
+
+describe('populateSummaryList', () => {
+    test('lists the comments recorded against the run', () => {
+        twoTests([['Stoppers:', 'Focus is lost']], 0);
+        populateSummaryList();
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['Stoppers:', 'Focus is lost']);
+    });
+
+    test('a run with no comments reads "No Issues"', () => {
+        twoTests([[]], 0);
+        populateSummaryList();
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+    });
+
+    test('redraws rather than appending to what is already there', () => {
+        twoTests([['only once']], 0);
+        populateSummaryList();
+        populateSummaryList();
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['only once']);
+    });
+});
+
+describe('opening a run and the summary left by the last one', () => {
+    test('the next script clears the previous script summary', () => {
+        twoTests([['Script one had this'], []], 0);
+        populateSummaryList();
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['Script one had this']);
+
+        // Selecting the second script and opening its run is what the tester
+        // does by pressing Perform on it.
+        setCurrentTestIndex(1);
+        openTestRun();
+
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+    });
+
+    test('a script with its own summary shows that one, not the previous', () => {
+        twoTests([['Script one had this'], ['Script two had that']], 0);
+        populateSummaryList();
+        setCurrentTestIndex(1);
+        openTestRun();
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['Script two had that']);
     });
 });
 
