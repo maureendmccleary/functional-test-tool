@@ -6,9 +6,10 @@ import {
     testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
 import {
-    emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines
+    emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines, issueRows
 } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
+import { SCORE_LABELS } from '../src/domain/report-format.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 describe('emptyFunctionalTest', () => {
@@ -347,7 +348,52 @@ describe('issueLines', () => {
         expect(issueLines({ issues: [issue('found earlier')], outOfScope: true }))
             .toEqual(['Out of scope']);
     });
+
+    test('is the descriptions of the same rows the report is built from', () => {
+        const record = { issues: [issue('one'), issue('two')] };
+        expect(issueLines(record)).toEqual(issueRows(record).map((row) => row.description));
+    });
 });
+
+describe('issueRows', () => {
+    const scored = (score: string) => ({ description: `issue at ${score}`, findingURL: '', score });
+
+    test('gives every issue a row of its own, in order and unaveraged', () => {
+        // A stopper beside two minor issues. The mean of these rounded down
+        // printed a single "2", which is what issue #27 was about.
+        expect(issueRows({ issues: [scored('1'), scored('3'), scored('3')] })).toEqual([
+            { score: '1', description: 'issue at 1' },
+            { score: '3', description: 'issue at 3' },
+            { score: '3', description: 'issue at 3' }
+        ]);
+    });
+
+    test('keeps each score with its own description', () => {
+        const rows = issueRows({ issues: [scored('1'), scored('4')] });
+        // The pairing is the point: it is what lets the report put the two in
+        // the same table row.
+        rows.forEach((row) => expect(row.description).toBe(`issue at ${row.score}`));
+    });
+
+    test('a record with nothing recorded is one row reading a clean pass', () => {
+        expect(issueRows({ issues: [] })).toEqual([{ score: '5', description: 'No issues' }]);
+        expect(issueRows({})).toEqual([{ score: '5', description: 'No issues' }]);
+    });
+
+    test('out of scope collapses to one row, whatever is recorded', () => {
+        expect(issueRows({ issues: [], outOfScope: true }))
+            .toEqual([{ score: 'N/A', description: 'Out of scope' }]);
+        expect(issueRows({ issues: [scored('1'), scored('3')], outOfScope: true }))
+            .toEqual([{ score: 'N/A', description: 'Out of scope' }]);
+    });
+
+    test('the clean pass it reports is the top of the scale the report prints', () => {
+        // SCORE_LABELS is highest first, and is where the report's own idea of
+        // a perfect score lives.
+        expect(issueRows({ issues: [] })[0].score).toBe(String(SCORE_LABELS[0].score));
+    });
+});
+
 
 describe('ensureTestRunShape and extensions', () => {
     test('pads and truncates extensions the same way as steps', () => {

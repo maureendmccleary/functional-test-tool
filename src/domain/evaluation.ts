@@ -1,8 +1,8 @@
 import type {
-    AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, TestRun
+    AssistiveTechnologySummary, Evaluation, FunctionalTest, TestRun
 } from '../types.js';
 import { issuesMap, minimumScore } from './scoring.js';
-import { isOutOfScope, isPerformed, OUT_OF_SCOPE_SCORE_TEXT } from './test-run.js';
+import { isPerformed } from './test-run.js';
 
 /**
  * Evaluation-wide queries used to assemble the report.
@@ -116,41 +116,6 @@ export function groupRunsByAssistiveTechnology(evaluation: Evaluation): Assistiv
  */
 export function runScore(run: TestRun): number {
     return isPerformed(run) ? minimumScore(issuesMap(run)) : -1;
-}
-
-/**
- * The score for a single step: the mean of its issue scores, rounded down, or
- * 5 when it has none.
- *
- * Deliberately *not* `minimumScore`, which is what `runScore` and the perform
- * dialog use. A step holding one stopper and three minor issues averages to 2
- * here while the run it belongs to still scores 1. That is the reporting rule
- * this export has always used, and changing it is a scoring change, not a
- * cleanup.
- *
- * A score outside 1..5 counts as itself, and a non-numeric one as 0, both of
- * which can drag the average below 1. Issue scores are validated on entry, so
- * this only shows up in hand-edited files.
- */
-export function stepScore(step: { issues: Issue[] }): number {
-    const issues = Array.isArray(step.issues) ? step.issues : [];
-    if (issues.length === 0) {
-        return HIGHEST_SCORE;
-    }
-    const total = issues.reduce((sum, issue) => sum + (parseInt(issue.score) || 0), 0);
-    return Math.floor(total / issues.length);
-}
-
-/**
- * The Score column's text for one step or extension.
- *
- * A record marked out of scope has no score to print: the tester did not
- * perform it, so the 5 that stepScore would return for an empty issue list
- * would read as a clean pass. Shared by the results dialog and the report so
- * the two columns cannot come to disagree.
- */
-export function stepScoreText(step: { issues: Issue[]; outOfScope?: boolean }): string {
-    return isOutOfScope(step) ? OUT_OF_SCOPE_SCORE_TEXT : String(stepScore(step));
 }
 
 /** Every performed run recorded with one assistive technology. */

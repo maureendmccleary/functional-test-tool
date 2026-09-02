@@ -425,6 +425,12 @@ th {
     color: var(--text);
     padding: 10px 12px;
     text-align: left;
+    /*
+     * Matching td, which sets it explicitly. A header cell spanning a group of
+     * rows would otherwise sit at the middle of the group by default, out of
+     * line with the first row it heads and with the cell beside it.
+     */
+    vertical-align: top;
     border-bottom: 1px solid var(--border);
 }
 

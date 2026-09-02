@@ -1,8 +1,7 @@
 import type { Issue, TestReport } from '../types.js';
-import { stepScoreText } from '../domain/evaluation.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
-import { issueLines } from '../domain/test-run.js';
+import { issueRows } from '../domain/test-run.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
 import { createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
@@ -40,8 +39,21 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
  * One numbered table of steps or extensions, under its own heading.
  *
  * Steps and extensions are shown the same way and differ only in their column
- * headings, so they share this. The "•" prefixes are deliberate output, not
- * commentary: they are how the issue list has always read in this table.
+ * headings, so they share this.
+ *
+ * A step gets one row per issue, so each score sits in the same row as the
+ * finding it belongs to and is read under the "Score" column heading. Stacking
+ * both columns as lines inside single cells could not say which number went
+ * with which finding, and lost the visual pairing too as soon as a description
+ * wrapped.
+ *
+ * Each step's rows are grouped in their own tbody, headed by the step number as
+ * a `rowgroup` header cell spanning them. That is what keeps the step
+ * identifiable from any row of it: a reader on the third issue is still told
+ * which step it belongs to, without the number being repeated on every line.
+ *
+ * The "•" prefix is deliberate output, not commentary: it is how the issue
+ * column has always read in this table.
  */
 function appendResultsSection(
     resultsDiv: HTMLElement, sectionLevel: number, title: string, columnHeadings: string[],
@@ -52,31 +64,55 @@ function appendResultsSection(
     resultsDiv.appendChild(sectionHeading);
 
     const table = document.createElement("table");
-    const headingRow = table.insertRow(-1);
+    const head = document.createElement("thead");
+    const headingRow = head.insertRow(-1);
     columnHeadings.forEach((columnHeading) => {
         const heading = document.createElement("th");
         heading.setAttribute("scope", "col");
         heading.textContent = columnHeading;
         headingRow.appendChild(heading);
     });
+    table.appendChild(head);
 
     entries.forEach((entry, index) => {
-        const issues = entry.issues || [];
-        const row = table.insertRow(-1);
-        row.insertCell(0).textContent = String(index + 1);
-        const instructions = row.insertCell(1);
-        instructions.textContent = entry.instructions;
-        instructions.classList.add("cell-centered");
-        row.insertCell(2).textContent = stepScoreText({ issues, outOfScope: entry.outOfScope });
-        // One element per issue rather than a string of markup: descriptions
-        // come out of a saved file and must never be parsed as HTML.
-        const issueCell = row.insertCell(3);
-        issueLines(entry).forEach((text) => {
-            const line = document.createElement("div");
-            line.textContent = "•" + text;
-            issueCell.appendChild(line);
+        const rows = issueRows(entry);
+        const group = document.createElement("tbody");
+
+        rows.forEach((issueRow, rowIndex) => {
+            const row = group.insertRow(-1);
+            // The step number and its instructions are written once and span
+            // the step's rows, so they are not read out again for every issue.
+            if (rowIndex === 0) {
+                const number = document.createElement("th");
+                number.setAttribute("scope", "rowgroup");
+                number.textContent = String(index + 1);
+                row.appendChild(number);
+
+                const instructions = document.createElement("td");
+                instructions.textContent = entry.instructions;
+                instructions.classList.add("cell-centered");
+                row.appendChild(instructions);
+
+                // Only where there is something to span. rowspan="1" is what
+                // every cell does anyway, and saying so on a step with a single
+                // issue is noise in the markup a tester may well be reading.
+                if (rows.length > 1) {
+                    number.setAttribute("rowspan", String(rows.length));
+                    instructions.setAttribute("rowspan", String(rows.length));
+                }
+            }
+            // textContent throughout: descriptions come out of a saved file and
+            // must never be parsed as HTML.
+            const scoreCell = document.createElement("td");
+            scoreCell.textContent = issueRow.score;
+            row.appendChild(scoreCell);
+
+            const issueCell = document.createElement("td");
+            issueCell.textContent = "•" + issueRow.description;
+            issueCell.classList.add("cell-centered");
+            row.appendChild(issueCell);
         });
-        issueCell.classList.add("cell-centered");
+        table.appendChild(group);
     });
     resultsDiv.appendChild(table);
 }
