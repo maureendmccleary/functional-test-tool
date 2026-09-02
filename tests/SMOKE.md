@@ -236,6 +236,15 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       nothing to the score, the summary or the significant issues
 - [ ] **View Results**: the out of scope steps read `N/A` in the Score column and
       `Out of scope` under Issues Encountered, and their issues are absent
+- [ ] Generate and save a summary, *then* tick Out of scope on a step whose
+      issues are in it: those issues leave the Summary under the score, and
+      leave the Problem Summary in View Results and the report with it
+      <br>*(the summary is stored as text, so it is the one thing that has to be
+      brought back into line rather than recomputed)*
+- [ ] Anything you typed into the summary yourself survives that; only text
+      matching an issue on the skipped step goes
+- [ ] The Score under the list is **not** changed by ticking the box -- the
+      score is the tester's
 - [ ] The same two cells read the same way in the generated `.docx`
 
 ## 6. Issues
@@ -268,9 +277,14 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one
+- [ ] Rewording a description updates the line for it in the Summary under the
+      score **in place**, keeping its position, rather than dropping it
+      <br>*(an edit is the same finding in better words; a delete is not)*
 - [ ] Reopen the dialog on a step whose issue count is unchanged -- the table
       renders without a console error
-- [ ] **Delete** on a row removes it from both the table and the step
+- [ ] **Delete** on a row removes it from both the table and the step, and takes
+      it out of the Summary under the score as well when a summary was already
+      written for the run
 - [ ] On a step already marked **Out of scope**, saving, editing or deleting an
       issue leaves the list behind the dialog reading "Out of scope" -- the
       dialog must not redraw it as the issues it is hiding

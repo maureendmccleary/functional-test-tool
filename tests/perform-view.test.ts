@@ -197,6 +197,37 @@ describe('outOfScopeChanged', () => {
         expect(linesIn(documentStub, 'perform-step-results[0]')).toEqual(['no label']);
     });
 
+    test('takes the skipped issues out of a summary already stored', () => {
+        const test = evaluationWithRun();
+        const run = test.runs[0];
+        run.steps[1].issues = [{ description: 'count not announced', findingURL: '', score: '3' }];
+        run.comments = ['no label', 'count not announced'];
+
+        outOfScopeChanged(changeEvent('out-of-scope[0]', true));
+
+        expect(run.comments).toEqual(['count not announced']);
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['count not announced']);
+    });
+
+    test('a summary left with nothing in it reads "No Issues"', () => {
+        const test = evaluationWithRun();
+        test.runs[0].comments = ['no label'];
+
+        outOfScopeChanged(changeEvent('out-of-scope[0]', true));
+
+        expect(test.runs[0].comments).toEqual([]);
+        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+    });
+
+    test('does not touch the score, which is the tester\'s', () => {
+        const test = evaluationWithRun();
+        test.runs[0].score = 1;
+
+        outOfScopeChanged(changeEvent('out-of-scope[0]', true));
+
+        expect(test.runs[0].score).toBe(1);
+    });
+
     test('a checkbox with no record behind it is left alone', () => {
         evaluationWithRun();
         expect(() => outOfScopeChanged(changeEvent('out-of-scope[7]', true))).not.toThrow();

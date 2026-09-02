@@ -1,6 +1,7 @@
-import type { Evaluation } from '../types.js';
-import { issuesText } from './scoring.js';
+import type { Evaluation, IssueBearing } from '../types.js';
+import { issuesMap, issuesText } from './scoring.js';
 import { getTestComments, testAssistiveTechnology, testDisplayName } from './functional-test.js';
+import { isOutOfScope } from './test-run.js';
 
 /**
  * Severity headings, in order, for scores 1 through 4.
@@ -35,6 +36,92 @@ export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
         }
     }
     return summaryText;
+}
+
+/** Every issue description recorded against a record marked out of scope. */
+function skippedDescriptions(run: IssueBearing): Set<string> {
+    const skipped = new Set<string>();
+    for (const section of [run.steps, run.extensions || []]) {
+        for (const record of section) {
+            if (isOutOfScope(record)) {
+                record.issues.forEach((issue) => skipped.add(issue.description));
+            }
+        }
+    }
+    return skipped;
+}
+
+/** Every issue description that still counts towards this run's totals. */
+function countedDescriptions(run: IssueBearing): Set<string> {
+    const counted = new Set<string>();
+    issuesMap(run).forEach((descriptions) => {
+        descriptions.forEach((description) => counted.add(description));
+    });
+    return counted;
+}
+
+/**
+ * The stored summary with the named descriptions taken out of it.
+ *
+ * A summary is generated from the issues and then stored as text, so anything
+ * that stops an issue counting afterwards -- marking its step out of scope,
+ * deleting it -- would otherwise leave it written into the run's comments, and
+ * from there into the results dialog's problem summary and the report, both of
+ * which print those comments rather than recomputing them.
+ *
+ * Only the descriptions named are removed. Anything the tester wrote themselves
+ * matches none of them and is left alone, and a description still counted
+ * somewhere in the run stays, because it is still something that happened: the
+ * same problem hit on two steps does not stop having happened on the second
+ * when the first is skipped.
+ *
+ * Removal only. Nothing here puts a description back, because where it belonged
+ * in the tester's prose is not recoverable; Generate Summary rebuilds the whole
+ * block from what currently counts.
+ *
+ * @param run the run as it is *after* the change, which is what decides what
+ *            still counts
+ */
+export function summaryWithoutIssues(
+    comments: string[], removed: Iterable<string>, run: IssueBearing
+): string[] {
+    const dropping = new Set(removed);
+    if (dropping.size === 0) {
+        return comments;
+    }
+    const counted = countedDescriptions(run);
+    return comments.filter((comment) => !dropping.has(comment) || counted.has(comment));
+}
+
+/**
+ * The stored summary with one issue's description rewritten where it appears.
+ *
+ * Editing an issue is not deleting one: it is the same finding in better words,
+ * so the summary keeps the line, in its place, saying the new thing. Dropping
+ * it the way a deletion does would lose a finding the tester still means to
+ * report, and leaving it would report wording they have just corrected.
+ *
+ * The old wording is left alone when it still describes an issue recorded
+ * somewhere else in the run, since there it is not out of date. If the new
+ * wording is already in the summary, the old line goes rather than being
+ * duplicated.
+ *
+ * @param run the run as it is *after* the edit
+ */
+export function summaryWithRenamedIssue(
+    comments: string[], from: string, to: string, run: IssueBearing
+): string[] {
+    if (from === to || countedDescriptions(run).has(from)) {
+        return comments;
+    }
+    return comments.includes(to)
+        ? comments.filter((comment) => comment !== from)
+        : comments.map((comment) => (comment === from ? to : comment));
+}
+
+/** The stored summary with the issues of every out of scope record taken out. */
+export function summaryWithoutSkippedIssues(comments: string[], run: IssueBearing): string[] {
+    return summaryWithoutIssues(comments, skippedDescriptions(run), run);
 }
 
 /** Splits an edited comment block back into individual comments. */
