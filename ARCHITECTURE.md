@@ -386,13 +386,18 @@ Three consequences worth knowing:
   "03" under every AT it was performed with even where it is the first one
   listed, and stays "03" after an earlier script is deleted.
 
-The two scores in the detailed section use **different rules on purpose**.
-`runScore` is the most severe issue in the run, or 5 when there are none and the
-run has been performed. `stepScore` is the mean of that
-step's issue scores, rounded down. So a step holding one stopper among minor
-issues reads as a 2 while the run it belongs to still reads as a 1. That is the
-reporting rule this export has always used; unifying them would be a scoring
-change, not a cleanup.
+The detailed section prints **one score per issue**, not one per step.
+`issueScoreLines` gives back the score the tester assigned to each issue, in
+order, and is built to the same length as `issueLines` beside it, so line *i* of
+the Score column belongs to line *i* of the issues. A step with none reads 5,
+and one out of scope reads `N/A`.
+
+Nothing is averaged. A step used to report the mean of its issue scores rounded
+down, so a stopper sitting beside two minor issues printed a single "2" -- which
+read as the score of the first issue, and lost the rest (issue #27). The run's
+own score is still `runScore`, the most severe issue anywhere in it, so that
+step's stopper takes the use case to 1 while the step itself shows a 1 and a 3
+side by side.
 
 The table of contents is written out from the evaluation, not left to a Word
 `TableOfContents` field. A field would carry page numbers, but only after Word

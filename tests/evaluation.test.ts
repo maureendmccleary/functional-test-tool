@@ -2,8 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Evaluation, FunctionalTest, Issue } from '../src/types.js';
 import {
     buildScorecard, collectAssistiveTechnologies, findSummary,
-    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore, stepScoreText,
-    topIssuesFor, worstScoreFor
+    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, topIssuesFor, worstScoreFor
 } from '../src/domain/evaluation.js';
 
 /** An issue at the given severity, which is all the scoring cares about. */
@@ -150,41 +149,6 @@ describe('runScore', () => {
     test('is the most severe issue present', () => {
         const subject = testWithRuns('one', { NVDA: [issue('3'), issue('1'), issue('4')] });
         expect(runScore(subject.runs[0])).toBe(1);
-    });
-});
-
-describe('stepScore', () => {
-    test('is 5 for a step with no issues', () => {
-        expect(stepScore({ issues: [] })).toBe(5);
-    });
-
-    test('averages the issue scores and rounds down', () => {
-        expect(stepScore({ issues: [issue('4'), issue('2')] })).toBe(3);
-        expect(stepScore({ issues: [issue('4'), issue('3')] })).toBe(3);
-        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3'), issue('3')] })).toBe(2);
-    });
-
-    test('does not take the most severe issue, unlike runScore', () => {
-        // One stopper among minor issues averages up; the run it belongs to
-        // still scores 1. See the note on stepScore.
-        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3')] })).toBe(2);
-    });
-
-    test('counts an unrated issue as its own value and junk as zero', () => {
-        expect(stepScore({ issues: [issue('-1')] })).toBe(-1);
-        expect(stepScore({ issues: [issue('not a score'), issue('4')] })).toBe(2);
-    });
-});
-
-describe('stepScoreText', () => {
-    test('prints the step score for a record that was performed', () => {
-        expect(stepScoreText({ issues: [] })).toBe('5');
-        expect(stepScoreText({ issues: [issue('2'), issue('4')] })).toBe('3');
-    });
-
-    test('prints N/A for a record marked out of scope', () => {
-        expect(stepScoreText({ issues: [], outOfScope: true })).toBe('N/A');
-        expect(stepScoreText({ issues: [issue('1')], outOfScope: true })).toBe('N/A');
     });
 });
 

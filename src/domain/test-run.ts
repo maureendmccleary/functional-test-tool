@@ -33,6 +33,14 @@ export const OUT_OF_SCOPE_SCORE_TEXT = 'N/A';
 export const NO_ISSUES_TEXT = 'No issues';
 
 /**
+ * The score a record with nothing recorded against it is reported at.
+ *
+ * Its own constant rather than a reach into evaluation.ts, which keeps its
+ * bounds private; the two are checked against each other in the tests.
+ */
+const CLEAN_PASS_SCORE = '5';
+
+/**
  * True when the tester marked this step or extension outside the test's scope.
  *
  * Only the flag set to true counts. Files written before it existed leave it
@@ -74,6 +82,25 @@ export function setOutOfScope(record: TestRunStep, outOfScope: boolean): void {
     } else {
         delete record.outOfScope;
     }
+}
+
+/**
+ * The scores a record's Score column shows, one per line of issueLines.
+ *
+ * Every issue is reported at the score the tester gave it, with nothing
+ * averaged: a step holding a stopper and a minor issue says so, rather than
+ * printing the one number a mean of the two rounds to. The two lists are built
+ * to the same length and order, so line i of the Score column belongs to line i
+ * of the issues beside it.
+ */
+export function issueScoreLines(record: { issues?: Issue[]; outOfScope?: boolean }): string[] {
+    if (isOutOfScope(record)) {
+        return [OUT_OF_SCOPE_SCORE_TEXT];
+    }
+    const issues = Array.isArray(record.issues) ? record.issues : [];
+    return issues.length === 0
+        ? [CLEAN_PASS_SCORE]
+        : issues.map((issue) => String(issue.score ?? ''));
 }
 
 /** Creates an unscored run with an empty record per step and per extension. */

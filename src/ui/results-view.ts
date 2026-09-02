@@ -1,8 +1,7 @@
 import type { Issue, TestReport } from '../types.js';
-import { stepScoreText } from '../domain/evaluation.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
-import { issueLines } from '../domain/test-run.js';
+import { issueLines, issueScoreLines } from '../domain/test-run.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
 import { createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
@@ -61,15 +60,21 @@ function appendResultsSection(
     });
 
     entries.forEach((entry, index) => {
-        const issues = entry.issues || [];
         const row = table.insertRow(-1);
         row.insertCell(0).textContent = String(index + 1);
         const instructions = row.insertCell(1);
         instructions.textContent = entry.instructions;
         instructions.classList.add("cell-centered");
-        row.insertCell(2).textContent = stepScoreText({ issues, outOfScope: entry.outOfScope });
-        // One element per issue rather than a string of markup: descriptions
-        // come out of a saved file and must never be parsed as HTML.
+        // Score and issues are drawn as matching stacks of lines, so a step
+        // holding several issues shows each one's own score beside it. One
+        // element per line rather than a string of markup: descriptions come
+        // out of a saved file and must never be parsed as HTML.
+        const scoreCell = row.insertCell(2);
+        issueScoreLines(entry).forEach((text) => {
+            const line = document.createElement("div");
+            line.textContent = text;
+            scoreCell.appendChild(line);
+        });
         const issueCell = row.insertCell(3);
         issueLines(entry).forEach((text) => {
             const line = document.createElement("div");

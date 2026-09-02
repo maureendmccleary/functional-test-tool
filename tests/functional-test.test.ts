@@ -6,9 +6,10 @@ import {
     testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
 import {
-    emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines
+    emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines, issueScoreLines
 } from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
+import { SCORE_LABELS } from '../src/domain/report-format.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 describe('emptyFunctionalTest', () => {
@@ -346,6 +347,44 @@ describe('issueLines', () => {
         expect(issueLines({ issues: [], outOfScope: true })).toEqual(['Out of scope']);
         expect(issueLines({ issues: [issue('found earlier')], outOfScope: true }))
             .toEqual(['Out of scope']);
+    });
+});
+
+describe('issueScoreLines', () => {
+    const scored = (score: string) => ({ description: `issue at ${score}`, findingURL: '', score });
+
+    test('gives every issue its own score, in order and unaveraged', () => {
+        // A stopper beside a minor issue. The mean of 1 and 3 would print one
+        // "2", which is the number issue #27 was about.
+        expect(issueScoreLines({ issues: [scored('1'), scored('3')] })).toEqual(['1', '3']);
+    });
+
+    test('a record with nothing recorded reads as a clean pass', () => {
+        expect(issueScoreLines({ issues: [] })).toEqual(['5']);
+        expect(issueScoreLines({})).toEqual(['5']);
+    });
+
+    test('out of scope has no score, whatever is recorded', () => {
+        expect(issueScoreLines({ issues: [], outOfScope: true })).toEqual(['N/A']);
+        expect(issueScoreLines({ issues: [scored('1')], outOfScope: true })).toEqual(['N/A']);
+    });
+
+    test('the clean pass it reports is the top of the scale the report prints', () => {
+        // SCORE_LABELS is highest first, and is where the report's own idea of
+        // a perfect score lives.
+        expect(issueScoreLines({ issues: [] })).toEqual([String(SCORE_LABELS[0].score)]);
+    });
+
+    test('pairs line for line with issueLines, which is what the columns rely on', () => {
+        const records = [
+            { issues: [] },
+            { issues: [scored('2')] },
+            { issues: [scored('1'), scored('3'), scored('4')] },
+            { issues: [scored('1')], outOfScope: true }
+        ];
+        records.forEach((record) => {
+            expect(issueScoreLines(record)).toHaveLength(issueLines(record).length);
+        });
     });
 });
 

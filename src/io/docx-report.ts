@@ -1,9 +1,9 @@
 import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
 import {
-    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScoreText
+    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
-import { issueLines } from '../domain/test-run.js';
+import { issueLines, issueScoreLines } from '../domain/test-run.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
@@ -408,7 +408,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         const stepRows = report.steps.map((step, stepIndex) => [
             String(stepIndex + 1),
             String(step.instructions || ''),
-            stepScoreText({ issues: step.issues || [], outOfScope: step.outOfScope }),
+            issueScoreLines(step),
             issueLines(step)
         ]);
         children.push(makeTable(
@@ -426,9 +426,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                 extensions.map((extension, extensionIndex) => [
                     String(extensionIndex + 1),
                     String(extension.instructions || ''),
-                    stepScoreText({
-                        issues: extension.issues || [], outOfScope: extension.outOfScope
-                    }),
+                    issueScoreLines(extension),
                     issueLines(extension)
                 ]),
                 false, { banded: true, columns: STEP_COLUMNS }
