@@ -1,7 +1,8 @@
 import type { Issue, TestReport } from '../types.js';
-import { stepScore } from '../domain/evaluation.js';
+import { stepScoreText } from '../domain/evaluation.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
+import { issueLines } from '../domain/test-run.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
 import { createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
@@ -43,8 +44,8 @@ export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
  * commentary: they are how the issue list has always read in this table.
  */
 function appendResultsSection(
-    resultsDiv: HTMLElement, sectionLevel: number, title: string,
-    columnHeadings: string[], entries: Array<{ instructions: string; issues: Issue[] }>
+    resultsDiv: HTMLElement, sectionLevel: number, title: string, columnHeadings: string[],
+    entries: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>
 ): void {
     const sectionHeading = document.createElement(`h${sectionLevel}`);
     sectionHeading.textContent = title;
@@ -66,19 +67,15 @@ function appendResultsSection(
         const instructions = row.insertCell(1);
         instructions.textContent = entry.instructions;
         instructions.classList.add("cell-centered");
-        row.insertCell(2).textContent = String(stepScore({ issues }));
+        row.insertCell(2).textContent = stepScoreText({ issues, outOfScope: entry.outOfScope });
         // One element per issue rather than a string of markup: descriptions
         // come out of a saved file and must never be parsed as HTML.
         const issueCell = row.insertCell(3);
-        if (issues.length === 0) {
-            issueCell.textContent = "•No issues";
-        } else {
-            issues.forEach((issue) => {
-                const line = document.createElement("div");
-                line.textContent = "•" + issue.description;
-                issueCell.appendChild(line);
-            });
-        }
+        issueLines(entry).forEach((text) => {
+            const line = document.createElement("div");
+            line.textContent = "•" + text;
+            issueCell.appendChild(line);
+        });
         issueCell.classList.add("cell-centered");
     });
     resultsDiv.appendChild(table);
