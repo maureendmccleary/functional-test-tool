@@ -370,6 +370,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] It arrives as `evaluation-results - <evaluation name>.docx`, so two
+      reports from different evaluations do not land on each other as copies
+- [ ] An evaluation with no name set downloads as `evaluation-results.docx`,
+      with no dangling separator left on the end
+- [ ] An evaluation named with something a file name cannot carry -- try
+      `Q3/2026: audit` -- still downloads, with those characters spaced out
+      rather than the download failing
       <br>*(needs network access -- `docx` loads from unpkg)*
 
 Open that document and check:

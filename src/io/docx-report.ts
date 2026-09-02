@@ -7,7 +7,8 @@ import { issueRows } from '../domain/test-run.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
-    formatOverallRating, formatReportTimestamp, formatScore, scoreRowStyle, scorecardRows
+    formatOverallRating, formatReportTimestamp, formatScore, reportFileName, scoreRowStyle,
+    scorecardRows
 } from '../domain/report-format.js';
 import { showStatusMessage } from '../ui/status.js';
 
@@ -591,7 +592,7 @@ export function renderEvalResultsDocx(evaluation: Evaluation): void {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'evaluation-results.docx';
+        a.download = reportFileName(evaluation.name);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
