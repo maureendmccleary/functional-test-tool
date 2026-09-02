@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
 import {
     SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
-    splitSummaryComments, summaryWithoutSkippedIssues
+    splitSummaryComments, summaryWithoutIssues, summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -207,6 +207,26 @@ describe('summaryWithoutSkippedIssues', () => {
             extensions: []
         };
         expect(summaryWithoutSkippedIssues([], run)).toEqual([]);
+    });
+});
+
+describe('summaryWithoutIssues', () => {
+    test('removes the description of an issue that has been deleted', () => {
+        // The run no longer holds it, which is the state after the splice.
+        const run = { steps: [{ issues: [issue('still here', '3')] }], extensions: [] };
+        expect(summaryWithoutIssues(['deleted one', 'still here'], ['deleted one'], run))
+            .toEqual(['still here']);
+    });
+
+    test('keeps it when the same description is still recorded elsewhere', () => {
+        const run = { steps: [{ issues: [issue('hit twice', '2')] }], extensions: [] };
+        expect(summaryWithoutIssues(['hit twice'], ['hit twice'], run)).toEqual(['hit twice']);
+    });
+
+    test('leaves the summary alone when nothing is named', () => {
+        const run = { steps: [{ issues: [] }], extensions: [] };
+        const comments = ['written by hand'];
+        expect(summaryWithoutIssues(comments, [], run)).toBe(comments);
     });
 });
 

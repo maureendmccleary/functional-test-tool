@@ -52,33 +52,44 @@ function skippedDescriptions(run: IssueBearing): Set<string> {
 }
 
 /**
- * The stored summary with the issues that no longer count taken out of it.
+ * The stored summary with the named descriptions taken out of it.
  *
- * A summary is generated from the issues, then stored as text, so marking a
- * step out of scope afterwards would otherwise leave its issues written into
- * the run's comments -- and from there into the results dialog's problem
- * summary and the report, which print those comments rather than recomputing
- * them. A step nobody performed should not be describing what went wrong.
+ * A summary is generated from the issues and then stored as text, so anything
+ * that stops an issue counting afterwards -- marking its step out of scope,
+ * deleting it -- would otherwise leave it written into the run's comments, and
+ * from there into the results dialog's problem summary and the report, both of
+ * which print those comments rather than recomputing them.
  *
- * Only text attributable to a skipped record is removed. Anything the tester
- * wrote themselves matches no issue description and is left alone, and a
- * description that is also recorded against a record still in scope stays,
- * because it is still something that happened.
+ * Only the descriptions named are removed. Anything the tester wrote themselves
+ * matches none of them and is left alone, and a description still counted
+ * somewhere in the run stays, because it is still something that happened: the
+ * same problem hit on two steps does not stop having happened on the second
+ * when the first is skipped.
  *
- * Removal only. Taking the mark off again does not put the description back:
- * where it belonged in the tester's prose is not recoverable, and Generate
- * Summary rebuilds the whole block from what currently counts.
+ * Removal only. Nothing here puts a description back, because where it belonged
+ * in the tester's prose is not recoverable; Generate Summary rebuilds the whole
+ * block from what currently counts.
+ *
+ * @param run the run as it is *after* the change, which is what decides what
+ *            still counts
  */
-export function summaryWithoutSkippedIssues(comments: string[], run: IssueBearing): string[] {
-    const skipped = skippedDescriptions(run);
-    if (skipped.size === 0) {
+export function summaryWithoutIssues(
+    comments: string[], removed: Iterable<string>, run: IssueBearing
+): string[] {
+    const dropping = new Set(removed);
+    if (dropping.size === 0) {
         return comments;
     }
     const counted = new Set<string>();
     issuesMap(run).forEach((descriptions) => {
         descriptions.forEach((description) => counted.add(description));
     });
-    return comments.filter((comment) => !skipped.has(comment) || counted.has(comment));
+    return comments.filter((comment) => !dropping.has(comment) || counted.has(comment));
+}
+
+/** The stored summary with the issues of every out of scope record taken out. */
+export function summaryWithoutSkippedIssues(comments: string[], run: IssueBearing): string[] {
+    return summaryWithoutIssues(comments, skippedDescriptions(run), run);
 }
 
 /** Splits an edited comment block back into individual comments. */

@@ -279,7 +279,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       row rather than adding one
 - [ ] Reopen the dialog on a step whose issue count is unchanged -- the table
       renders without a console error
-- [ ] **Delete** on a row removes it from both the table and the step
+- [ ] **Delete** on a row removes it from both the table and the step, and takes
+      it out of the Summary under the score as well when a summary was already
+      written for the run
 - [ ] On a step already marked **Out of scope**, saving, editing or deleting an
       issue leaves the list behind the dialog reading "Out of scope" -- the
       dialog must not redraw it as the issues it is hiding

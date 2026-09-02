@@ -1,13 +1,14 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
+import { summaryWithoutIssues } from '../domain/summary.js';
 import {
-    getCurrentIssue, getCurrentRecord, getCurrentSection, getCurrentStep, getCurrentTest,
-    markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
+    getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
+    getCurrentTest, markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
 import { showStatusMessage } from './status.js';
-import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
+import { populateIssuesList, populateSummaryList, updateAddIssueButtons } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
 import { getStepNumber, isExtensionElementId } from './step-ids.js';
 
@@ -260,9 +261,16 @@ export function deleteIssue(e: Event): void {
     for (let i = 1; i < issueTable.rows.length; i++) {
         issueTable.rows[i].cells[0].textContent = String(i);
     }
-    getCurrentRecord().issues.splice(rowIndex - 1, 1);
+    // Captured on the way out: once it is spliced away, nothing left in the run
+    // says what the summary should stop describing.
+    const [removed] = getCurrentRecord().issues.splice(rowIndex - 1, 1);
+    const run = getCurrentRun();
+    run.comments = summaryWithoutIssues(
+        run.comments, removed ? [removed.description] : [], run
+    );
     markEvaluationChanged();
     populateIssuesList();
+    populateSummaryList();
     // The row just removed held the button that had focus, so focus has to land
     // somewhere before the message, or it is discarded with the old context.
     requireEl("add-issue-dialog-new-issue").focus();
