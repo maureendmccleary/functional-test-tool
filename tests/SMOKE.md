@@ -215,6 +215,29 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the same as one recorded against a step
 - [ ] A test with no extensions shows no extension blocks at all
 
+## 5a. Steps that are out of scope
+
+- [ ] Every step and every extension has an **Out of scope** checkbox after its
+      Add Issue button, and the reader announces it as a checkbox named
+      "Out of scope Step 3" -- the step's number is part of the name, since
+      every step on the screen has one of these
+- [ ] The label is clickable and **Space** toggles the box, both of which come
+      free from its being a real checkbox rather than something built to look
+      like one
+- [ ] Ticking it replaces that step's issue list with a single **Out of scope**
+      line, and no other step's list changes
+- [ ] Untick it: the step's own issues come back, or "No issues" if it had none
+- [ ] Leave the screen and come back: every box you ticked is still ticked
+- [ ] Tick the box on a step that already has an issue recorded. The list reads
+      "Out of scope", and the button still says "View 1 Issue" -- the issue is
+      kept and still reachable, it is only no longer reported
+- [ ] With a **stopper** recorded on that step, the use case's score is what the
+      rest of the steps make it, not 1. A step nobody performed contributes
+      nothing to the score, the summary or the significant issues
+- [ ] **View Results**: the out of scope steps read `N/A` in the Score column and
+      `Out of scope` under Issues Encountered, and their issues are absent
+- [ ] The same two cells read the same way in the generated `.docx`
+
 ## 6. Issues
 
 - [ ] Open the issue dialog on **step 1**, close it, then open it on **step 3**:
@@ -234,8 +257,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       never back up it
 - [ ] Saving with an empty description shows "Description is required." and moves
       focus to the description field
-- [ ] Saving with the score left on "Not Rated (-1)" shows "Score is required."
-      and moves focus to the score field
+- [ ] Saving with the score left on "Not Rated (-1)" is refused, moves focus to
+      the score field, and the message names the record and points at the
+      checkbox: "Score is required. To record that Step 3 was not tested, close
+      this dialog and mark it Out of scope."
+      <br>*(a -1 is the one score nothing downstream can read, so it stays
+      refused; filing an "N/A" issue was the workaround the checkbox replaces)*
 - [ ] A valid save announces "Issue successfully saved!", adds a table row, and
       adds the issue under the step in the Perform dialog
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
@@ -244,6 +271,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Reopen the dialog on a step whose issue count is unchanged -- the table
       renders without a console error
 - [ ] **Delete** on a row removes it from both the table and the step
+- [ ] On a step already marked **Out of scope**, saving, editing or deleting an
+      issue leaves the list behind the dialog reading "Out of scope" -- the
+      dialog must not redraw it as the issues it is hiding
 - [ ] Typing a description and then closing the dialog with **Esc** or the X
       prompts to discard; cancelling the prompt keeps the dialog open
 - [ ] Reopening the dialog on a step shows a table matching that step exactly

@@ -5,7 +5,9 @@ import {
     getTestComments, isLastTestForItsTechnology, nextTestNumber, splitByAssistiveTechnology,
     testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
-import { emptyTestRun, ensureTestRunShape, isPerformed } from '../src/domain/test-run.js';
+import {
+    emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines
+} from '../src/domain/test-run.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
 import { loadFixture } from './helpers/fixtures.js';
 
@@ -319,6 +321,34 @@ describe('isPerformed', () => {
     });
 });
 
+describe('isOutOfScope', () => {
+    test('is true only for the flag actually set to true', () => {
+        expect(isOutOfScope({ outOfScope: true })).toBe(true);
+        expect(isOutOfScope({ outOfScope: false })).toBe(false);
+        expect(isOutOfScope({})).toBe(false);
+        expect(isOutOfScope(undefined)).toBe(false);
+    });
+});
+
+describe('issueLines', () => {
+    const issue = (description: string) => ({ description, findingURL: '', score: '2' });
+
+    test('lists what was recorded', () => {
+        expect(issueLines({ issues: [issue('one'), issue('two')] })).toEqual(['one', 'two']);
+    });
+
+    test('stands in for an empty list', () => {
+        expect(issueLines({ issues: [] })).toEqual(['No issues']);
+        expect(issueLines({})).toEqual(['No issues']);
+    });
+
+    test('out of scope replaces whatever was recorded', () => {
+        expect(issueLines({ issues: [], outOfScope: true })).toEqual(['Out of scope']);
+        expect(issueLines({ issues: [issue('found earlier')], outOfScope: true }))
+            .toEqual(['Out of scope']);
+    });
+});
+
 describe('ensureTestRunShape and extensions', () => {
     test('pads and truncates extensions the same way as steps', () => {
         const subject = { steps: [], extensions: [{}, {}] } as unknown as FunctionalTest;
@@ -374,8 +404,8 @@ describe('buildTestReport', () => {
         const display = buildTestReport(subject, run);
         expect(display.steps).toHaveLength(3);
         expect(display.steps[0].issues).toHaveLength(1);
-        expect(display.steps[1]).toEqual({ instructions: 'two', issues: [] });
-        expect(display.steps[2]).toEqual({ instructions: 'three', issues: [] });
+        expect(display.steps[1]).toEqual({ instructions: 'two', issues: [], outOfScope: false });
+        expect(display.steps[2]).toEqual({ instructions: 'three', issues: [], outOfScope: false });
     });
 
     test('ignores run steps beyond the functional test step count', () => {
@@ -419,6 +449,31 @@ describe('buildTestReport and extensions', () => {
         const run = { steps: [], extensions: [] } as unknown as TestRun;
 
         expect(buildTestReport(subject, run).extensions[0].issues).toEqual([]);
+    });
+
+    test('carries each record out-of-scope flag through from the run', () => {
+        const subject = {
+            steps: [{ instructions: 'sign in', issues: [] }, { instructions: 'search', issues: [] }],
+            extensions: [{ instructions: 'Credentials' }]
+        } as unknown as FunctionalTest;
+        const run = {
+            steps: [{ issues: [], outOfScope: true }, { issues: [] }],
+            extensions: [{ issues: [], outOfScope: true }]
+        } as unknown as TestRun;
+
+        const report = buildTestReport(subject, run);
+
+        expect(report.steps.map((step) => step.outOfScope)).toEqual([true, false]);
+        expect(report.extensions[0].outOfScope).toBe(true);
+    });
+
+    test('a step the run has no record for is not out of scope', () => {
+        const subject = {
+            steps: [{ instructions: 'added later', issues: [] }], extensions: []
+        } as unknown as FunctionalTest;
+        const run = { steps: [], extensions: [] } as unknown as TestRun;
+
+        expect(buildTestReport(subject, run).steps[0].outOfScope).toBe(false);
     });
 
     test('a test written before extensions existed reports none', () => {

@@ -1,7 +1,7 @@
 import type { TestReport, TestRun, FunctionalTest } from '../types.js';
 import { collectAssistiveTechnologies } from './evaluation.js';
 import { formatUseCaseName } from './report-format.js';
-import { emptyTestRun, isPerformed } from './test-run.js';
+import { emptyTestRun, isOutOfScope, isPerformed } from './test-run.js';
 
 /**
  * How many blank steps a functional test created from the editor starts with.
@@ -194,6 +194,10 @@ export function getTestComments(test: FunctionalTest): string[] {
  * Step and extension counts come from the functional test, not the performance,
  * so either one added in the editor after a run still appears -- with an empty
  * issue list.
+ *
+ * Whether a record was marked out of scope belongs to the performance, like the
+ * issues beside it: the same script performed with two technologies can have a
+ * step tested under one and skipped under the other.
  */
 export function buildTestReport(test: FunctionalTest, run: TestRun): TestReport {
     return {
@@ -208,11 +212,13 @@ export function buildTestReport(test: FunctionalTest, run: TestRun): TestReport 
         comments: run.comments,
         steps: test.steps.map((step, i) => ({
             instructions: step.instructions,
-            issues: (run.steps[i] && run.steps[i].issues) || []
+            issues: (run.steps[i] && run.steps[i].issues) || [],
+            outOfScope: isOutOfScope(run.steps[i])
         })),
         extensions: (Array.isArray(test.extensions) ? test.extensions : []).map((extension, i) => ({
             instructions: extension.instructions,
-            issues: (run.extensions && run.extensions[i] && run.extensions[i].issues) || []
+            issues: (run.extensions && run.extensions[i] && run.extensions[i].issues) || [],
+            outOfScope: isOutOfScope(run.extensions && run.extensions[i])
         }))
     };
 }

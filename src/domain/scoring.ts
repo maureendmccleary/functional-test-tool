@@ -1,4 +1,5 @@
 import type { Issue, IssueBearing } from '../types.js';
+import { isOutOfScope } from './test-run.js';
 
 /** Severities an issue can be bucketed under, most severe first. */
 const SEVERITIES = [1, 2, 3, 4];
@@ -9,6 +10,12 @@ const SEVERITIES = [1, 2, 3, 4];
  * The map always holds exactly keys 1..4. Issues found in an extension count
  * alongside those found in a step: a problem is a problem wherever the tester
  * hit it, so a stopper in an extension takes the use case to 1 the same way.
+ *
+ * A step or extension marked out of scope contributes nothing, whatever is
+ * stored against it. Every total in the tool is built from this map -- the run
+ * and step scores, the problem summary, the significant issues, the scorecard
+ * -- so marking a record here is what keeps a step the tester never performed
+ * out of all of them at once.
  */
 export function issuesMap(test: IssueBearing): Map<number, Set<string>> {
     const allIssues = new Map<number, Set<string>>();
@@ -17,6 +24,9 @@ export function issuesMap(test: IssueBearing): Map<number, Set<string>> {
     }
     for (const section of [test.steps, test.extensions || []]) {
         for (const entry of section) {
+            if (isOutOfScope(entry)) {
+                continue;
+            }
             for (const issue of entry.issues) {
                 insertIssue(allIssues, issue);
             }

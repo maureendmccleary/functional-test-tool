@@ -45,6 +45,17 @@ export interface Extension {
  */
 export interface TestRunStep {
     issues: Issue[];
+    /**
+     * True when the tester marked this step or extension outside the scope of
+     * the test, as a sign-in step written into the script often is.
+     *
+     * Absent rather than false in a record nobody has marked, which is what
+     * files written before the flag existed look like. Read it through
+     * isOutOfScope in domain/test-run.ts. A marked record is reported as
+     * "Out of scope" with no score, and its issues are left out of every
+     * total: a step nobody performed cannot have found anything.
+     */
+    outOfScope?: boolean;
 }
 
 /** One run of a functional test against a specific AT and operating system. */
@@ -154,8 +165,8 @@ export interface TestReport {
     operatingSystem: string;
     score: number;
     comments: string[];
-    steps: Array<{ instructions: string; issues: Issue[] }>;
-    extensions: Array<{ instructions: string; issues: Issue[] }>;
+    steps: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>;
+    extensions: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>;
 }
 
 /**
@@ -166,8 +177,8 @@ export interface TestReport {
  * predate them; anything the app produces has the array.
  */
 export interface IssueBearing {
-    steps: Array<{ issues: Issue[] }>;
-    extensions?: Array<{ issues: Issue[] }>;
+    steps: Array<{ issues: Issue[]; outOfScope?: boolean }>;
+    extensions?: Array<{ issues: Issue[]; outOfScope?: boolean }>;
 }
 
 /** An option in a <select>, as consumed by fillListbox. */

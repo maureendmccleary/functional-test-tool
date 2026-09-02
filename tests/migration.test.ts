@@ -212,6 +212,40 @@ describe('script numbers', () => {
     });
 });
 
+describe('out of scope records', () => {
+    /** One script with a run whose step records carry the given flags. */
+    function withFlags(flags: unknown[]): FunctionalTest {
+        return normalizeEvaluation({
+            tests: [{
+                name: 'one',
+                ats: ['NVDA'],
+                steps: flags.map(() => ({ instructions: 'a step', issues: [] })),
+                performedUCs: [{
+                    ats: 'NVDA',
+                    score: 5,
+                    steps: flags.map((outOfScope) => ({ issues: [], outOfScope })),
+                    extensions: []
+                }]
+            }]
+        }).tests[0];
+    }
+
+    test('keeps the flag a tester set', () => {
+        expect(withFlags([true]).runs[0].steps[0].outOfScope).toBe(true);
+    });
+
+    test('drops anything else, so an unmarked record carries no field at all', () => {
+        const steps = withFlags([false, undefined, 'yes', 1]).runs[0].steps;
+        expect(steps.map((step) => 'outOfScope' in step)).toEqual([false, false, false, false]);
+    });
+
+    test('a file written before the flag existed reads as not out of scope', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        const steps = evaluation.tests.flatMap((test) => test.runs[0].steps);
+        expect(steps.some((step) => 'outOfScope' in step)).toBe(false);
+    });
+});
+
 describe('extensions', () => {
     test('default to an empty list in a file that predates them', () => {
         const evaluation = normalizeEvaluation(loadFixture('evaluation-legacy'));

@@ -171,6 +171,12 @@ function normalizeRun(raw: RawRecord): TestRun {
             if (!Array.isArray(record.issues)) {
                 record.issues = [];
             }
+            // Only the flag actually set to true is kept, so a record nobody
+            // marked saves back the way files written before the flag existed
+            // look: without the field at all.
+            if (record.outOfScope !== true) {
+                delete record.outOfScope;
+            }
         });
     }
     return raw as unknown as TestRun;

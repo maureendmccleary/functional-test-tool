@@ -334,6 +334,28 @@ dialog {
 }
 
 /*
+ * The "Out of scope" checkbox under each step's Add Issue button.
+ *
+ * A row rather than the column the sheet lays every other label out in: this
+ * label names a box beside it rather than a field under it, so it opts out of
+ * the block label the same way the assistive technology list does, and out of
+ * its weight as well. Nothing here resizes or repaints the box itself, which
+ * stays the browser's own control and so keeps the platform's rendering of
+ * checked, focused and forced-colours states.
+ */
+.out-of-scope {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: var(--gap);
+}
+
+.out-of-scope label {
+    margin: 0;
+    font-weight: 400;
+}
+
+/*
  * A disclosure holding a column of checkboxes. It carries no role and no name
  * on purpose, so it is matched by id.
  */

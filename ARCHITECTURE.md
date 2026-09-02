@@ -129,6 +129,21 @@ renumbers the ones after it**, which no code can follow into the prose of a step
 that mentions them, so the editor warns before doing it and only ever appends
 new ones.
 
+A step or an extension can be marked **out of scope** for the run, which is
+what the tester does with a step the scripter wrote but nobody is meant to
+perform — signing in to the site being the common one. The mark belongs to the
+run rather than to the script, since the same script can have a step tested
+under one assistive technology and skipped under another, and it lives on the
+run's record as `outOfScope`. A marked record reads as "Out of scope" wherever
+its issues would be listed and prints `N/A` in place of a score, and its issues
+are dropped in `issuesMap` — the one place every total in the tool is built
+from — so a step nobody performed cannot contribute a finding to the run's
+score, the scorecard, the problem summary or the significant issues. Issues
+already recorded against it are kept in the file and still reachable through
+View Issues; they simply stop being reported. The flag is absent rather than
+`false` on a record nobody has marked, which is what a file written before it
+existed looks like, and `setOutOfScope` and the migration both hold that rule.
+
 The operating system belongs to the script the same way the assistive
 technology does, so one script performed with NVDA on Windows and another with
 VoiceOver on macOS keep separate results. Saving a script brings its run's

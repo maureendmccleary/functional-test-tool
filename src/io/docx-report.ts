@@ -1,8 +1,9 @@
 import type { Evaluation, FunctionalTest, TestRun } from '../types.js';
 import {
-    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore
+    buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScoreText
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
+import { issueLines } from '../domain/test-run.js';
 import {
     BAND_FILL, HEADER_FILL, HEADING_COLOR, REPORT_FONT, REPORT_TEXT_COLOR, SCORE_LABELS,
     SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, buildCoverSubtitle,
@@ -404,15 +405,12 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         ], true, { columns: [2600, 6760] }));
 
         children.push(heading('Main Success Case', HeadingLevel.HEADING_4));
-        const stepRows = report.steps.map((step, stepIndex) => {
-            const issueLines = (step.issues || []).map((issue) => String(issue.description || ''));
-            return [
-                String(stepIndex + 1),
-                String(step.instructions || ''),
-                String(stepScore({ issues: step.issues || [] })),
-                issueLines.length > 0 ? issueLines : ['No issues']
-            ];
-        });
+        const stepRows = report.steps.map((step, stepIndex) => [
+            String(stepIndex + 1),
+            String(step.instructions || ''),
+            stepScoreText({ issues: step.issues || [], outOfScope: step.outOfScope }),
+            issueLines(step)
+        ]);
         children.push(makeTable(
             ['Step #', 'Main Success Case', 'Score', 'Issues Encountered'], stepRows,
             false, { banded: true, columns: STEP_COLUMNS }
@@ -425,16 +423,14 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             children.push(heading('Extensions', HeadingLevel.HEADING_4));
             children.push(makeTable(
                 ['Extension #', 'Extension', 'Score', 'Issues Encountered'],
-                extensions.map((extension, extensionIndex) => {
-                    const issueLines = (extension.issues || [])
-                        .map((issue) => String(issue.description || ''));
-                    return [
-                        String(extensionIndex + 1),
-                        String(extension.instructions || ''),
-                        String(stepScore({ issues: extension.issues || [] })),
-                        issueLines.length > 0 ? issueLines : ['No issues']
-                    ];
-                }),
+                extensions.map((extension, extensionIndex) => [
+                    String(extensionIndex + 1),
+                    String(extension.instructions || ''),
+                    stepScoreText({
+                        issues: extension.issues || [], outOfScope: extension.outOfScope
+                    }),
+                    issueLines(extension)
+                ]),
                 false, { banded: true, columns: STEP_COLUMNS }
             ));
         }
