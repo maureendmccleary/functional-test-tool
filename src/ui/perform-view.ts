@@ -5,6 +5,7 @@ import {
 } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
+import { summaryWithoutSkippedIssues } from '../domain/summary.js';
 import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
 } from '../domain/test-run.js';
@@ -86,17 +87,29 @@ export function populateSummaryList(): void {
  * The whole of what the checkbox does. A marked record reports as "Out of
  * scope" with no score and its issues stop counting, so the issue lists are
  * redrawn from the run rather than only the one that changed.
+ *
+ * A summary already written for this run is brought back into line as well.
+ * Everything else derives its totals from the issues at the moment it is asked,
+ * so marking a record is enough on its own; the summary is the one thing stored
+ * as text, and it would otherwise keep describing a step nobody performed --
+ * in the results dialog and the report as much as on this screen.
+ *
+ * The score is deliberately left alone. It is the tester's, and this is not the
+ * score control.
  */
 export function outOfScopeChanged(e: Event): void {
     const checkbox = e.currentTarget as HTMLInputElement;
     const section = isExtensionElementId(checkbox.id) ? 'extensions' : 'steps';
-    const record = getCurrentRun()[section][getStepNumber(checkbox.id)];
+    const run = getCurrentRun();
+    const record = run[section][getStepNumber(checkbox.id)];
     if (!record) {
         return;
     }
     setOutOfScope(record, checkbox.checked);
+    run.comments = summaryWithoutSkippedIssues(run.comments, run);
     markEvaluationChanged();
     populateIssuesList();
+    populateSummaryList();
 }
 
 /**

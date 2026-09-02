@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
 import {
     SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
-    splitSummaryComments
+    splitSummaryComments, summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -136,6 +136,77 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
             .toEqual(['second save']);
+    });
+});
+
+describe('summaryWithoutSkippedIssues', () => {
+    const stored = ['cannot activate the control', 'no status message on submit'];
+
+    test('leaves a run with nothing marked exactly as it was', () => {
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')] },
+                { issues: [issue('no status message on submit', '3')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(stored, run)).toEqual(stored);
+    });
+
+    test('drops the issues recorded against a step now out of scope', () => {
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')], outOfScope: true },
+                { issues: [issue('no status message on submit', '3')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(stored, run))
+            .toEqual(['no status message on submit']);
+    });
+
+    test('drops them for an extension the same way', () => {
+        const run = {
+            steps: [{ issues: [issue('no status message on submit', '3')] }],
+            extensions: [{
+                issues: [issue('cannot activate the control', '1')], outOfScope: true
+            }]
+        };
+        expect(summaryWithoutSkippedIssues(stored, run))
+            .toEqual(['no status message on submit']);
+    });
+
+    test('keeps a description that is also recorded on a step still in scope', () => {
+        // The same problem was hit twice. One of the steps being skipped does
+        // not make it stop having happened on the other.
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')], outOfScope: true },
+                { issues: [issue('cannot activate the control', '1')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(['cannot activate the control'], run))
+            .toEqual(['cannot activate the control']);
+    });
+
+    test('leaves prose the tester wrote themselves alone', () => {
+        const run = {
+            steps: [{ issues: [issue('cannot activate the control', '1')], outOfScope: true }],
+            extensions: []
+        };
+        const comments = ['Sign-in is out of scope for this engagement.',
+            'cannot activate the control'];
+        expect(summaryWithoutSkippedIssues(comments, run))
+            .toEqual(['Sign-in is out of scope for this engagement.']);
+    });
+
+    test('does not put a description back when the mark comes off', () => {
+        const run = {
+            steps: [{ issues: [issue('cannot activate the control', '1')] }],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues([], run)).toEqual([]);
     });
 });
 

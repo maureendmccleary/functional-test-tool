@@ -1,6 +1,7 @@
-import type { Evaluation } from '../types.js';
-import { issuesText } from './scoring.js';
+import type { Evaluation, IssueBearing } from '../types.js';
+import { issuesMap, issuesText } from './scoring.js';
 import { getTestComments, testAssistiveTechnology, testDisplayName } from './functional-test.js';
+import { isOutOfScope } from './test-run.js';
 
 /**
  * Severity headings, in order, for scores 1 through 4.
@@ -35,6 +36,49 @@ export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
         }
     }
     return summaryText;
+}
+
+/** Every issue description recorded against a record marked out of scope. */
+function skippedDescriptions(run: IssueBearing): Set<string> {
+    const skipped = new Set<string>();
+    for (const section of [run.steps, run.extensions || []]) {
+        for (const record of section) {
+            if (isOutOfScope(record)) {
+                record.issues.forEach((issue) => skipped.add(issue.description));
+            }
+        }
+    }
+    return skipped;
+}
+
+/**
+ * The stored summary with the issues that no longer count taken out of it.
+ *
+ * A summary is generated from the issues, then stored as text, so marking a
+ * step out of scope afterwards would otherwise leave its issues written into
+ * the run's comments -- and from there into the results dialog's problem
+ * summary and the report, which print those comments rather than recomputing
+ * them. A step nobody performed should not be describing what went wrong.
+ *
+ * Only text attributable to a skipped record is removed. Anything the tester
+ * wrote themselves matches no issue description and is left alone, and a
+ * description that is also recorded against a record still in scope stays,
+ * because it is still something that happened.
+ *
+ * Removal only. Taking the mark off again does not put the description back:
+ * where it belonged in the tester's prose is not recoverable, and Generate
+ * Summary rebuilds the whole block from what currently counts.
+ */
+export function summaryWithoutSkippedIssues(comments: string[], run: IssueBearing): string[] {
+    const skipped = skippedDescriptions(run);
+    if (skipped.size === 0) {
+        return comments;
+    }
+    const counted = new Set<string>();
+    issuesMap(run).forEach((descriptions) => {
+        descriptions.forEach((description) => counted.add(description));
+    });
+    return comments.filter((comment) => !skipped.has(comment) || counted.has(comment));
 }
 
 /** Splits an edited comment block back into individual comments. */

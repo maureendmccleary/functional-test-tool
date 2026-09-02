@@ -236,6 +236,15 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       nothing to the score, the summary or the significant issues
 - [ ] **View Results**: the out of scope steps read `N/A` in the Score column and
       `Out of scope` under Issues Encountered, and their issues are absent
+- [ ] Generate and save a summary, *then* tick Out of scope on a step whose
+      issues are in it: those issues leave the Summary under the score, and
+      leave the Problem Summary in View Results and the report with it
+      <br>*(the summary is stored as text, so it is the one thing that has to be
+      brought back into line rather than recomputed)*
+- [ ] Anything you typed into the summary yourself survives that; only text
+      matching an issue on the skipped step goes
+- [ ] The Score under the list is **not** changed by ticking the box -- the
+      score is the tester's
 - [ ] The same two cells read the same way in the generated `.docx`
 
 ## 6. Issues
