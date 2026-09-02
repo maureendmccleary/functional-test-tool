@@ -1,4 +1,5 @@
 import type { Evaluation } from '../types.js';
+import { evaluationFileName } from '../domain/file-names.js';
 
 /**
  * File System Access API wrappers. Chromium only; Firefox and Safari do not
@@ -85,11 +86,19 @@ export function hasSavedFile(): boolean {
 /**
  * Writes the evaluation as JSON, asking where only the first time.
  *
+ * The dialog opens on the evaluation's own name, which is what the tester would
+ * otherwise type, and is only ever a suggestion. It is offered once: saving
+ * again writes straight to the file they chose, so renaming it there is not
+ * undone by the next save.
+ *
  * A failed write clears the handle, so the next attempt asks again rather than
  * retrying somewhere the browser has stopped letting us write.
  */
 export async function saveEvaluation(evaluation: Evaluation): Promise<void> {
-    const fileHandle = savedFileHandle ?? await window.showSaveFilePicker(fileopts);
+    const fileHandle = savedFileHandle ?? await window.showSaveFilePicker({
+        ...fileopts,
+        suggestedName: evaluationFileName(evaluation.name)
+    });
     try {
         const fp = await fileHandle.createWritable();
         await fp.write(JSON.stringify(evaluation));

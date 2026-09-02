@@ -370,6 +370,20 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] It arrives as `evaluation-results - <evaluation name>.docx`, so two
+      reports from different evaluations do not land on each other as copies
+- [ ] An evaluation with no name set downloads as `evaluation-results.docx`,
+      with no dangling separator left on the end
+- [ ] An evaluation named with something a file name cannot carry -- try
+      `Q3/2026: audit` -- still downloads, with those characters spaced out
+      rather than the download failing
+- [ ] **Save Evaluation File** on a *new* evaluation opens the save dialog
+      already filled in with the evaluation's name and `.json`, or
+      `evaluation.json` when it has no name yet
+      <br>*(the file pickers cannot be driven from a test, so this one is only
+      ever checked by hand)*
+- [ ] Renaming the file in that dialog sticks: saving again writes straight to
+      the file you chose, without offering the suggestion a second time
       <br>*(needs network access -- `docx` loads from unpkg)*
 
 Open that document and check:

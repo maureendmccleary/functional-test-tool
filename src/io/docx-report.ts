@@ -2,6 +2,7 @@ import type { Evaluation, FunctionalTest, Issue, TestRun } from '../types.js';
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
+import { reportFileName } from '../domain/file-names.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { issueRows } from '../domain/test-run.js';
 import {
@@ -591,7 +592,7 @@ export function renderEvalResultsDocx(evaluation: Evaluation): void {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'evaluation-results.docx';
+        a.download = reportFileName(evaluation.name);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

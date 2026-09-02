@@ -18,6 +18,8 @@ interface FilePickerOptions {
     excludeAcceptAllOption?: boolean;
     multiple?: boolean;
     startIn?: string;
+    /** The name a save dialog opens on. Ignored by the open picker. */
+    suggestedName?: string;
 }
 
 interface FileSystemWritableFileStream {
