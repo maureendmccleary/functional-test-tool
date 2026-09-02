@@ -290,6 +290,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
+- [ ] Save a summary on script 1, go **Back**, then Perform script 2: the
+      Summary under the score reads "No Issues", **not** script 1's summary
+- [ ] Back to script 1: its own summary is there again
+- [ ] Opening a script in the **editor** does not change what the perform
+      screen's Summary shows
+      <br>*(the list is on the perform screen; populateEditor used to write to
+      it from a screen it is not on, which is what left it stale)*
 - [ ] **View Results** shows the results table with the issues grouped by severity
 
 ## 7a. Overall comments for an assistive technology

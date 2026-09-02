@@ -58,6 +58,28 @@ export function populateIssuesList(): void {
 }
 
 /**
+ * Redraws the Summary list under the score from the selected run.
+ *
+ * Filled when the screen opens, not only when a summary is saved. The list is a
+ * single element that every test on the screen shares, so a test whose run has
+ * no comments has to actively clear what the last one left there: without this
+ * the tester read the previous script's summary under this script's score.
+ */
+export function populateSummaryList(): void {
+    const summaryList = requireEl("summary-list");
+    while (summaryList.firstChild) {
+        summaryList.removeChild(summaryList.firstChild);
+    }
+    const comments = getCurrentRun().comments;
+    const lines = comments.length > 0 ? comments : ["No Issues"];
+    lines.forEach((text) => {
+        const summaryLi = document.createElement("LI");
+        summaryLi.textContent = text;
+        summaryList.appendChild(summaryLi);
+    });
+}
+
+/**
  * Records that the tester marked a step or extension outside the test's scope,
  * or took the mark off again.
  *
@@ -161,6 +183,7 @@ export function openTestRun(): void {
     populateIssuesList();
     updateAddIssueButtons();
     updateOutOfScopeCheckboxes();
+    populateSummaryList();
     requireEl<HTMLSelectElement>("perform-score").value = String(getCurrentRun().score);
 }
 

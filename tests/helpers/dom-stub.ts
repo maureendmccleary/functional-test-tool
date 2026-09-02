@@ -20,6 +20,12 @@ export interface ElementStub {
     setAttribute(name: string, value: string): void;
     getAttribute(name: string): string | null;
     removeAttribute(name: string): void;
+    /**
+     * Answers with nothing. The elements these queries look for are the ones a
+     * view generates -- a step's Add Issue button and the like -- and none of
+     * them is modelled here, so a walk over the result is a walk over nothing.
+     */
+    querySelectorAll(selector: string): ElementStub[];
     readonly firstChild: ElementStub | null;
 }
 
@@ -45,6 +51,9 @@ export function createElementStub(tagName = 'DIV'): ElementStub {
                 element.children.splice(index, 1);
             }
             return child;
+        },
+        querySelectorAll() {
+            return [];
         },
         setAttribute(name, value) {
             element.attributes.set(name, value);
