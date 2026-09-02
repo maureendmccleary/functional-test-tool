@@ -3,7 +3,8 @@ import {
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import {
-    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatOverallRating
+    SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatOverallRating,
+    scorecardRows
 } from '../domain/report-format.js';
 import { renderEvalResultsDocx } from '../io/docx-report.js';
 import { getEvaluation } from '../state/store.js';
@@ -57,15 +58,9 @@ function replaceContents(elementId: string, nodes: Node[]): void {
 /** The Scorecard: how many use cases landed on each score. */
 function renderScorecard(): void {
     const scorecard = buildScorecard(getEvaluation());
-    replaceContents("eval-results-scorecard", [createLabelValueTable([
-        ["Total Number of Use Cases", String(scorecard.totalRuns)],
-        ["1 (worst)", String(scorecard.countsByScore.get(1) || 0)],
-        ["2", String(scorecard.countsByScore.get(2) || 0)],
-        ["3", String(scorecard.countsByScore.get(3) || 0)],
-        ["4", String(scorecard.countsByScore.get(4) || 0)],
-        ["Use Cases that Scored a 5 (best)", String(scorecard.countsByScore.get(5) || 0)],
-        ["Overall Rating", formatOverallRating(scorecard.overallRating)]
-    ])]);
+    // Rows from report-format, so the dialog and the report cannot disagree
+    // about what the scorecard says or what it calls each line.
+    replaceContents("eval-results-scorecard", [createLabelValueTable(scorecardRows(scorecard))]);
 }
 
 /** The assistive technologies with recorded runs, and their catalogue versions. */
