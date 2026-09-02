@@ -61,6 +61,21 @@ export function issueLines(record: { issues?: Issue[]; outOfScope?: boolean }): 
         : issues.map((issue) => String(issue.description || ''));
 }
 
+/**
+ * Marks a record out of scope, or clears the mark.
+ *
+ * Clearing removes the field rather than storing false, so a record nobody has
+ * marked reads and saves the way one written before the flag existed does.
+ * The migration holds the same rule for the other direction.
+ */
+export function setOutOfScope(record: TestRunStep, outOfScope: boolean): void {
+    if (outOfScope) {
+        record.outOfScope = true;
+    } else {
+        delete record.outOfScope;
+    }
+}
+
 /** Creates an unscored run with an empty record per step and per extension. */
 export function emptyTestRun(test: FunctionalTest, assistiveTechnology: string, operatingSystem: string): TestRun {
     return {

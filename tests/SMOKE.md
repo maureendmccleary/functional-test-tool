@@ -215,6 +215,29 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the same as one recorded against a step
 - [ ] A test with no extensions shows no extension blocks at all
 
+## 5a. Steps that are out of scope
+
+- [ ] Every step and every extension has an **Out of scope** checkbox after its
+      Add Issue button, and the reader announces it as a checkbox named
+      "Out of scope Step 3" -- the step's number is part of the name, since
+      every step on the screen has one of these
+- [ ] The label is clickable and **Space** toggles the box, both of which come
+      free from its being a real checkbox rather than something built to look
+      like one
+- [ ] Ticking it replaces that step's issue list with a single **Out of scope**
+      line, and no other step's list changes
+- [ ] Untick it: the step's own issues come back, or "No issues" if it had none
+- [ ] Leave the screen and come back: every box you ticked is still ticked
+- [ ] Tick the box on a step that already has an issue recorded. The list reads
+      "Out of scope", and the button still says "View 1 Issue" -- the issue is
+      kept and still reachable, it is only no longer reported
+- [ ] With a **stopper** recorded on that step, the use case's score is what the
+      rest of the steps make it, not 1. A step nobody performed contributes
+      nothing to the score, the summary or the significant issues
+- [ ] **View Results**: the out of scope steps read `N/A` in the Score column and
+      `Out of scope` under Issues Encountered, and their issues are absent
+- [ ] The same two cells read the same way in the generated `.docx`
+
 ## 6. Issues
 
 - [ ] Open the issue dialog on **step 1**, close it, then open it on **step 3**:

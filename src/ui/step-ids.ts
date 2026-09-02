@@ -28,6 +28,23 @@ export function getIssueListId(section: 'steps' | 'extensions', index: number): 
         : `perform-step-results[${index}]`;
 }
 
+/**
+ * Id of the "Out of scope" checkbox for one step or extension.
+ *
+ * The extension form starts with "extension-" so isExtensionElementId reads the
+ * section back off it, the same way it does for the Add Issue buttons.
+ */
+export function getOutOfScopeId(section: 'steps' | 'extensions', index: number): string {
+    return section === 'extensions'
+        ? `extension-out-of-scope[${index}]`
+        : `out-of-scope[${index}]`;
+}
+
+/** Id of that checkbox's own label, which names it together with the step's heading. */
+export function getOutOfScopeLabelId(section: 'steps' | 'extensions', index: number): string {
+    return `${getOutOfScopeId(section, index)}-label`;
+}
+
 /** Id of an extension's heading in the perform dialog, used as its accessible name. */
 export function getExtensionLabelIdForPerform(index: number): string {
     return `extension-label[${index}]`;

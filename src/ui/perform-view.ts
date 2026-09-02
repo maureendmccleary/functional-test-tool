@@ -5,7 +5,9 @@ import {
 } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
-import { emptyTestRun, ensureTestRunShape } from '../domain/test-run.js';
+import {
+    emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
+} from '../domain/test-run.js';
 import {
     getCurrentRun, getCurrentTest, getEvaluation, markEvaluationChanged, setCurrentRunIndex,
     setCurrentTestIndex
@@ -17,7 +19,8 @@ import { saveFileButtonClick } from './evaluation-view.js';
 import { addIssueButtonClick } from './issue-dialog.js';
 import { viewResultsButtonClicked } from './results-view.js';
 import {
-    getExtensionLabelIdForPerform, getIssueListId, getStepLabelIdForPerform
+    getExtensionLabelIdForPerform, getIssueListId, getOutOfScopeId, getOutOfScopeLabelId,
+    getStepLabelIdForPerform, getStepNumber, isExtensionElementId
 } from './step-ids.js';
 import { viewSummaryButtonClicked } from './summary-dialog.js';
 
@@ -26,26 +29,24 @@ export function getSelectedOperatingSystem(): string {
     return normalizeOperatingSystem(getCurrentTest().operatingSystem);
 }
 
-/** Redraws one list of recorded issues, a step's or an extension's. */
+/**
+ * Redraws one list of recorded issues, a step's or an extension's.
+ *
+ * What each list says comes from issueLines, which the results dialog and the
+ * report use for the same column: the tester reads the same words on the screen
+ * they are working on as the ones the report will carry.
+ */
 function drawIssueLists(section: 'steps' | 'extensions', records: TestRunStep[]): void {
     records.forEach((record, index) => {
         const issueAggregateUl = requireEl(getIssueListId(section, index));
         while (issueAggregateUl.firstChild) {
             issueAggregateUl.removeChild(issueAggregateUl.firstChild);
         }
-        const issues = record.issues || [];
-        if (issues.length > 0) {
-            issues.forEach((issue) => {
-                const issueDescLi = document.createElement("LI");
-                issueDescLi.textContent = issue.description;
-                issueAggregateUl.appendChild(issueDescLi);
-            });
-        }
-        else {
+        issueLines(record).forEach((text) => {
             const issueDescLi = document.createElement("LI");
-            issueDescLi.textContent = "No issues";
+            issueDescLi.textContent = text;
             issueAggregateUl.appendChild(issueDescLi);
-        }
+        });
     });
 }
 
@@ -54,6 +55,69 @@ export function populateIssuesList(): void {
     const run = getCurrentRun();
     drawIssueLists('steps', run.steps);
     drawIssueLists('extensions', run.extensions || []);
+}
+
+/**
+ * Records that the tester marked a step or extension outside the test's scope,
+ * or took the mark off again.
+ *
+ * The whole of what the checkbox does. A marked record reports as "Out of
+ * scope" with no score and its issues stop counting, so the issue lists are
+ * redrawn from the run rather than only the one that changed.
+ */
+export function outOfScopeChanged(e: Event): void {
+    const checkbox = e.currentTarget as HTMLInputElement;
+    const section = isExtensionElementId(checkbox.id) ? 'extensions' : 'steps';
+    const record = getCurrentRun()[section][getStepNumber(checkbox.id)];
+    if (!record) {
+        return;
+    }
+    setOutOfScope(record, checkbox.checked);
+    markEvaluationChanged();
+    populateIssuesList();
+}
+
+/**
+ * Builds the "Out of scope" checkbox for one step or extension.
+ *
+ * A plain checkbox, so it is announced as one and toggles with the space bar
+ * without any help from this app. Its own label is what makes the box clickable
+ * and is named in aria-labelledby beside the step's heading, because "Out of
+ * scope" on its own says nothing about which step is being taken out of it:
+ * every step on the screen has one of these.
+ */
+function createOutOfScopeCheckbox(
+    section: 'steps' | 'extensions', index: number, headingId: string
+): HTMLElement {
+    const container = document.createElement("DIV");
+    container.classList.add("out-of-scope");
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = getOutOfScopeId(section, index);
+    checkbox.setAttribute("aria-labelledby", `${getOutOfScopeLabelId(section, index)} ${headingId}`);
+    checkbox.addEventListener("change", outOfScopeChanged);
+
+    const label = document.createElement("label");
+    label.setAttribute("id", getOutOfScopeLabelId(section, index));
+    label.htmlFor = checkbox.id;
+    label.textContent = "Out of scope";
+
+    container.appendChild(checkbox);
+    container.appendChild(label);
+    return container;
+}
+
+/** Ticks each checkbox that the selected run has a mark stored for. */
+export function updateOutOfScopeCheckboxes(): void {
+    const run = getCurrentRun();
+    ([['steps', run.steps], ['extensions', run.extensions || []]] as const)
+        .forEach(([section, records]) => {
+            records.forEach((record, index) => {
+                requireEl<HTMLInputElement>(getOutOfScopeId(section, index)).checked
+                    = isOutOfScope(record);
+            });
+        });
 }
 
 /** Relabels one set of buttons to reflect how many issues each holds. */
@@ -96,6 +160,7 @@ export function openTestRun(): void {
     setCurrentRunIndex(0);
     populateIssuesList();
     updateAddIssueButtons();
+    updateOutOfScopeCheckboxes();
     requireEl<HTMLSelectElement>("perform-score").value = String(getCurrentRun().score);
 }
 
@@ -166,6 +231,7 @@ export function addStepToPerform(test: FunctionalTest, stepNumber: number): void
     stepDiv.appendChild(stepResults);
     appendNewlines(stepDiv);
     stepDiv.appendChild(addIssueButton);
+    stepDiv.appendChild(createOutOfScopeCheckbox('steps', stepNumber, newStepLabel.id));
     form.appendChild(stepDiv);
     appendNewlines(form);
 }
@@ -223,6 +289,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
         extensionDiv.appendChild(results);
         appendNewlines(extensionDiv);
         extensionDiv.appendChild(addIssueButton);
+        extensionDiv.appendChild(createOutOfScopeCheckbox('extensions', index, label.id));
         container.appendChild(extensionDiv);
         appendNewlines(container);
     });
@@ -309,6 +376,9 @@ export function addPerformScreenEvents(): void {
     requireEl("view-test-results").addEventListener('click', viewResultsButtonClicked);
     requireEl("view-summary").addEventListener('click', viewSummaryButtonClicked);
     requireEl("perform-score").addEventListener("change", scoreChanged);
+    // The first step is written into index.html rather than built here, so its
+    // checkbox is the one control of this kind the screen already owns.
+    requireEl(getOutOfScopeId('steps', 0)).addEventListener("change", outOfScopeChanged);
 }
 
 /** Opens the perform dialog on the test chosen in the list. */

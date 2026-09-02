@@ -241,6 +241,17 @@
       <ul id="perform-step-results[0]"></ul>
       <br><br>
       <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]">Add Issue</button>
+      <!--
+        Marks a step the scripter wrote but the tester is not meant to perform,
+        such as signing in. Named by its own label together with the step's
+        heading, since every step on the screen carries one of these. The steps
+        after this one are built by addStepToPerform, which makes the same
+        thing.
+      -->
+      <div class="out-of-scope">
+        <input type="checkbox" id="out-of-scope[0]" aria-labelledby="out-of-scope[0]-label perform-test-step-label[0]">
+        <label id="out-of-scope[0]-label" for="out-of-scope[0]">Out of scope</label>
+      </div>
       <br><br>
     </form>
     <div>
