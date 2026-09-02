@@ -1,6 +1,6 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
-import { summaryWithoutIssues } from '../domain/summary.js';
+import { summaryWithRenamedIssue, summaryWithoutIssues } from '../domain/summary.js';
 import {
     getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
     getCurrentTest, markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
@@ -215,9 +215,17 @@ export function editSaveIssueButtonClick(e: Event): void {
     row.cells[1].innerText = newIssue.description;
     row.cells[2].innerText = newIssue.findingURL;
     row.cells[3].innerText = newIssue.score;
+    // Read before the overwrite, for the same reason deleteIssue reads on the
+    // way out: afterwards nothing says what the summary is still calling this.
+    const previousDescription = getCurrentRecord().issues[currentIssue - 1].description;
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
+    const run = getCurrentRun();
+    run.comments = summaryWithRenamedIssue(
+        run.comments, previousDescription, newIssue.description, run
+    );
     markEvaluationChanged();
     populateIssuesList();
+    populateSummaryList();
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
     // Focus, then announce. Hiding the Save button drops focus to the body, and

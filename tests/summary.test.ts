@@ -2,7 +2,8 @@ import { afterEach, describe, expect, test } from 'vitest';
 import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
 import {
     SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
-    splitSummaryComments, summaryWithoutIssues, summaryWithoutSkippedIssues
+    splitSummaryComments, summaryWithRenamedIssue, summaryWithoutIssues,
+    summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -227,6 +228,46 @@ describe('summaryWithoutIssues', () => {
         const run = { steps: [{ issues: [] }], extensions: [] };
         const comments = ['written by hand'];
         expect(summaryWithoutIssues(comments, [], run)).toBe(comments);
+    });
+});
+
+describe('summaryWithRenamedIssue', () => {
+    /** The run after the edit: the issue now carries the new wording. */
+    const edited = { steps: [{ issues: [issue('button has no name', '2')] }], extensions: [] };
+
+    test('rewrites the line in place, keeping its position', () => {
+        const comments = ['first finding', 'unlabelled button', 'third finding'];
+        expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
+            .toEqual(['first finding', 'button has no name', 'third finding']);
+    });
+
+    test('leaves a summary that never mentioned it alone', () => {
+        expect(summaryWithRenamedIssue(['something else'], 'unlabelled button', 'button has no name', edited))
+            .toEqual(['something else']);
+    });
+
+    test('does nothing when the description did not change', () => {
+        const comments = ['button has no name'];
+        expect(summaryWithRenamedIssue(comments, 'button has no name', 'button has no name', edited))
+            .toBe(comments);
+    });
+
+    test('keeps the old wording when another issue is still recorded under it', () => {
+        const run = {
+            steps: [
+                { issues: [issue('button has no name', '2')] },
+                { issues: [issue('unlabelled button', '2')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithRenamedIssue(['unlabelled button'], 'unlabelled button', 'button has no name', run))
+            .toEqual(['unlabelled button']);
+    });
+
+    test('drops the old line rather than duplicating wording already there', () => {
+        const comments = ['button has no name', 'unlabelled button'];
+        expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
+            .toEqual(['button has no name']);
     });
 });
 

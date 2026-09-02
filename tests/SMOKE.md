@@ -277,6 +277,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one
+- [ ] Rewording a description updates the line for it in the Summary under the
+      score **in place**, keeping its position, rather than dropping it
+      <br>*(an edit is the same finding in better words; a delete is not)*
 - [ ] Reopen the dialog on a step whose issue count is unchanged -- the table
       renders without a console error
 - [ ] **Delete** on a row removes it from both the table and the step, and takes
