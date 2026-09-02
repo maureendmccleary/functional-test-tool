@@ -2,7 +2,7 @@ import type {
     AssistiveTechnologySummary, Evaluation, FunctionalTest, Issue, TestRun
 } from '../types.js';
 import { issuesMap, minimumScore } from './scoring.js';
-import { isPerformed } from './test-run.js';
+import { isOutOfScope, isPerformed, OUT_OF_SCOPE_SCORE_TEXT } from './test-run.js';
 
 /**
  * Evaluation-wide queries used to assemble the report.
@@ -139,6 +139,18 @@ export function stepScore(step: { issues: Issue[] }): number {
     }
     const total = issues.reduce((sum, issue) => sum + (parseInt(issue.score) || 0), 0);
     return Math.floor(total / issues.length);
+}
+
+/**
+ * The Score column's text for one step or extension.
+ *
+ * A record marked out of scope has no score to print: the tester did not
+ * perform it, so the 5 that stepScore would return for an empty issue list
+ * would read as a clean pass. Shared by the results dialog and the report so
+ * the two columns cannot come to disagree.
+ */
+export function stepScoreText(step: { issues: Issue[]; outOfScope?: boolean }): string {
+    return isOutOfScope(step) ? OUT_OF_SCOPE_SCORE_TEXT : String(stepScore(step));
 }
 
 /** Every performed run recorded with one assistive technology. */

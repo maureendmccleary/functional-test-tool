@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 import type { Evaluation, FunctionalTest, Issue } from '../src/types.js';
 import {
     buildScorecard, collectAssistiveTechnologies, findSummary,
-    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore, topIssuesFor,
-    worstScoreFor
+    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore, stepScoreText,
+    topIssuesFor, worstScoreFor
 } from '../src/domain/evaluation.js';
 
 /** An issue at the given severity, which is all the scoring cares about. */
@@ -173,6 +173,39 @@ describe('stepScore', () => {
     test('counts an unrated issue as its own value and junk as zero', () => {
         expect(stepScore({ issues: [issue('-1')] })).toBe(-1);
         expect(stepScore({ issues: [issue('not a score'), issue('4')] })).toBe(2);
+    });
+});
+
+describe('stepScoreText', () => {
+    test('prints the step score for a record that was performed', () => {
+        expect(stepScoreText({ issues: [] })).toBe('5');
+        expect(stepScoreText({ issues: [issue('2'), issue('4')] })).toBe('3');
+    });
+
+    test('prints N/A for a record marked out of scope', () => {
+        expect(stepScoreText({ issues: [], outOfScope: true })).toBe('N/A');
+        expect(stepScoreText({ issues: [issue('1')], outOfScope: true })).toBe('N/A');
+    });
+});
+
+describe('out of scope and the totals', () => {
+    /** A run whose only stopper is on a step nobody performed. */
+    function withSkippedStopper(): FunctionalTest {
+        const subject = testWithRuns('Place a hold', { NVDA: [] });
+        subject.runs[0].steps = [{ issues: [issue('1')], outOfScope: true }, { issues: [] }];
+        return subject;
+    }
+
+    test('the run scores as if the skipped step were not there', () => {
+        expect(runScore(withSkippedStopper().runs[0])).toBe(5);
+    });
+
+    test('its issues stay out of the scorecard and the significant issues', () => {
+        const evaluation = evaluationOf([withSkippedStopper()]);
+        expect(buildScorecard(evaluation).countsByScore.get(5)).toBe(1);
+        expect(buildScorecard(evaluation).countsByScore.get(1)).toBe(0);
+        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual([]);
+        expect(worstScoreFor(evaluation, 'NVDA')).toBe(5);
     });
 });
 
