@@ -225,6 +225,14 @@ Generating into a box that already has text **merges** rather than appends, so
 pressing Generate twice adds nothing the second time and a line the tester typed
 unclassified picks up the severity of the issue it matches.
 
+The run's summary is kept in step with its issues without being asked.
+`summaryWithCurrentIssues` runs wherever an issue is added, edited, deleted or
+taken out of scope, so the Summary under the score says what has been found even
+for a tester who never opens the summary dialog. It is the same merge, so their
+wording and the severity they moved a line to both survive. The consequence to
+know: a line deleted from the summary while its issue is still recorded comes
+back on the next change, and deleting the issue is what removes it for good.
+
 Files saved by earlier versions used different field names (`evalUCs`,
 `performedUCs`, `ats`, `oses`, `startlocation`). `domain/migration.ts` accepts
 both spellings on load and always writes the current ones, so opening an old

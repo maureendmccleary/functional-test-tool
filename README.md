@@ -38,10 +38,16 @@ The rules are:
 
 ### An example
 
-**Generate Summary** fills the box from the issues you recorded. It **merges**
-rather than replacing, so it is always safe to press: your wording stays,
-anything missing is added, and pressing it twice changes nothing the second
-time.
+**The summary builds itself as you record issues.** Every issue you log appears
+under its category in the Summary beneath the score, straight away, and leaves
+again if you delete it or mark its step out of scope. You do not have to ask for
+it.
+
+**Generate Summary** does the same thing on demand, which is what you want after
+opening an older evaluation, or if you have deleted a line you now want back. It
+**merges** rather than replacing, so it is always safe to press: your wording
+stays, anything missing is added, and pressing it twice changes nothing the
+second time.
 
 It starts you with:
 
@@ -104,6 +110,9 @@ most severe issues, computed from the scores, and those come out grouped already
 
 ### Worth knowing
 
+- A line you delete from the summary while its issue is still recorded comes
+  back the next time any issue changes, because the summary follows the issues.
+  Delete the issue itself to be rid of it.
 - Deleting a banner does not delete its comments. They fall into whichever
   section is above them, or become unclassified if there is none.
 - Moving a comment to another severity is cut and paste.

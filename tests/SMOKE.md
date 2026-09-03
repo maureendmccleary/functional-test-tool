@@ -288,6 +288,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       refused; filing an "N/A" issue was the workaround the checkbox replaces)*
 - [ ] A valid save announces "Issue successfully saved!", adds a table row, and
       adds the issue under the step in the Perform dialog
+- [ ] It also appears in the **Summary under the score**, under its category,
+      without View Summary ever being opened
+- [ ] Deleting it takes it out of that summary again; marking its step **Out of
+      scope** does the same, and unticking brings it back
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one

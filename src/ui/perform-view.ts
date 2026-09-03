@@ -5,7 +5,9 @@ import {
 } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
-import { groupSummaryComments, summaryWithoutSkippedIssues } from '../domain/summary.js';
+import {
+    groupSummaryComments, summaryWithCurrentIssues, summaryWithoutSkippedIssues
+} from '../domain/summary.js';
 import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
 } from '../domain/test-run.js';
@@ -114,7 +116,11 @@ export function outOfScopeChanged(e: Event): void {
         return;
     }
     setOutOfScope(record, checkbox.checked);
-    run.comments = summaryWithoutSkippedIssues(run.comments, run);
+    // Out first, then in: marking a record drops its issues from the summary,
+    // and unmarking one puts them back, since they count again.
+    run.comments = summaryWithCurrentIssues(
+        summaryWithoutSkippedIssues(run.comments, run), run
+    );
     markEvaluationChanged();
     populateIssuesList();
     populateSummaryList();

@@ -5,8 +5,8 @@ import type {
 import {
     SUMMARY_BANNERS, bannerSeverity, buildOverallCommentsTextFor, buildSummaryText,
     buildSummaryTextFromComments, groupSummaryComments, mergeSummaryComments,
-    parseSummaryComments, summaryWithRenamedIssue, summaryWithoutIssues,
-    summaryWithoutSkippedIssues
+    parseSummaryComments, summaryWithCurrentIssues, summaryWithRenamedIssue,
+    summaryWithoutIssues, summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -380,6 +380,62 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         expect(summaryLines(document))
             .toEqual(['second save']);
+    });
+});
+
+describe('summaryWithCurrentIssues', () => {
+    test('builds a summary for a run nobody has written one for', () => {
+        const run = {
+            steps: [
+                { issues: [issue('a stopper', '1')] },
+                { issues: [issue('a minor thing', '3')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithCurrentIssues([], run))
+            .toEqual([said('a stopper', 1), said('a minor thing', 3)]);
+    });
+
+    test('adds only what is missing, leaving the tester wording alone', () => {
+        const run = {
+            steps: [{ issues: [issue('their own words', '2'), issue('newly found', '1')] }],
+            extensions: []
+        };
+        const written = [said('their own words', 4)];
+        expect(summaryWithCurrentIssues(written, run))
+            .toEqual([said('their own words', 4), said('newly found', 1)]);
+    });
+
+    test('leaves out an issue on a record marked out of scope', () => {
+        const run = {
+            steps: [{ issues: [issue('skipped', '1')], outOfScope: true }],
+            extensions: []
+        };
+        expect(summaryWithCurrentIssues([], run)).toEqual([]);
+    });
+
+    test('brings those issues back when the mark comes off', () => {
+        const marked = { steps: [{ issues: [issue('was skipped', '1')], outOfScope: true }] };
+        const unmarked = { steps: [{ issues: [issue('was skipped', '1')] }] };
+        const afterMarking = summaryWithCurrentIssues([], marked);
+        expect(afterMarking).toEqual([]);
+        expect(summaryWithCurrentIssues(afterMarking, unmarked))
+            .toEqual([said('was skipped', 1)]);
+    });
+
+    test('counts an extension issue the same as a step issue', () => {
+        const run = {
+            steps: [{ issues: [] }],
+            extensions: [{ issues: [issue('found in an extension', '2')] }]
+        };
+        expect(summaryWithCurrentIssues([], run))
+            .toEqual([said('found in an extension', 2)]);
+    });
+
+    test('is a no-op once every issue is already mentioned', () => {
+        const run = { steps: [{ issues: [issue('already there', '1')] }], extensions: [] };
+        const once = summaryWithCurrentIssues([], run);
+        expect(summaryWithCurrentIssues(once, run)).toEqual(once);
     });
 });
 

@@ -81,8 +81,8 @@ export function buildSummaryTextFromComments(comments: SummaryComment[]): string
     return text;
 }
 
-/** Assembles the comment block from issues, emitting only severities that have any. */
-export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
+/** One line per issue found, each at the severity it was recorded under. */
+export function commentsFromIssues(allIssues: Map<number, Set<string>>): SummaryComment[] {
     const comments: SummaryComment[] = [];
     for (let severity = LOWEST_SEVERITY; severity <= HIGHEST_SEVERITY; severity++) {
         const issueString = issuesText(allIssues, severity);
@@ -90,7 +90,12 @@ export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
             issueString.split("\n\n").forEach((text) => comments.push({ text, severity }));
         }
     }
-    return buildSummaryTextFromComments(comments);
+    return comments;
+}
+
+/** Assembles the comment block from issues, emitting only severities that have any. */
+export function buildSummaryText(allIssues: Map<number, Set<string>>): string {
+    return buildSummaryTextFromComments(commentsFromIssues(allIssues));
 }
 
 /**
@@ -280,6 +285,26 @@ export function summaryWithRenamedIssue(
         : comments.map((comment) => (
             comment.text === from ? { ...comment, text: to } : comment
         ));
+}
+
+/**
+ * The summary brought up to date with the issues currently recorded.
+ *
+ * Called wherever an issue is added, edited, deleted or taken out of scope, so
+ * the summary under the score on the perform screen says what has been found
+ * without the tester having to ask for it. A tester who never opens the summary
+ * dialog at all still gets one.
+ *
+ * A merge, not a rebuild: wording the tester has written stays, its severity
+ * stays where they put it, and only issues the summary does not yet mention are
+ * added. It follows that a line deleted from the summary while its issue is
+ * still recorded comes back the next time an issue changes. Removing the issue
+ * is what removes it for good, and that is what summaryWithoutIssues is for.
+ */
+export function summaryWithCurrentIssues(
+    comments: SummaryComment[], run: IssueBearing
+): SummaryComment[] {
+    return mergeSummaryComments(comments, commentsFromIssues(issuesMap(run)));
 }
 
 /**
