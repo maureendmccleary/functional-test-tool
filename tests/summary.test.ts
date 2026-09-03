@@ -46,6 +46,19 @@ function withTestRun(steps: TestRunStep[]) {
     return { run, document: installDocumentStub(SUMMARY_ELEMENT_IDS) };
 }
 
+/** Every line of the summary list, banners included, in drawn order. */
+function summaryLines(document: ReturnType<typeof installDocumentStub>): string[] {
+    const lines: string[] = [];
+    const walk = (node: { textContent: string; children: typeof node[] }): void => {
+        if (node.textContent !== '') {
+            lines.push(node.textContent);
+        }
+        node.children.forEach(walk);
+    };
+    document.elements.get('summary-list')!.children.forEach(walk);
+    return lines;
+}
+
 afterEach(() => clearDocumentStub());
 
 describe('bannerSeverity', () => {
@@ -301,7 +314,7 @@ describe('saveGeneralComments', () => {
         document.getElementById('general-comments')!.value = '   ';
         saveGeneralComments(clickEvent);
         expect(run.comments).toEqual([]);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
+        expect(summaryLines(document))
             .toEqual(['No Issues']);
     });
 
@@ -315,8 +328,11 @@ describe('saveGeneralComments', () => {
         expect(run.comments).toEqual([
             said('cannot activate the control', 1), said('no status message on submit', 3)
         ]);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
-            .toEqual(['cannot activate the control', 'no status message on submit']);
+        // The list under the score is grouped too, banners and all.
+        expect(summaryLines(document)).toEqual([
+            'Stoppers:', 'cannot activate the control',
+            'Minor Issues', 'no status message on submit'
+        ]);
     });
 
     test('a line the tester rewords under a banner keeps that severity', () => {
@@ -362,7 +378,7 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         document.getElementById('general-comments')!.value = 'second save';
         saveGeneralComments(clickEvent);
-        expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
+        expect(summaryLines(document))
             .toEqual(['second save']);
     });
 });

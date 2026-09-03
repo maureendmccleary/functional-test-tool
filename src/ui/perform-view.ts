@@ -5,7 +5,7 @@ import {
 } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
-import { summaryWithoutSkippedIssues } from '../domain/summary.js';
+import { groupSummaryComments, summaryWithoutSkippedIssues } from '../domain/summary.js';
 import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
 } from '../domain/test-run.js';
@@ -13,7 +13,7 @@ import {
     getCurrentRun, getCurrentTest, getEvaluation, hasUnsavedChanges, markEvaluationChanged,
     setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
-import { appendNewlines, fillListbox } from './controls.js';
+import { appendNewlines, createGroupedList, fillListbox } from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
 import { showScreen } from './screens.js';
 import { saveFileButtonClick } from './evaluation-view.js';
@@ -71,15 +71,11 @@ export function populateSummaryList(): void {
     while (summaryList.firstChild) {
         summaryList.removeChild(summaryList.firstChild);
     }
-    const comments = getCurrentRun().comments;
-    const lines = comments.length > 0
-        ? comments.map((comment) => comment.text)
-        : ["No Issues"];
-    lines.forEach((text) => {
-        const summaryLi = document.createElement("LI");
-        summaryLi.textContent = text;
-        summaryList.appendChild(summaryLi);
-    });
+    // Grouped exactly as the results dialog and the report group it, so what
+    // the tester reads under the score is the order the client will read.
+    summaryList.appendChild(createGroupedList(
+        groupSummaryComments(getCurrentRun().comments), "No Issues"
+    ));
 }
 
 /**

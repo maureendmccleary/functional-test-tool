@@ -321,6 +321,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Save** announces "General comments saved." and leaves it on screen; the
       reader hears it from inside the dialog, since the page's own region is
       inert while a modal is open
+- [ ] The **Summary under the score** on the perform screen is grouped the same
+      way the report is: any unbannered line first, then `Stoppers:` and the
+      rest, most severe first
+- [ ] Clearing the summary entirely leaves a plain "No Issues" line there
+- [ ] Leaving the script and performing it again redraws the summary still
+      grouped
 - [ ] Closing and reopening **View Summary** does not read that message again
 - [ ] Reword a line *under its banner*, save, and reopen **View Summary**: the
       box comes back with its banners, and the reworded line is still under the
