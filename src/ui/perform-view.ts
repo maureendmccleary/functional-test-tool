@@ -72,7 +72,9 @@ export function populateSummaryList(): void {
         summaryList.removeChild(summaryList.firstChild);
     }
     const comments = getCurrentRun().comments;
-    const lines = comments.length > 0 ? comments : ["No Issues"];
+    const lines = comments.length > 0
+        ? comments.map((comment) => comment.text)
+        : ["No Issues"];
     lines.forEach((text) => {
         const summaryLi = document.createElement("LI");
         summaryLi.textContent = text;

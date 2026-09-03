@@ -232,7 +232,7 @@ describe('findSummary', () => {
     test('finds the entry for an assistive technology, or nothing', () => {
         const evaluation = evaluationOf([]);
         evaluation.assistiveTechnologySummaries = [
-            { assistiveTechnology: 'JAWS', overallRating: 4, significantIssues: ['one'] }
+            { assistiveTechnology: 'JAWS', overallRating: 4, significantIssues: [{ text: 'one' }] }
         ];
         expect(findSummary(evaluation, 'JAWS')?.overallRating).toBe(4);
         expect(findSummary(evaluation, 'NVDA')).toBeUndefined();
@@ -277,12 +277,17 @@ describe('topIssuesFor', () => {
             testWithRuns('three', { JAWS: [issue('1')] })
         ]);
         expect(topIssuesFor(evaluation, 'NVDA', 3))
-            .toEqual(['issue scored 1', 'issue scored 2', 'issue scored 3']);
+            .toEqual([
+                { text: 'issue scored 1', severity: 1 },
+                { text: 'issue scored 2', severity: 2 },
+                { text: 'issue scored 3', severity: 3 }
+            ]);
     });
 
     test('takes fewer than asked for when fewer exist', () => {
         const evaluation = evaluationOf([testWithRuns('one', { NVDA: [issue('2')] })]);
-        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual(['issue scored 2']);
+        expect(topIssuesFor(evaluation, 'NVDA', 3))
+            .toEqual([{ text: 'issue scored 2', severity: 2 }]);
     });
 
     test('reports the same description once', () => {
@@ -290,7 +295,8 @@ describe('topIssuesFor', () => {
             testWithRuns('one', { NVDA: [issue('2')] }),
             testWithRuns('two', { NVDA: [issue('2')] })
         ]);
-        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual(['issue scored 2']);
+        expect(topIssuesFor(evaluation, 'NVDA', 3))
+            .toEqual([{ text: 'issue scored 2', severity: 2 }]);
     });
 
     test('has nothing to offer for a technology with no issues', () => {
@@ -303,10 +309,10 @@ describe('effectiveSummaryFor', () => {
     test('uses what the tester wrote, when they wrote it', () => {
         const evaluation = evaluationOf([testWithRuns('one', { NVDA: [issue('1')] })]);
         evaluation.assistiveTechnologySummaries = [
-            { assistiveTechnology: 'NVDA', overallRating: 4, significantIssues: ['as written'] }
+            { assistiveTechnology: 'NVDA', overallRating: 4, significantIssues: [{ text: 'as written' }] }
         ];
         expect(effectiveSummaryFor(evaluation, 'NVDA'))
-            .toEqual({ overallRating: 4, significantIssues: ['as written'] });
+            .toEqual({ overallRating: 4, significantIssues: [{ text: 'as written' }] });
     });
 
     test('falls back to the worst score and the top issues when they did not', () => {
@@ -316,7 +322,10 @@ describe('effectiveSummaryFor', () => {
         ]);
         expect(effectiveSummaryFor(evaluation, 'NVDA')).toEqual({
             overallRating: 2,
-            significantIssues: ['issue scored 2', 'issue scored 4']
+            significantIssues: [
+                { text: 'issue scored 2', severity: 2 },
+                { text: 'issue scored 4', severity: 4 }
+            ]
         });
     });
 
@@ -326,7 +335,10 @@ describe('effectiveSummaryFor', () => {
             { assistiveTechnology: 'NVDA', overallRating: 5, significantIssues: [] }
         ];
         expect(effectiveSummaryFor(evaluation, 'NVDA'))
-            .toEqual({ overallRating: 5, significantIssues: ['issue scored 3'] });
+            .toEqual({
+                overallRating: 5,
+                significantIssues: [{ text: 'issue scored 3', severity: 3 }]
+            });
     });
 
     test('has nothing to fall back on for an unperformed technology', () => {

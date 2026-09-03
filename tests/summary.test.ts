@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
+import type {
+    Issue, SummaryComment, TestRunStep, TestRun, FunctionalTest
+} from '../src/types.js';
 import {
-    SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
-    splitSummaryComments, summaryWithRenamedIssue, summaryWithoutIssues,
+    SUMMARY_BANNERS, bannerSeverity, buildOverallCommentsTextFor, buildSummaryText,
+    buildSummaryTextFromComments, groupSummaryComments, mergeSummaryComments,
+    parseSummaryComments, summaryWithRenamedIssue, summaryWithoutIssues,
     summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
@@ -14,6 +17,11 @@ import { loadFixture } from './helpers/fixtures.js';
 
 function issue(description: string, score: string): Issue {
     return { description, findingURL: '', score };
+}
+
+/** One stored summary line, with or without the severity it was written under. */
+function said(text: string, severity?: number): SummaryComment {
+    return severity === undefined ? { text } : { text, severity };
 }
 
 const SUMMARY_ELEMENT_IDS = ['general-comments', 'perform-score', 'summary-list'];
@@ -35,6 +43,31 @@ function withTestRun(steps: TestRunStep[]) {
 
 afterEach(() => clearDocumentStub());
 
+describe('bannerSeverity', () => {
+    test('reads each of the four banners, with or without its colon', () => {
+        expect(SUMMARY_BANNERS).toEqual(['Stoppers:', 'Major Issues:', 'Minor Issues', 'Advisory']);
+        expect(bannerSeverity('Stoppers:')).toBe(1);
+        expect(bannerSeverity('Stoppers')).toBe(1);
+        expect(bannerSeverity('Major Issues:')).toBe(2);
+        expect(bannerSeverity('Minor Issues')).toBe(3);
+        expect(bannerSeverity('Minor Issues:')).toBe(3);
+        expect(bannerSeverity('Advisory')).toBe(4);
+    });
+
+    test('ignores surrounding whitespace', () => {
+        expect(bannerSeverity('   Advisory  ')).toBe(4);
+    });
+
+    test('only a whole line counts, so a banner word inside a sentence does not', () => {
+        // The old stripping matched anywhere and ate the tester's words:
+        // "Advisory only: ..." came back as "only: ...".
+        expect(bannerSeverity('Advisory only: the icon could be larger.')).toBeUndefined();
+        expect(bannerSeverity('This is a Major Issues style problem.')).toBeUndefined();
+        expect(bannerSeverity('Stoppers are common on this page.')).toBeUndefined();
+        expect(bannerSeverity('')).toBeUndefined();
+    });
+});
+
 describe('buildSummaryText', () => {
     test('emits only the severities that have issues, in severity order', () => {
         const map = issuesMap({ steps: [{ issues: [issue('severe thing', '1'), issue('optimization', '4')] }] });
@@ -44,7 +77,6 @@ describe('buildSummaryText', () => {
     test('uses the exact banner text, colons included and omitted', () => {
         // "Stoppers:" and "Major Issues:" carry a colon; "Minor Issues" and
         // "Advisory" do not. This text lands in saved files -- do not tidy it.
-        expect(SUMMARY_BANNERS).toEqual(['Stoppers:', 'Major Issues:', 'Minor Issues', 'Advisory']);
         const map = issuesMap({
             steps: [{ issues: [issue('one', '1'), issue('two', '2'), issue('three', '3'), issue('four', '4')] }]
         });
@@ -58,22 +90,133 @@ describe('buildSummaryText', () => {
     });
 });
 
-describe('splitSummaryComments', () => {
-    test('strips the banner along with its punctuation and line break', () => {
-        expect(splitSummaryComments('Major Issues:\nthe first problem\n\nAdvisory\nthe second problem'))
-            .toEqual(['the first problem', 'the second problem']);
+describe('parseSummaryComments', () => {
+    test('takes each line severity from the banner above it', () => {
+        expect(parseSummaryComments(
+            'Major Issues:\nthe first problem\n\nAdvisory\nthe second problem'
+        )).toEqual([said('the first problem', 2), said('the second problem', 4)]);
     });
 
-    test('round trips buildSummaryText without leaving banner residue', () => {
+    test('keeps several lines under one banner at that severity', () => {
+        expect(parseSummaryComments('Stoppers:\nfirst\n\nsecond\n\nMinor Issues\nthird'))
+            .toEqual([said('first', 1), said('second', 1), said('third', 3)]);
+    });
+
+    test('text before any banner keeps no severity rather than being guessed at', () => {
+        expect(parseSummaryComments('Testing covered the desktop only.\n\nStoppers:\nfirst'))
+            .toEqual([said('Testing covered the desktop only.'), said('first', 1)]);
+    });
+
+    test('text with no banners at all is all unclassified', () => {
+        expect(parseSummaryComments('just a comment')).toEqual([said('just a comment')]);
+    });
+
+    test('keeps a comment the tester wrapped over two lines as one comment', () => {
+        expect(parseSummaryComments('Stoppers:\nfirst line\nsecond line'))
+            .toEqual([said('first line\nsecond line', 1)]);
+    });
+
+    test('does not eat a banner word used inside a sentence', () => {
+        expect(parseSummaryComments('Advisory only: the icon could be larger.'))
+            .toEqual([said('Advisory only: the icon could be larger.')]);
+    });
+
+    test('an empty box yields nothing', () => {
+        expect(parseSummaryComments('')).toEqual([]);
+        expect(parseSummaryComments('   \n\n  ')).toEqual([]);
+    });
+
+    test('a banner with nothing under it contributes nothing', () => {
+        expect(parseSummaryComments('Stoppers:\n\nAdvisory\nonly this')).toEqual([
+            said('only this', 4)
+        ]);
+    });
+});
+
+describe('the box round trip', () => {
+    test('what a tester reads back is what they wrote, severities included', () => {
+        const written = [
+            said('Testing covered the desktop catalogue only.'),
+            said('The hold button has no name.', 1),
+            said('Focus is lost after the dialog closes.', 1),
+            said('The result count is not announced.', 3)
+        ];
+        expect(parseSummaryComments(buildSummaryTextFromComments(written))).toEqual(written);
+    });
+
+    test('a generated block survives being saved and reopened unchanged', () => {
         const map = issuesMap({
             steps: [{ issues: [issue('cannot activate the control', '1'), issue('no status message', '3')] }]
         });
-        expect(splitSummaryComments(buildSummaryText(map).trim()))
-            .toEqual(['cannot activate the control', 'no status message']);
+        const generated = buildSummaryText(map);
+        const stored = parseSummaryComments(generated);
+        expect(stored).toEqual([
+            said('cannot activate the control', 1), said('no status message', 3)
+        ]);
+        expect(buildSummaryTextFromComments(stored)).toBe(generated);
     });
 
-    test('leaves text that contains no banners alone', () => {
-        expect(splitSummaryComments('just a comment')).toEqual(['just a comment']);
+    test('unclassified lines are written back at the top, ahead of the banners', () => {
+        const text = buildSummaryTextFromComments([
+            said('The hold button has no name.', 1),
+            said('Testing covered the desktop catalogue only.')
+        ]);
+        expect(text).toBe(
+            'Testing covered the desktop catalogue only.\n\nStoppers:\nThe hold button has no name.\n\n'
+        );
+    });
+});
+
+describe('mergeSummaryComments', () => {
+    test('adds what is missing and leaves the tester wording alone', () => {
+        const existing = [said('their own words', 2)];
+        const generated = [said('a fresh finding', 1)];
+        expect(mergeSummaryComments(existing, generated))
+            .toEqual([said('their own words', 2), said('a fresh finding', 1)]);
+    });
+
+    test('generating twice adds nothing the second time', () => {
+        const generated = [said('a finding', 1), said('another', 3)];
+        const once = mergeSummaryComments([], generated);
+        expect(mergeSummaryComments(once, generated)).toEqual(once);
+    });
+
+    test('an unclassified line takes the severity the matching issue was found at', () => {
+        expect(mergeSummaryComments([said('a finding')], [said('a finding', 2)]))
+            .toEqual([said('a finding', 2)]);
+    });
+
+    test('does not overwrite a severity the tester had already moved a line to', () => {
+        expect(mergeSummaryComments([said('a finding', 1)], [said('a finding', 3)]))
+            .toEqual([said('a finding', 1)]);
+    });
+});
+
+describe('groupSummaryComments', () => {
+    test('leads with the unclassified lines, then each severity most severe first', () => {
+        expect(groupSummaryComments([
+            said('a minor thing', 3),
+            said('a note'),
+            said('a stopper', 1)
+        ])).toEqual([
+            { comments: [said('a note')] },
+            { banner: 'Stoppers:', comments: [said('a stopper', 1)] },
+            { banner: 'Minor Issues', comments: [said('a minor thing', 3)] }
+        ]);
+    });
+
+    test('emits no group for a severity with nothing in it', () => {
+        expect(groupSummaryComments([said('a stopper', 1)]))
+            .toEqual([{ banner: 'Stoppers:', comments: [said('a stopper', 1)] }]);
+    });
+
+    test('an old file, where nothing is classified, is one group with no banner', () => {
+        expect(groupSummaryComments([said('one'), said('two')]))
+            .toEqual([{ comments: [said('one'), said('two')] }]);
+    });
+
+    test('nothing written yields no groups at all', () => {
+        expect(groupSummaryComments([])).toEqual([]);
     });
 });
 
@@ -108,7 +251,7 @@ describe('saveGeneralComments', () => {
 
     test('clears comments and shows "No Issues" for an empty box', () => {
         const { run, document } = withTestRun([{ issues: [] }]);
-        run.comments = ['stale'];
+        run.comments = [said('stale')];
         document.getElementById('general-comments')!.value = '   ';
         saveGeneralComments(clickEvent);
         expect(run.comments).toEqual([]);
@@ -116,17 +259,28 @@ describe('saveGeneralComments', () => {
             .toEqual(['No Issues']);
     });
 
-    test('stores clean issue text after a generate/save round trip', () => {
+    test('stores each line with the severity it was written under', () => {
         const { run, document } = withTestRun([
             { issues: [issue('cannot activate the control', '1')] },
             { issues: [issue('no status message on submit', '3')] }
         ]);
         generateSummary();
         saveGeneralComments(clickEvent);
-        expect(run.comments)
-            .toEqual(['cannot activate the control', 'no status message on submit']);
+        expect(run.comments).toEqual([
+            said('cannot activate the control', 1), said('no status message on submit', 3)
+        ]);
         expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
-            .toEqual(run.comments);
+            .toEqual(['cannot activate the control', 'no status message on submit']);
+    });
+
+    test('a line the tester rewords under a banner keeps that severity', () => {
+        // The whole point of taking severity from position rather than text.
+        const { run, document } = withTestRun([{ issues: [issue('cannot activate the control', '1')] }]);
+        document.getElementById('general-comments')!.value =
+            'Stoppers:\nThe "Place hold" button is announced only as "button".';
+        saveGeneralComments(clickEvent);
+        expect(run.comments)
+            .toEqual([said('The "Place hold" button is announced only as "button".', 1)]);
     });
 
     test('replaces the previous list rather than appending to it', () => {
@@ -141,7 +295,7 @@ describe('saveGeneralComments', () => {
 });
 
 describe('summaryWithoutSkippedIssues', () => {
-    const stored = ['cannot activate the control', 'no status message on submit'];
+    const stored = [said('cannot activate the control', 1), said('no status message on submit', 3)];
 
     test('leaves a run with nothing marked exactly as it was', () => {
         const run = {
@@ -163,7 +317,7 @@ describe('summaryWithoutSkippedIssues', () => {
             extensions: []
         };
         expect(summaryWithoutSkippedIssues(stored, run))
-            .toEqual(['no status message on submit']);
+            .toEqual([said('no status message on submit', 3)]);
     });
 
     test('drops them for an extension the same way', () => {
@@ -174,7 +328,7 @@ describe('summaryWithoutSkippedIssues', () => {
             }]
         };
         expect(summaryWithoutSkippedIssues(stored, run))
-            .toEqual(['no status message on submit']);
+            .toEqual([said('no status message on submit', 3)]);
     });
 
     test('keeps a description that is also recorded on a step still in scope', () => {
@@ -187,8 +341,8 @@ describe('summaryWithoutSkippedIssues', () => {
             ],
             extensions: []
         };
-        expect(summaryWithoutSkippedIssues(['cannot activate the control'], run))
-            .toEqual(['cannot activate the control']);
+        expect(summaryWithoutSkippedIssues([said('cannot activate the control', 1)], run))
+            .toEqual([said('cannot activate the control', 1)]);
     });
 
     test('leaves prose the tester wrote themselves alone', () => {
@@ -196,10 +350,12 @@ describe('summaryWithoutSkippedIssues', () => {
             steps: [{ issues: [issue('cannot activate the control', '1')], outOfScope: true }],
             extensions: []
         };
-        const comments = ['Sign-in is out of scope for this engagement.',
-            'cannot activate the control'];
+        const comments = [
+            said('Sign-in is out of scope for this engagement.'),
+            said('cannot activate the control', 1)
+        ];
         expect(summaryWithoutSkippedIssues(comments, run))
-            .toEqual(['Sign-in is out of scope for this engagement.']);
+            .toEqual([said('Sign-in is out of scope for this engagement.')]);
     });
 
     test('does not put a description back when the mark comes off', () => {
@@ -215,18 +371,20 @@ describe('summaryWithoutIssues', () => {
     test('removes the description of an issue that has been deleted', () => {
         // The run no longer holds it, which is the state after the splice.
         const run = { steps: [{ issues: [issue('still here', '3')] }], extensions: [] };
-        expect(summaryWithoutIssues(['deleted one', 'still here'], ['deleted one'], run))
-            .toEqual(['still here']);
+        expect(summaryWithoutIssues(
+            [said('deleted one', 1), said('still here', 3)], ['deleted one'], run
+        )).toEqual([said('still here', 3)]);
     });
 
     test('keeps it when the same description is still recorded elsewhere', () => {
         const run = { steps: [{ issues: [issue('hit twice', '2')] }], extensions: [] };
-        expect(summaryWithoutIssues(['hit twice'], ['hit twice'], run)).toEqual(['hit twice']);
+        expect(summaryWithoutIssues([said('hit twice', 2)], ['hit twice'], run))
+            .toEqual([said('hit twice', 2)]);
     });
 
     test('leaves the summary alone when nothing is named', () => {
         const run = { steps: [{ issues: [] }], extensions: [] };
-        const comments = ['written by hand'];
+        const comments = [said('written by hand')];
         expect(summaryWithoutIssues(comments, [], run)).toBe(comments);
     });
 });
@@ -235,19 +393,24 @@ describe('summaryWithRenamedIssue', () => {
     /** The run after the edit: the issue now carries the new wording. */
     const edited = { steps: [{ issues: [issue('button has no name', '2')] }], extensions: [] };
 
-    test('rewrites the line in place, keeping its position', () => {
-        const comments = ['first finding', 'unlabelled button', 'third finding'];
+    test('rewrites the line in place, keeping its position and its severity', () => {
+        const comments = [
+            said('first finding', 1), said('unlabelled button', 2), said('third finding', 3)
+        ];
         expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
-            .toEqual(['first finding', 'button has no name', 'third finding']);
+            .toEqual([
+                said('first finding', 1), said('button has no name', 2), said('third finding', 3)
+            ]);
     });
 
     test('leaves a summary that never mentioned it alone', () => {
-        expect(summaryWithRenamedIssue(['something else'], 'unlabelled button', 'button has no name', edited))
-            .toEqual(['something else']);
+        expect(summaryWithRenamedIssue(
+            [said('something else', 2)], 'unlabelled button', 'button has no name', edited
+        )).toEqual([said('something else', 2)]);
     });
 
     test('does nothing when the description did not change', () => {
-        const comments = ['button has no name'];
+        const comments = [said('button has no name', 2)];
         expect(summaryWithRenamedIssue(comments, 'button has no name', 'button has no name', edited))
             .toBe(comments);
     });
@@ -260,50 +423,40 @@ describe('summaryWithRenamedIssue', () => {
             ],
             extensions: []
         };
-        expect(summaryWithRenamedIssue(['unlabelled button'], 'unlabelled button', 'button has no name', run))
-            .toEqual(['unlabelled button']);
+        expect(summaryWithRenamedIssue(
+            [said('unlabelled button', 2)], 'unlabelled button', 'button has no name', run
+        )).toEqual([said('unlabelled button', 2)]);
     });
 
     test('drops the old line rather than duplicating wording already there', () => {
-        const comments = ['button has no name', 'unlabelled button'];
+        const comments = [said('button has no name', 2), said('unlabelled button', 2)];
         expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
-            .toEqual(['button has no name']);
-    });
-});
-
-describe('buildOverallCommentsText', () => {
-    test('heads each functional test with its full name and lists its comments', () => {
-        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
-        const text = buildOverallCommentsText(evaluation);
-        expect(text.startsWith('01 Search the catalogue and place a hold - NVDA\n\n')).toBe(true);
-        expect(text.endsWith('\n\n')).toBe(true);
-        // Four scripts: the first was performed with two assistive technologies.
-        expect(text.split('\n\n').filter((line) => /^\d\d /.test(line))).toHaveLength(4);
-    });
-
-    test('says "No issues." for a functional test with no comments', () => {
-        const evaluation = {
-            tests: [{ name: 'Empty', testNumber: 1, runs: [] } as unknown as FunctionalTest],
-            score: 0
-        } satisfies Evaluation;
-        expect(buildOverallCommentsText(evaluation)).toBe('01 Empty\n\nNo issues.\n\n');
+            .toEqual([said('button has no name', 2)]);
     });
 });
 
 describe('buildOverallCommentsTextFor', () => {
-    test('covers one technology and leaves the others out', () => {
-        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
-        const text = buildOverallCommentsTextFor(evaluation, 'JAWS');
-
-        expect(text).toContain('01 Search the catalogue and place a hold - JAWS');
-        expect(text).not.toContain('- NVDA');
-    });
-
-    test('says "No issues." for a test with nothing written about it', () => {
+    test('groups the whole technology by severity, not by script', () => {
         const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
         const text = buildOverallCommentsTextFor(evaluation, 'NVDA');
 
-        expect(text).toContain('02 Renew a borrowed item - NVDA\n\nNo issues.');
+        // It used to head each block with the script's name, leaving the tester
+        // to sort the lot into severity order by hand.
+        expect(text).not.toContain('01 Search the catalogue and place a hold');
+        expect(text.startsWith('Stoppers:\n')).toBe(true);
+        expect(text).toContain('Major Issues:\n');
+        expect(text).toContain('Minor Issues\n');
+    });
+
+    test('covers one technology and leaves the others out', () => {
+        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
+        const jaws = parseSummaryComments(buildOverallCommentsTextFor(evaluation, 'JAWS'));
+        const nvda = parseSummaryComments(buildOverallCommentsTextFor(evaluation, 'NVDA'));
+
+        // Availability shown by colour alone was only ever recorded under NVDA.
+        const under = (comments: SummaryComment[]) => comments.map((comment) => comment.text);
+        expect(under(nvda).some((text) => text.startsWith('Availability is shown'))).toBe(true);
+        expect(under(jaws).some((text) => text.startsWith('Availability is shown'))).toBe(false);
     });
 
     test('is empty for a technology the evaluation does not use', () => {

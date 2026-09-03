@@ -58,8 +58,12 @@
         {
           "score": 1,
           "comments": [
-            "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
-            "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
+            {
+              "text": "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today."
+            },
+            {
+              "text": "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
+            }
           ],
           "steps": [
             {
@@ -188,7 +192,9 @@
         {
           "score": 1,
           "comments": [
-            "Placing a hold is possible but the confirmation is easy to miss."
+            {
+              "text": "Placing a hold is possible but the confirmation is easy to miss."
+            }
           ],
           "steps": [
             {
@@ -369,8 +375,12 @@
         {
           "score": 1,
           "comments": [
-            "The reminder timing control cannot be operated with the keyboard at all.",
-            "Switching notification channel reveals a phone number field that is neither announced nor labelled."
+            {
+              "text": "The reminder timing control cannot be operated with the keyboard at all."
+            },
+            {
+              "text": "Switching notification channel reveals a phone number field that is neither announced nor labelled."
+            }
           ],
           "steps": [
             {

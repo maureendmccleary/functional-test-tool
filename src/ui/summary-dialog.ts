@@ -1,5 +1,7 @@
 import { issuesMap, minimumScore } from '../domain/scoring.js';
-import { buildSummaryText, splitSummaryComments } from '../domain/summary.js';
+import {
+    buildSummaryText, buildSummaryTextFromComments, parseSummaryComments
+} from '../domain/summary.js';
 import { getCurrentRun, markEvaluationChanged } from '../state/store.js';
 import { requireEl } from './dom.js';
 /*
@@ -30,13 +32,8 @@ export function saveGeneralComments(e: Event): void {
     e.preventDefault();
     const run = getCurrentRun();
     markEvaluationChanged();
-    const commentSummary = requireEl<HTMLTextAreaElement>("general-comments").value.trim();
-    if (commentSummary === "") {
-        run.comments.length = 0;
-    }
-    else {
-        run.comments = splitSummaryComments(commentSummary);
-    }
+    const commentSummary = requireEl<HTMLTextAreaElement>("general-comments").value;
+    run.comments = parseSummaryComments(commentSummary);
     populateSummaryList();
 }
 
@@ -57,11 +54,9 @@ export function viewSummaryButtonClicked(e: Event): void {
     generateSummaryBtn.addEventListener("click", generateSummaryClicked);
     const saveSummaryBtn = requireEl("general-comments-save");
     saveSummaryBtn.addEventListener("click", saveGeneralComments);
+    // Rebuilt with its banners, so the tester reads the block back the way they
+    // wrote it and every line is still sitting under its own severity.
     const run = getCurrentRun();
-    if (run.comments.length > 0) {
-        requireEl<HTMLTextAreaElement>("general-comments").value = run.comments.join("\n\n");
-    }
-    else {
-        requireEl<HTMLTextAreaElement>("general-comments").value = "";
-    }
+    requireEl<HTMLTextAreaElement>("general-comments").value =
+        buildSummaryTextFromComments(run.comments);
 }

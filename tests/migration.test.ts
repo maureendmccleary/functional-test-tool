@@ -3,7 +3,7 @@ import type { FunctionalTest } from '../src/types.js';
 import {
     migrateLegacyTestRun, normalizeEvaluation, normalizeOperatingSystem
 } from '../src/domain/migration.js';
-import { getTestComments, testDisplayName } from '../src/domain/functional-test.js';
+import { testDisplayName } from '../src/domain/functional-test.js';
 import { loadFixture } from './helpers/fixtures.js';
 
 /**
@@ -63,7 +63,7 @@ describe('migrateLegacyTestRun', () => {
         } as unknown as FunctionalTest;
         migrateLegacyTestRun(subject);
         subject.comments.push('added later');
-        expect(subject.runs[0].comments).toEqual(['first']);
+        expect(subject.runs[0].comments).toEqual([{ text: 'first' }]);
     });
 
     test('falls back to -1 when the functional test has no numeric score', () => {
@@ -128,12 +128,15 @@ describe('loading a file saved before runs existed', () => {
         expect(renew.runs).toHaveLength(1);
         expect(renew.runs[0].score).toBe(-1);
         expect(renew.runs[0].steps.every((step) => step.issues.length === 0)).toBe(true);
-        expect(getTestComments(renew)).toEqual([]);
+        expect(renew.runs[0].comments).toEqual([]);
     });
 
     test('carries comments onto the migrated run', () => {
-        expect(getTestComments(preferences)).toEqual(preferences.runs[0].comments);
-        expect(getTestComments(preferences)).toHaveLength(2);
+        // The legacy file kept them on the test; they belong to the run now,
+        // and arrive unclassified because nothing in that file says otherwise.
+        expect(preferences.runs[0].comments).toHaveLength(2);
+        expect(preferences.runs[0].comments.every((comment) => comment.severity === undefined))
+            .toBe(true);
     });
 
     test('defaults the top-level comments array', () => {
@@ -311,8 +314,9 @@ describe('assistive technology summaries', () => {
                 { assistiveTechnology: 'JAWS', overallRating: 2, significantIssues: ['kept'] }
             ]
         });
+        // Stored as a plain string by an older version, read back unclassified.
         expect(evaluation.assistiveTechnologySummaries).toEqual([
-            { assistiveTechnology: 'JAWS', overallRating: 2, significantIssues: ['kept'] }
+            { assistiveTechnology: 'JAWS', overallRating: 2, significantIssues: [{ text: 'kept' }] }
         ]);
     });
 

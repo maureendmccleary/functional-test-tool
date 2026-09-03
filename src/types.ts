@@ -58,6 +58,25 @@ export interface TestRunStep {
     outOfScope?: boolean;
 }
 
+/**
+ * One line of a written summary, with the severity it was written under.
+ *
+ * The summary is generated from the issues, grouped under the banners
+ * "Stoppers:", "Major Issues:", "Minor Issues" and "Advisory", and the tester
+ * then rewrites it freely. What keeps a reworded line at its severity is where
+ * it sits: the banner above it, not anything about its text. See
+ * parseSummaryComments in domain/summary.ts.
+ *
+ * `severity` is 1..4, matching Issue.score, and is absent rather than -1 when
+ * the line sat under no banner at all -- a scoping note typed at the top of the
+ * box, or every line of a file written before severities were stored. Those are
+ * kept and reported ahead of the banners, never guessed at.
+ */
+export interface SummaryComment {
+    text: string;
+    severity?: number;
+}
+
 /** One run of a functional test against a specific AT and operating system. */
 export interface TestRun {
     /** A single assistive technology, unlike FunctionalTest's list. */
@@ -71,7 +90,7 @@ export interface TestRun {
      * choosing a score is the signal; see isPerformed in domain/test-run.ts.
      */
     score: number;
-    comments: string[];
+    comments: SummaryComment[];
     steps: TestRunStep[];
     /** One record per extension of the test, paired by position. */
     extensions: TestRunStep[];
@@ -130,7 +149,7 @@ export interface AssistiveTechnologySummary {
     assistiveTechnology: string;
     /** Assigned by the tester; -1 until they set one, matching TestRun.score. */
     overallRating: number;
-    significantIssues: string[];
+    significantIssues: SummaryComment[];
 }
 
 /** A saved file: every functional test in one engagement, with evaluation-wide comments. */
@@ -164,7 +183,7 @@ export interface TestReport {
     assistiveTechnology: string;
     operatingSystem: string;
     score: number;
-    comments: string[];
+    comments: SummaryComment[];
     steps: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>;
     extensions: Array<{ instructions: string; issues: Issue[]; outOfScope?: boolean }>;
 }

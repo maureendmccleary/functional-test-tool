@@ -318,6 +318,18 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
+- [ ] Reword a line *under its banner*, save, and reopen **View Summary**: the
+      box comes back with its banners, and the reworded line is still under the
+      one you left it under
+      <br>*(a line's severity comes from where it sits, not from its text --
+      this is the whole of issue #25)*
+- [ ] Type a scoping note above the first banner, save and reopen: it is still
+      at the top, still under no banner
+- [ ] Write a comment that *mentions* a banner word mid-sentence -- "Advisory
+      only: the icon could be larger" -- save and reopen: the sentence is intact
+      <br>*(the old stripping deleted those words wherever they appeared)*
+- [ ] **View Results**: the Problem Summary is grouped, most severe first, with
+      any unbannered line printed above the groups
 - [ ] Save a summary on script 1, go **Back**, then Perform script 2: the
       Summary under the score reads "No Issues", **not** script 1's summary
 - [ ] Back to script 1: its own summary is there again
@@ -345,10 +357,17 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Activating it opens a dialog titled "NVDA Overall comments" followed by
       the evaluation's name, and the page title says the same
 - [ ] The rating starts at the **worst** score any of that technology's tests
-      reached, and the box holds the three most severe issues found with it
-- [ ] **Generate Overall Comments** appends that technology's per test comments
-      below whatever is already written, keeping the tester's own wording, and
-      lists only that technology's tests
+      reached, and the box holds the three most severe issues found with it,
+      already under their banners
+- [ ] **Generate Overall Comments** fills the box with that technology's issues
+      **grouped by severity**, not by script -- no script names appear
+      <br>*(it used to head each block with a script name, leaving the tester to
+      sort the whole thing into severity order by hand)*
+- [ ] Pressing **Generate Overall Comments** a second time changes nothing: it
+      merges rather than appending a second copy under a second set of banners
+- [ ] Editing a line and generating again keeps the edit and adds only what is
+      missing
+- [ ] Only that technology's issues appear, never another's
 - [ ] Change the rating, edit the text, **Save**, close and reopen: both come
       back as saved rather than being recomputed
 - [ ] **View Evaluation Results**: Significant Issues shows that rating and
@@ -383,6 +402,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] In the report, both Problem Summary and Significant Issues are grouped
+      under bold `Stoppers:` / `Major Issues:` / `Minor Issues` / `Advisory`
+      lines, most severe first, with any unbannered line printed above them
+      <br>*(the banners are bold paragraphs, not headings: they must not appear
+      in the table of contents)*
 - [ ] It arrives as `evaluation-results - <evaluation name>.docx`, so two
       reports from different evaluations do not land on each other as copies
 - [ ] An evaluation with no name set downloads as `evaluation-results.docx`,

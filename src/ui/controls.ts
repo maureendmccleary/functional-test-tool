@@ -1,4 +1,5 @@
 import type { ListboxOption, TypeCatalogEntry } from '../types.js';
+import type { SummaryGroup } from '../domain/summary.js';
 import { findEl, requireEl } from './dom.js';
 
 /**
@@ -99,6 +100,39 @@ export function createUnorderedList(listItems: string[] | undefined, emptyText =
     });
 
     return list;
+}
+
+/**
+ * A summary printed in its severity groups: a banner, then the lines under it.
+ *
+ * Returns one element holding the lot, so it drops into the same place the flat
+ * list used to. The banner is a paragraph rather than a heading because this is
+ * rendered at three different depths -- the results dialog, the evaluation
+ * results screen and inside the report -- and a heading would have to be a
+ * different level in each; getting that wrong is worse for a reader navigating
+ * by headings than not offering one.
+ */
+export function createGroupedList(groups: SummaryGroup[], emptyText = ""): HTMLElement {
+    if (groups.length === 0) {
+        const paragraphElem = document.createElement("p");
+        paragraphElem.textContent = emptyText;
+        return paragraphElem;
+    }
+
+    const container = document.createElement("div");
+    groups.forEach((group) => {
+        if (group.banner !== undefined) {
+            const banner = document.createElement("p");
+            const strong = document.createElement("strong");
+            strong.textContent = group.banner;
+            banner.appendChild(strong);
+            container.appendChild(banner);
+        }
+        container.appendChild(
+            createUnorderedList(group.comments.map((comment) => comment.text))
+        );
+    });
+    return container;
 }
 
 /**

@@ -192,6 +192,39 @@ does not have to agree with the average or the minimum of the run scores.
 to, and keeps stored summaries whose AT is no longer assigned to any test, so
 briefly unassigning an AT does not discard the text written against it.
 
+### Written summaries and their severities
+
+A written summary — the run's `comments` and the AT summary's
+`significantIssues` — is a list of `SummaryComment`, each a line of text with
+the `severity` it was written under. Both are generated from the issues, grouped
+under the four banners `Stoppers:`, `Major Issues:`, `Minor Issues` and
+`Advisory`, and the tester then rewrites them freely.
+
+**A line's severity comes from where it sits, not from what it says.** The
+banners stay in the box as ordinary lines of text, and `parseSummaryComments`
+reads them: a line that is *exactly* a banner opens a section, and the
+paragraphs below it carry that severity until the next one. So a tester can
+reword a finding however they like and it stays a stopper, without ever typing a
+severity. `buildSummaryTextFromComments` writes the box back out the same way,
+so generate → edit → save → reopen is stable.
+
+Matching a whole line matters. The banners used to be *stripped* with an
+unanchored pattern, which ate the tester's own words wherever those phrases
+appeared: "Advisory only: the icon could be larger" came back as "only: the icon
+could be larger".
+
+A line under no banner keeps **no** severity. That is a scoping note typed at
+the top of the box, and it is every line of a file written before severities
+were stored, since nothing in such a file says what the tester had grouped them
+under. Those lines are kept and printed first, ahead of the banners, in the
+results dialog, the evaluation results screen and the report alike
+(`groupSummaryComments`). Printing them last would file them under whichever
+banner came last, which is a severity nobody chose.
+
+Generating into a box that already has text **merges** rather than appends, so
+pressing Generate twice adds nothing the second time and a line the tester typed
+unclassified picks up the severity of the issue it matches.
+
 Files saved by earlier versions used different field names (`evalUCs`,
 `performedUCs`, `ats`, `oses`, `startlocation`). `domain/migration.ts` accepts
 both spellings on load and always writes the current ones, so opening an old

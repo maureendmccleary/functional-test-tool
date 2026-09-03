@@ -2,13 +2,16 @@ import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology
 } from '../domain/evaluation.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
+import { groupSummaryComments } from '../domain/summary.js';
 import {
     SCORE_LABELS, SCORING_KEY_PARAGRAPHS, SIGNIFICANT_ISSUES_INTRO, formatOverallRating,
     scorecardRows
 } from '../domain/report-format.js';
 import { renderEvalResultsDocx } from '../io/docx-report.js';
 import { getEvaluation } from '../state/store.js';
-import { createDataTable, createLabelValueTable, createUnorderedList } from './controls.js';
+import {
+    createDataTable, createGroupedList, createLabelValueTable, createUnorderedList
+} from './controls.js';
 import { requireEl } from './dom.js';
 import { setSectionTitle } from './screens.js';
 import { createResultsTable } from './results-view.js';
@@ -43,7 +46,7 @@ export function renderAssistiveTechnologySummaries(): void {
         rating.textContent = `Overall Rating: ${formatOverallRating(summary.overallRating)}`;
         block.appendChild(rating);
 
-        block.appendChild(createUnorderedList(summary.significantIssues, "No issues."));
+        block.appendChild(createGroupedList(groupSummaryComments(summary.significantIssues), "No issues."));
         parentDiv.appendChild(block);
     });
 }
@@ -95,7 +98,7 @@ function renderSignificantIssues(): void {
         rating.textContent = `${group.assistiveTechnology} Overall Rating: `
             + formatOverallRating(summary.overallRating);
         nodes.push(rating);
-        nodes.push(createUnorderedList(summary.significantIssues, "No issues."));
+        nodes.push(createGroupedList(groupSummaryComments(summary.significantIssues), "No issues."));
     });
     replaceContents("eval-results-summary", nodes);
 }

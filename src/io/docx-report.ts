@@ -1,8 +1,9 @@
-import type { Evaluation, FunctionalTest, Issue, TestRun } from '../types.js';
+import type { Evaluation, FunctionalTest, Issue, SummaryComment, TestRun } from '../types.js';
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
 import { reportFileName } from '../domain/file-names.js';
+import { groupSummaryComments } from '../domain/summary.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { issueRows } from '../domain/test-run.js';
 import {
@@ -262,6 +263,24 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         return items.map((item) => new Paragraph({ text: String(item || ''), bullet: { level: 0 } }));
     }
 
+    /**
+     * A written summary in its severity groups: the banner, then its bullets.
+     *
+     * The banner is a bold paragraph rather than a heading, so it does not
+     * appear in the contents or shift the heading levels around it. Unclassified
+     * lines lead, under no banner at all.
+     */
+    function summaryParagraphs(comments: SummaryComment[] | undefined) {
+        const groups = groupSummaryComments(Array.isArray(comments) ? comments : []);
+        if (groups.length === 0) {
+            return [new Paragraph({ text: 'No issues.' })];
+        }
+        return groups.flatMap((group) => [
+            ...(group.banner === undefined ? [] : [text(group.banner, { bold: true })]),
+            ...bullets(group.comments.map((comment) => comment.text))
+        ]);
+    }
+
     const children: unknown[] = [];
 
     /*
@@ -373,7 +392,8 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             `Overall Rating: ${formatOverallRating(summary.overallRating)}`,
             { bold: true }
         ));
-        bullets(summary.significantIssues).forEach((paragraph) => children.push(paragraph));
+        summaryParagraphs(summary.significantIssues)
+            .forEach((paragraph) => children.push(paragraph));
     });
 
     // Scoring key.
@@ -475,7 +495,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(scoreRow(score));
 
         children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));
-        bullets(report.comments).forEach((paragraph) => children.push(paragraph));
+        summaryParagraphs(report.comments).forEach((paragraph) => children.push(paragraph));
     }
 
     /*

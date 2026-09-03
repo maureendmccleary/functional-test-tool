@@ -2,15 +2,13 @@ import { describe, expect, test } from 'vitest';
 import type { TestRun, FunctionalTest } from '../src/types.js';
 import {
     DEFAULT_NEW_TEST_STEPS, addAssistiveTechnologyCopies, buildTestReport, emptyFunctionalTest,
-    getTestComments, isLastTestForItsTechnology, nextTestNumber, splitByAssistiveTechnology,
+    isLastTestForItsTechnology, nextTestNumber, splitByAssistiveTechnology,
     testAssistiveTechnology, testDisplayName
 } from '../src/domain/functional-test.js';
 import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, isPerformed, issueLines, issueRows
 } from '../src/domain/test-run.js';
-import { normalizeEvaluation } from '../src/domain/migration.js';
 import { SCORE_LABELS } from '../src/domain/report-format.js';
-import { loadFixture } from './helpers/fixtures.js';
 
 describe('emptyFunctionalTest', () => {
     test('has every key the editor form writes to', () => {
@@ -126,11 +124,11 @@ describe('splitByAssistiveTechnology', () => {
     test('keeps the run already recorded for a technology', () => {
         const subject = draft(['NVDA', 'JAWS']);
         subject.runs = [{
-            assistiveTechnology: 'JAWS', operatingSystem: 'Windows', score: 2, comments: ['kept'],
+            assistiveTechnology: 'JAWS', operatingSystem: 'Windows', score: 2, comments: [{ text: 'kept' }],
             steps: [{ issues: [] }, { issues: [] }], extensions: []
         }];
         const [nvda, jaws] = splitByAssistiveTechnology(subject);
-        expect(jaws.runs[0].comments).toEqual(['kept']);
+        expect(jaws.runs[0].comments).toEqual([{ text: 'kept' }]);
         expect(jaws.runs[0].score).toBe(2);
         expect(nvda.runs[0].score).toBe(-1);
     });
@@ -527,32 +525,6 @@ describe('buildTestReport and extensions', () => {
         const run = { steps: [] } as unknown as TestRun;
 
         expect(buildTestReport(subject, run).extensions).toEqual([]);
-    });
-});
-
-describe('getTestComments', () => {
-    test('returns an empty array when runs is not an array', () => {
-        expect(getTestComments({} as FunctionalTest)).toEqual([]);
-        expect(getTestComments({ runs: null } as unknown as FunctionalTest)).toEqual([]);
-    });
-
-    test('flattens comments across every run', () => {
-        const subject = {
-            runs: [{ comments: ['a', 'b'] }, { comments: [] }, { comments: ['c'] }]
-        } as unknown as FunctionalTest;
-        expect(getTestComments(subject)).toEqual(['a', 'b', 'c']);
-    });
-
-    test('skips a run whose comments are missing', () => {
-        const subject = { runs: [{}, { comments: ['kept'] }] } as unknown as FunctionalTest;
-        expect(getTestComments(subject)).toEqual(['kept']);
-    });
-
-    test('reports the comment counts from a real evaluation', () => {
-        const evaluation = normalizeEvaluation(loadFixture('evaluation-with-runs'));
-        // The first script was run with two assistive technologies, so loading
-        // it yields two scripts, each holding the comments of its own run.
-        expect(evaluation.tests.map((t) => getTestComments(t).length)).toEqual([2, 1, 0, 2]);
     });
 });
 

@@ -64,7 +64,7 @@ function twoTests(comments: string[][], index: number): void {
             assistiveTechnology: 'NVDA',
             operatingSystem: 'Windows',
             score: -1,
-            comments: runComments,
+            comments: runComments.map((text) => ({ text })),
             steps: [{ issues: [] }, { issues: [] }],
             extensions: [{ issues: [] }]
         }]
@@ -201,17 +201,17 @@ describe('outOfScopeChanged', () => {
         const test = evaluationWithRun();
         const run = test.runs[0];
         run.steps[1].issues = [{ description: 'count not announced', findingURL: '', score: '3' }];
-        run.comments = ['no label', 'count not announced'];
+        run.comments = [{ text: 'no label', severity: 2 }, { text: 'count not announced', severity: 3 }];
 
         outOfScopeChanged(changeEvent('out-of-scope[0]', true));
 
-        expect(run.comments).toEqual(['count not announced']);
+        expect(run.comments).toEqual([{ text: 'count not announced', severity: 3 }]);
         expect(linesIn(documentStub, 'summary-list')).toEqual(['count not announced']);
     });
 
     test('a summary left with nothing in it reads "No Issues"', () => {
         const test = evaluationWithRun();
-        test.runs[0].comments = ['no label'];
+        test.runs[0].comments = [{ text: 'no label', severity: 2 }];
 
         outOfScopeChanged(changeEvent('out-of-scope[0]', true));
 
