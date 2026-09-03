@@ -17,6 +17,17 @@ import { setSectionTitle } from './screens.js';
 import { createResultsTable } from './results-view.js';
 
 /**
+ * Heading levels for the two per-technology blocks on this screen.
+ *
+ * Significant Issues and Assistive Technology Summaries are both h2 sections
+ * holding one block per assistive technology, so both name the technology at h3
+ * and head its severities at h4. Kept together because the two blocks show the
+ * same summaries and reading one after the other should feel like one screen.
+ */
+const AT_HEADING_LEVEL = 3;
+const CATEGORY_HEADING_LEVEL = 4;
+
+/**
  * Shows each assistive technology's rating and overall comments, as text.
  *
  * Read only, like the rest of this dialog. Both values are written on the
@@ -38,7 +49,7 @@ export function renderAssistiveTechnologySummaries(): void {
         const summary = effectiveSummaryFor(evaluation, stored.assistiveTechnology);
         const block = document.createElement("div");
 
-        const atHeading = document.createElement("h3");
+        const atHeading = document.createElement(`h${AT_HEADING_LEVEL}`);
         atHeading.textContent = stored.assistiveTechnology;
         block.appendChild(atHeading);
 
@@ -46,7 +57,9 @@ export function renderAssistiveTechnologySummaries(): void {
         rating.textContent = `Overall Rating: ${formatOverallRating(summary.overallRating)}`;
         block.appendChild(rating);
 
-        block.appendChild(createGroupedList(groupSummaryComments(summary.significantIssues), "No issues."));
+        block.appendChild(createGroupedList(
+            groupSummaryComments(summary.significantIssues), "No issues.", CATEGORY_HEADING_LEVEL
+        ));
         parentDiv.appendChild(block);
     });
 }
@@ -91,14 +104,26 @@ function renderSignificantIssues(): void {
         return;
     }
 
+    // Each technology is headed by its own name, as it is under Assistive
+    // Technology Summaries below. It used to be a single paragraph reading
+    // "NVDA Overall Rating: 2.0", which left this section with nothing to
+    // navigate by on a report covering several technologies, and no level for
+    // its severity headings to sit under.
     const nodes: Node[] = [];
     groups.forEach((group) => {
         const summary = effectiveSummaryFor(evaluation, group.assistiveTechnology);
+
+        const atHeading = document.createElement(`h${AT_HEADING_LEVEL}`);
+        atHeading.textContent = group.assistiveTechnology;
+        nodes.push(atHeading);
+
         const rating = document.createElement("p");
-        rating.textContent = `${group.assistiveTechnology} Overall Rating: `
-            + formatOverallRating(summary.overallRating);
+        rating.textContent = `Overall Rating: ${formatOverallRating(summary.overallRating)}`;
         nodes.push(rating);
-        nodes.push(createGroupedList(groupSummaryComments(summary.significantIssues), "No issues."));
+
+        nodes.push(createGroupedList(
+            groupSummaryComments(summary.significantIssues), "No issues.", CATEGORY_HEADING_LEVEL
+        ));
     });
     replaceContents("eval-results-summary", nodes);
 }

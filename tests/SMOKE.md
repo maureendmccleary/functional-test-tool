@@ -403,6 +403,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       does not read it again
 - [ ] **View Evaluation Results**: Significant Issues shows that rating and
       those comments for that technology
+- [ ] Each technology there is an **h3** naming it, with its rating in a
+      paragraph under it and an **h4** per severity -- the same shape as
+      Assistive Technology Summaries below and Detailed Use Case Results
+      further down
+- [ ] With two technologies in the evaluation, the whole screen's outline runs
+      h1, then h2 per section, h3 per technology, h4 beneath, with no level
+      skipped anywhere
 - [ ] A technology whose overall comments were **never opened** still shows a
       rating and issues there, being the worst score it reached and its three
       most severe issues, rather than "Not rated" and "No issues."
