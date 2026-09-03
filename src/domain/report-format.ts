@@ -65,7 +65,7 @@ export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
  * and orange to red for 1. Neither shade is ever asked to carry the meaning on
  * its own -- the score's label sits on every fill, in the key and on the badge
  * alike -- which is what keeps the report readable to anyone who does not see
- * the color, and in greyscale.
+ * the color, and in grayscale.
  *
  * Kept here with the rest of the report's presentation so the contrast of every
  * pairing can be asserted without building a document. See
