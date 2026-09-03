@@ -11,6 +11,9 @@ import { setSectionTitle } from './screens.js';
 /** How many issues stand in for a summary nobody has written. */
 const TOP_ISSUE_COUNT = 3;
 
+/** There is no h7, so a table drawn deep enough stops nesting here. */
+const MAX_HEADING_LEVEL = 6;
+
 /**
  * What the problem summary says: what the tester wrote, or the worst of what
  * went wrong when they have written nothing yet.
@@ -174,8 +177,13 @@ export function createResultsTable(
     const score = minimumScore(issuesMap(test));
     p1.textContent = `${test.assistiveTechnology} Overall Rating: ${score}`;
     resultsDiv.appendChild(p1);
+    // A heading per severity, one level under the "Problem Summary" heading
+    // above them, so a reader moves between severities rather than walking the
+    // list. Derived rather than fixed: this table is drawn at heading level 2
+    // in the results dialog and at 4 inside the evaluation results screen.
     resultsDiv.appendChild(createGroupedList(
-        groupSummaryComments(problemSummaryComments(test)), "No issues"
+        groupSummaryComments(problemSummaryComments(test)), "No issues",
+        Math.min(sectionLevel + 1, MAX_HEADING_LEVEL)
     ));
     return resultsDiv;
 }

@@ -344,6 +344,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(the old stripping deleted those words wherever they appeared)*
 - [ ] **View Results**: the Problem Summary is grouped, most severe first, with
       any unbannered line printed above the groups
+- [ ] Each category there is a heading one level under "Problem Summary" -- an
+      h4 in the dialog, and an h6 in the same table inside the evaluation
+      results screen, where it is drawn deeper. No level is skipped in either
+      <br>*(the level is derived from the table's own, so a fixed one would be
+      wrong in one of the two places)*
 - [ ] **Generate Summary** on a box that already has text **merges**: your
       wording stays, missing issues are added under their banners, and pressing
       it a second time changes nothing
