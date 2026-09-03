@@ -66,6 +66,15 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       functional tests matches the landing screen's
 - [ ] **Add Test** opens the functional test editor with 5 blank steps already
       present and focus in the Name field
+- [ ] The **Assistive Technology** list is **collapsed** when the editor opens,
+      and tabbing from Application reaches the steps without walking through
+      thirty checkboxes
+- [ ] Enter or Space on the button expands it and lands focus in the list;
+      **Escape** collapses it and returns focus to the button
+- [ ] Shift+Tab back to the button and Enter also collapses it, and focus stays
+      on the button
+      <br>*(a `display` rule on the menu beat the browser's own `[hidden]`, so
+      it was never collapsed at all -- see the `[hidden]` rule in styles.css)*
 - [ ] **Back** in the editor warns that the unsaved test will be discarded;
       confirming returns to the evaluation screen with the list unchanged
 - [ ] **Delete Functional Test** on `01 ... - JAWS` asks first; cancelling
