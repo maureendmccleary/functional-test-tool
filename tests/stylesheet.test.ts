@@ -50,3 +50,18 @@ describe('the hidden attribute', () => {
         expect(ruleBody('#test-edit-at-menu')).toMatch(/display:\s*grid/);
     });
 });
+
+describe('dialog close controls', () => {
+    test('use the danger fill at rest', () => {
+        expect(ruleBody('.dialog-close')).toMatch(/background-color:\s*var\(--danger\)/);
+        expect(ruleBody('.dialog-close')).toMatch(/border-color:\s*var\(--danger\)/);
+        expect(ruleBody('.dialog-close')).toMatch(/color:\s*#ffffff/);
+    });
+
+    test('use the darker danger fill on hover', () => {
+        expect(ruleBody('.dialog-close:hover'))
+            .toMatch(/background-color:\s*var\(--danger-hover\)/);
+        expect(ruleBody('.dialog-close:hover'))
+            .toMatch(/border-color:\s*var\(--danger-hover\)/);
+    });
+});

@@ -46,7 +46,7 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] You stay on the landing screen, and its Evaluation Details show
       "Riverbend Public Library", "Library Catalogue" and
       "Q3 2026 Accessibility Evaluation" as text, not as editable fields
-- [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation File**,
+- [ ] **Edit Evaluation**, **View Evaluation Results**, **Download Evaluation File**,
       **Edit Functional Test**, and **Perform** all become enabled, alongside
       **New Evaluation**
 - [ ] "Q3 2026 Accessibility Evaluation loaded successfully. 4 functional tests."
@@ -107,6 +107,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       **New Functional Test** button
 - [ ] **Back** on the evaluation screen also returns to the landing screen, and
       does **not** announce that the evaluation is ready to perform
+- [ ] That Back control is exposed as a link named "Back to Evaluation Home",
+      while remaining in its existing action row
 - [ ] **New Evaluation** with unsaved changes warns before discarding them;
       cancelling keeps the loaded evaluation intact
 - [ ] **New Evaluation** immediately after loading a file does **not** warn --
@@ -132,6 +134,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Edit Functional Test** on the evaluation screen opens the editor on the
       selected copy; **Back** returns to the evaluation screen, not the landing
       screen
+- [ ] The editor Back link is named "Back to Evaluation" when opened here, and
+      "Back to Evaluation Home" when opened from the landing screen
 - [ ] Give one copy instructions of its own -- reword a step for that
       technology -- and **Save**: the wording sticks, **no** further copy is
       created, and the other copies keep the wording they had
@@ -215,6 +219,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       "Perform Functional Test", and there is no dialog to escape from
 - [ ] **Back** returns to the landing screen with the test list intact, and the
       earlier "loaded successfully" message is **not** read out again
+- [ ] The Perform Back control is exposed as a link named
+      "Back to Evaluation Home"
 - [ ] **Back** after recording anything warns that the results are not saved to a
       file; cancelling stays on the perform screen with everything intact
 - [ ] Accepting that warning and going back, then performing the same test
@@ -297,12 +303,19 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       View Overall Comments
 - [ ] In each, the close button is reached straight after the heading, and
       **Escape** still closes
+- [ ] Every dialog close button has a solid red fill with white text or icon,
+      and changes to a darker red on hover
+- [ ] In every dialog, **Tab** from the final available control wraps to the
+      first, and **Shift+Tab** from the first wraps to the final control
 - [ ] **Add Issue** on a step opens the issue dialog with that step's issues in
       the table, and focus lands on the dialog's heading, which names the step.
       A step with no issues yet opens straight into the Description field
-- [ ] Tab order runs forwards: **New Issue**, then Description, Score, Finding
-      URL, then **Save Issue**. Pressing New Issue moves focus down the dialog,
-      never back up it
+- [ ] The Add Issue dialog has a red **Close** button at the bottom beside
+      **New Issue** or **Save Issue**, and its top X remains available
+- [ ] Pressing **New Issue** replaces it with **Save Issue** and moves focus to
+      Description. Tab then reaches Score, Finding URL, Save Issue and Close
+- [ ] With part-entered issue data, both the top X and bottom **Close** ask the
+      same discard question and leave the dialog open when it is declined
 - [ ] Saving with an empty description shows "Description is required." and moves
       focus to the description field
 - [ ] Saving with the score left on "Not Rated (-1)" is refused, moves focus to
@@ -481,7 +494,7 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] An evaluation named with something a file name cannot carry -- try
       `Q3/2026: audit` -- still downloads, with those characters spaced out
       rather than the download failing
-- [ ] **Save Evaluation File** on a *new* evaluation opens the save dialog
+- [ ] **Download Evaluation File** on a *new* evaluation opens the save dialog
       already filled in with the evaluation's name and `.json`, or
       `evaluation.json` when it has no name yet
       <br>*(the file pickers cannot be driven from a test, so this one is only
@@ -585,13 +598,13 @@ appear on screen, and the two are separate elements now.
 - [ ] **Save** in the functional test editor announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
-- [ ] Save on the perform screen, then go **Back**: the save message is not read
+- [ ] Download on the perform screen, then go **Back**: the save message is not read
       out a second time on the landing screen, nor found there by browsing
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
-- [ ] **Save Evaluation File** puts focus back on that button and then
+- [ ] **Download Evaluation File** puts focus back on that button and then
       announces, without the document title being read first
-- [ ] **Save Functional Test Results** on the perform screen returns focus to
+- [ ] **Download Functional Test Results** on the perform screen returns focus to
       **Back** and announces, without reading on into the next button
 - [ ] Cancelling either picker also returns focus to the button, announcing
       nothing
@@ -615,12 +628,12 @@ appear on screen, and the two are separate elements now.
 
 - [ ] The **first** save asks where to put the file; every save after it writes
       straight there with no dialog, and says so at once
-- [ ] **Save Functional Test Results** on the perform screen, twice: the second
+- [ ] **Download Functional Test Results** on the perform screen, twice: the second
       does not open a dialog
 - [ ] Load a different evaluation, then save: it asks again rather than writing
       over the file the previous one came from
 - [ ] **New Evaluation**, then save: it asks again for the same reason
-- [ ] **Save Evaluation File** over `C:\Users\momcc\smoke.json`
+- [ ] **Download Evaluation File** over `C:\Users\momcc\smoke.json`
 - [ ] With no edits made in this session, the saved file matches the golden:
 
 ```bash

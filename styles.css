@@ -288,6 +288,7 @@ dialog {
 [role="group"][aria-label$="Actions"],
 .button-row {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: var(--gap);
     margin-bottom: var(--stack);
@@ -536,17 +537,16 @@ td {
     align-items: center;
 }
 
-/*
- * The space in ".close-button button :hover" made this a descendant selector,
- * so the hover state landed on the icon inside the button and never on the
- * button itself. Fixing that shows the color for the first time, and plain
- * red on white falls under 4.5:1, so it is the error red the rest of the sheet
- * already uses.
- */
-.close-button button:hover {
+/* Every way to dismiss a dialog uses the same danger treatment. */
+.dialog-close {
     background-color: var(--danger);
     border-color: var(--danger);
     color: #ffffff;
+}
+
+.dialog-close:hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
 }
 
 /*

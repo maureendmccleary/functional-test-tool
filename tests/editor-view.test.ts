@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import { emptyFunctionalTest } from '../src/domain/functional-test.js';
 import {
-    blurFormField, collapseAssistiveTechnologies, getEventControlId
+    blurFormField, collapseAssistiveTechnologies, getEventControlId, updateTestEditorBackLink
 } from '../src/ui/editor-view.js';
 import {
     clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
@@ -88,6 +88,34 @@ describe('delete button events', () => {
         } as unknown as Event;
 
         expect(getEventControlId(event)).toBe('step-delete[3]');
+    });
+});
+
+describe('the editor Back link', () => {
+    let documentStub: DocumentStub;
+
+    beforeEach(() => {
+        documentStub = installDocumentStub(['test-editor-back']);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('names and targets the evaluation screen when opened from there', () => {
+        updateTestEditorBackLink('evaluation');
+        const back = documentStub.getElementById('test-editor-back')!;
+
+        expect(back.getAttribute('href')).toBe('#evaluation-editor-heading');
+        expect(back.getAttribute('aria-label')).toBe('Back to Evaluation');
+    });
+
+    test('names and targets Evaluation Home when opened from the landing screen', () => {
+        updateTestEditorBackLink('landing');
+        const back = documentStub.getElementById('test-editor-back')!;
+
+        expect(back.getAttribute('href')).toBe('#landing-heading');
+        expect(back.getAttribute('aria-label')).toBe('Back to Evaluation Home');
     });
 });
 

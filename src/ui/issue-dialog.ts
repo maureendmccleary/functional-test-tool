@@ -52,7 +52,7 @@ export function showAddIssueControls(): void {
     const addIssueDiv = requireEl("add-issue-controls");
     addIssueDiv.classList.remove('inactive');
     fillListbox(defaults["issue-scores"], "add-issue-score");
-    requireEl("add-issue-dialog-new-issue").setAttribute("disabled", "true");
+    requireEl("add-issue-dialog-new-issue").classList.add("inactive");
     requireEl("add-issue-dialog-save").classList.remove("inactive");
     requireEl<HTMLInputElement>("add-issue-description").value = "";
     requireEl<HTMLInputElement>("add-issue-findingURL").value = "";
@@ -62,11 +62,11 @@ export function showAddIssueControls(): void {
     requireEl("add-issue-description").focus();
 }
 
-/** Hides the issue fields and re-enables New Issue. */
+/** Hides the issue fields and replaces Save Issue with New Issue. */
 export function hideAddIssueControls(): void {
     requireEl("add-issue-controls").classList.add("inactive");
     requireEl("add-issue-dialog-save").classList.add("inactive");
-    requireEl("add-issue-dialog-new-issue").removeAttribute("disabled");
+    requireEl("add-issue-dialog-new-issue").classList.remove("inactive");
 }
 
 /** How the dialog names the record it is open on: "Step 3", "Extension 1". */
@@ -298,7 +298,7 @@ export function newIssueButtonClick(): void {
 
 /** Opens the issue dialog for the step whose button was activated. */
 /**
- * Closes the dialog from its own X button, asking first if an issue is part
+ * Closes the dialog from either of its controls, asking first if an issue is part
  * entered.
  *
  * Registered once at startup, not each time the dialog opens. As an inline
@@ -317,6 +317,8 @@ export function addIssueDialogCloseClicked(e: Event): void {
 /** Wires the issue dialog's own controls. Called once at startup. */
 export function addIssueDialogEvents(): void {
     requireEl("add-issue-dialog-close").addEventListener("click", addIssueDialogCloseClicked);
+    requireEl("add-issue-dialog-close-bottom")
+        .addEventListener("click", addIssueDialogCloseClicked);
     requireEl("add-issue-dialog-new-issue").addEventListener("click", newIssueButtonClick);
 }
 
@@ -369,7 +371,7 @@ export function addIssueButtonClick(e: Event): void {
     heading.focus();
 }
 
-// Runs whenever the add-issue dialog closes (X button, Escape key, or programmatic close), so the
+// Runs whenever the add-issue dialog closes (either button, Escape key, or programmatic close), so the
 // step buttons and issue lists always reflect the current data regardless of how the dialog was
 // dismissed. The score is deliberately left alone: it is the tester's, and recomputing it here
 // would overwrite their choice and mark an untouched run as performed.

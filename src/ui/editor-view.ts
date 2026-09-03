@@ -500,9 +500,22 @@ export function saveTestButtonClicked(e: Event): void {
     showStatusMessage("test-editor-msg", `${saved}${copies}`, 0);
 }
 
+/** Names and points the editor's Back link at the screen that opened it. */
+export function updateTestEditorBackLink(from: ScreenName): void {
+    const back = requireEl<HTMLAnchorElement>("test-editor-back");
+    const returnsToEvaluation = from === 'evaluation';
+    back.setAttribute(
+        'href', returnsToEvaluation ? '#evaluation-editor-heading' : '#landing-heading'
+    );
+    back.setAttribute(
+        'aria-label', returnsToEvaluation ? 'Back to Evaluation' : 'Back to Evaluation Home'
+    );
+}
+
 /** Shows the editor, remembering where to go back to. */
 function openTestEditor(from: ScreenName): void {
     returnScreen = from;
+    updateTestEditorBackLink(from);
     showScreen('test');
 }
 

@@ -1,5 +1,6 @@
 import { defaults } from './config/defaults.js';
 import { fillCheckboxMenu } from './ui/controls.js';
+import { addModalDialogEvents } from './ui/dialogs.js';
 import { requireEl } from './ui/dom.js';
 import {
     addFormEvents, backButtonClicked, editTestButtonClicked, newExtensionButtonClicked,
@@ -91,6 +92,7 @@ function initialize(): void {
     addIssueDialogEvents();
     addEvalResultsDialogEvents();
     addViewResultsDialogEvents();
+    addModalDialogEvents();
     // Whatever closes a dialog -- its button, Escape, or code -- the page is
     // named for the screen underneath again.
     for (const dialog of document.querySelectorAll('dialog')) {
