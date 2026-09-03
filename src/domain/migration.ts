@@ -32,6 +32,71 @@ const LEGACY_FIELDS = {
 /** A parsed file, before any normalization. Every field is suspect. */
 type RawRecord = Record<string, unknown>;
 
+/** Raised when parsed JSON cannot safely be treated as an evaluation. */
+export class EvaluationFormatError extends Error {
+    constructor(detail: string) {
+        super(`That file is not a supported evaluation: ${detail}.`);
+        this.name = 'EvaluationFormatError';
+    }
+}
+
+/** True only for JSON objects, excluding arrays and null. */
+function isRawRecord(value: unknown): value is RawRecord {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Requires a JSON object at a position that downstream code mutates. */
+function requireRecord(value: unknown, path: string): RawRecord {
+    if (!isRawRecord(value)) {
+        throw new EvaluationFormatError(`${path} must be an object`);
+    }
+    return value;
+}
+
+/**
+ * Reads an optional array without silently discarding a present value of the
+ * wrong type. Missing arrays are normal in legacy files and become empty.
+ */
+function optionalArray(value: unknown, path: string): unknown[] {
+    if (value === undefined) {
+        return [];
+    }
+    if (!Array.isArray(value)) {
+        throw new EvaluationFormatError(`${path} must be a list`);
+    }
+    return value;
+}
+
+/** Normalizes one issue while preserving fields written by other versions. */
+function normalizeIssue(value: unknown, path: string): Issue {
+    const issue = requireRecord(value, path);
+    if (typeof issue.description !== 'string') {
+        throw new EvaluationFormatError(`${path}.description must be text`);
+    }
+    if (issue.findingURL === undefined || issue.findingURL === null) {
+        issue.findingURL = '';
+    } else if (typeof issue.findingURL !== 'string') {
+        issue.findingURL = String(issue.findingURL);
+    }
+
+    const score = typeof issue.score === 'number'
+        ? String(issue.score)
+        : typeof issue.score === 'string'
+            ? issue.score.trim()
+            : issue.score;
+    if (typeof score !== 'string' || !['1', '2', '3', '4'].includes(score)) {
+        throw new EvaluationFormatError(`${path}.score must be 1, 2, 3, or 4`);
+    }
+    issue.score = score;
+    return issue as unknown as Issue;
+}
+
+/** Normalizes an optional issue list and rejects entries that would later crash scoring. */
+function normalizeIssues(value: unknown, path: string): Issue[] {
+    return optionalArray(value, path)
+        .map((issue, index) => normalizeIssue(issue, `${path}[${index}]`));
+}
+
 /** Returns the first of `names` that is present, else `fallback`. */
 function pick(source: RawRecord, names: string[], fallback: unknown = undefined): unknown {
     for (const name of names) {
@@ -98,7 +163,7 @@ export function migrateLegacyTestRun(test: FunctionalTest): void {
 }
 
 /** Normalizes one test in place, accepting either the old or new field names. */
-function normalizeTest(raw: RawRecord): FunctionalTest {
+function normalizeTest(raw: RawRecord, path: string): FunctionalTest {
     raw.startLocation = pick(raw, ['startLocation', LEGACY_FIELDS.startLocation], '');
     dropLegacy(raw, LEGACY_FIELDS.startLocation, 'startLocation');
 
@@ -114,25 +179,22 @@ function normalizeTest(raw: RawRecord): FunctionalTest {
     dropLegacy(raw, LEGACY_FIELDS.assistiveTechnologies, 'assistiveTechnologies');
 
     const rawRuns = pick(raw, ['runs', LEGACY_FIELDS.testRuns], []);
-    raw.runs = (Array.isArray(rawRuns) ? rawRuns : []).map((entry) => normalizeRun(entry as RawRecord));
+    raw.runs = optionalArray(rawRuns, `${path}.runs`).map((entry, index) =>
+        normalizeRun(requireRecord(entry, `${path}.runs[${index}]`), `${path}.runs[${index}]`)
+    );
     dropLegacy(raw, LEGACY_FIELDS.testRuns, 'runs');
 
     if (!Array.isArray(raw.comments)) {
         raw.comments = [];
     }
-    if (!Array.isArray(raw.steps)) {
-        raw.steps = [];
-    }
-    (raw.steps as Step[]).forEach((step) => {
-        if (!Array.isArray(step.issues)) {
-            step.issues = [] as Issue[];
-        }
+    raw.steps = optionalArray(raw.steps, `${path}.steps`).map((entry, index) => {
+        const step = requireRecord(entry, `${path}.steps[${index}]`);
+        step.issues = normalizeIssues(step.issues, `${path}.steps[${index}].issues`);
+        return step as unknown as Step;
     });
 
-    if (!Array.isArray(raw.extensions)) {
-        raw.extensions = [];
-    }
-    (raw.extensions as Extension[]).forEach((extension) => {
+    raw.extensions = optionalArray(raw.extensions, `${path}.extensions`).map((entry, index) => {
+        const extension = requireRecord(entry, `${path}.extensions[${index}]`);
         // Coerced rather than blanked: whatever a hand-edited file put here was
         // meant to be read by the tester.
         if (typeof extension.instructions !== 'string') {
@@ -141,6 +203,7 @@ function normalizeTest(raw: RawRecord): FunctionalTest {
                 ? ''
                 : String(extension.instructions);
         }
+        return extension as unknown as Extension;
     });
 
     const test = raw as unknown as FunctionalTest;
@@ -149,7 +212,7 @@ function normalizeTest(raw: RawRecord): FunctionalTest {
 }
 
 /** Normalizes one recorded run in place, accepting either field naming. */
-function normalizeRun(raw: RawRecord): TestRun {
+function normalizeRun(raw: RawRecord, path: string): TestRun {
     raw.assistiveTechnology = pick(
         raw, ['assistiveTechnology', LEGACY_FIELDS.assistiveTechnologies], ''
     );
@@ -162,21 +225,21 @@ function normalizeRun(raw: RawRecord): TestRun {
         raw.comments = [];
     }
     for (const field of ['steps', 'extensions'] as const) {
-        if (!Array.isArray(raw[field])) {
-            raw[field] = [];
-        }
+        raw[field] = optionalArray(raw[field], `${path}.${field}`);
         // issuesMap walks these directly, so a record missing its list would
         // throw rather than read as "nothing recorded here".
-        (raw[field] as TestRunStep[]).forEach((record) => {
-            if (!Array.isArray(record.issues)) {
-                record.issues = [];
-            }
+        raw[field] = (raw[field] as unknown[]).map((entry, index) => {
+            const record = requireRecord(entry, `${path}.${field}[${index}]`);
+            record.issues = normalizeIssues(
+                record.issues, `${path}.${field}[${index}].issues`
+            );
             // Only the flag actually set to true is kept, so a record nobody
             // marked saves back the way files written before the flag existed
             // look: without the field at all.
             if (record.outOfScope !== true) {
                 delete record.outOfScope;
             }
+            return record as unknown as TestRunStep;
         });
     }
     return raw as unknown as TestRun;
@@ -269,11 +332,13 @@ function normalizeSummaries(raw: unknown, tests: FunctionalTest[]): AssistiveTec
  * @param raw the result of `JSON.parse` on a saved evaluation file
  */
 export function normalizeEvaluation(raw: unknown): Evaluation {
-    const source = (raw ?? {}) as RawRecord;
+    const source = requireRecord(raw, 'The top level');
 
     const rawTests = pick(source, ['tests', LEGACY_FIELDS.evaluationTests], []);
-    const groups = (Array.isArray(rawTests) ? rawTests : [])
-        .map((entry) => splitByAssistiveTechnology(normalizeTest(entry as RawRecord)));
+    const groups = optionalArray(rawTests, 'tests')
+        .map((entry, index) => splitByAssistiveTechnology(normalizeTest(
+            requireRecord(entry, `tests[${index}]`), `tests[${index}]`
+        )));
     assignTestNumbers(groups);
     source.tests = groups.flat();
     dropLegacy(source, LEGACY_FIELDS.evaluationTests, 'tests');

@@ -30,6 +30,11 @@ function format(savedJson: string): string {
     return JSON.stringify(JSON.parse(savedJson), null, 2) + '\n';
 }
 
+/** Git may check text fixtures out with CRLF on Windows; saved JSON is compared logically. */
+function normalizeLineEndings(value: string): string {
+    return value.replace(/\r\n/g, '\n');
+}
+
 function checkGolden(name: string): void {
     const saved = JSON.stringify(normalizeEvaluation(loadFixture(name)));
     const actual = format(saved);
@@ -42,7 +47,7 @@ function checkGolden(name: string): void {
     }
 
     expect(actual, `Saved output for ${name} changed. If intentional, rerun with UPDATE_GOLDEN=1 and review the diff.`)
-        .toBe(fs.readFileSync(goldenFile, 'utf8'));
+        .toBe(normalizeLineEndings(fs.readFileSync(goldenFile, 'utf8')));
 }
 
 test('saving evaluation-legacy.json after load matches the golden', () => {

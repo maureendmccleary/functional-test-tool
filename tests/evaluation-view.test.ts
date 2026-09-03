@@ -153,6 +153,39 @@ describe('loading', () => {
             .toBe('That file is not valid JSON. No evaluation was loaded.');
     });
 
+    test('an unsupported JSON shape is reported without replacing the current evaluation', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'still loaded' });
+        vi.mocked(picker.loadFile).mockResolvedValue([]);
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toBe('That file is not a supported evaluation: The top level must be an object. '
+                + 'No evaluation was loaded.');
+        expect(getEvaluation().name).toBe('still loaded');
+    });
+
+    test('a malformed issue is reported before results can crash', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'still loaded' });
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            tests: [{
+                name: 'bad issue', ats: ['NVDA'], steps: [],
+                runs: [{
+                    assistiveTechnology: 'NVDA', score: 2,
+                    steps: [{ issues: [null] }], extensions: []
+                }]
+            }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toContain('issues[0] must be an object');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toContain('No evaluation was loaded.');
+        expect(getEvaluation().name).toBe('still loaded');
+    });
+
     test('an unsupported browser is told so before any dialog opens', async () => {
         vi.mocked(picker.isFilePickerSupported).mockReturnValue(false);
 

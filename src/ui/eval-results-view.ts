@@ -117,12 +117,12 @@ function renderScoringKey(): void {
 /** The detailed results, grouped by assistive technology as the report groups them. */
 function renderDetailedResults(): void {
     const parentDiv = requireEl("eval-results-tests");
-    parentDiv.textContent = "";
+    const fragment = document.createDocumentFragment();
 
     groupRunsByAssistiveTechnology(getEvaluation()).forEach((group) => {
         const atHeading = document.createElement("h3");
         atHeading.textContent = group.assistiveTechnology;
-        parentDiv.appendChild(atHeading);
+        fragment.appendChild(atHeading);
 
         group.pairings.forEach(({ test, run }) => {
             const resultsDiv = document.createElement("div");
@@ -130,9 +130,10 @@ function renderDetailedResults(): void {
                 title: testDisplayName(test),
                 headingLevel: 4
             });
-            parentDiv.appendChild(resultsDiv);
+            fragment.appendChild(resultsDiv);
         });
     });
+    parentDiv.replaceChildren(fragment);
 }
 
 /**
@@ -156,15 +157,28 @@ export function renderEvalResults(): void {
 export function evalViewResultsButtonClicked(e: Event): void {
     e.preventDefault();
     const evalViewResultsDialog = requireEl<HTMLDialogElement>("eval-view-results-dialog");
-    const evalViewResultsDialogClose = requireEl("eval-view-results-dialog-close");
     setSectionTitle('Evaluation Results');
+    // Build while the dialog is closed, so thousands of result rows do not
+    // trigger repeated layout and paint work as they are appended.
+    renderEvalResults();
     evalViewResultsDialog.showModal();
     requireEl('eval-view-results-dialog-title').focus();
-    evalViewResultsDialogClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        evalViewResultsDialog.close();
-    });
-    renderEvalResults();
-    const generatePDFBtn = requireEl("generate-pdf");
-    generatePDFBtn.addEventListener("click", () => renderEvalResultsDocx(getEvaluation()));
+}
+
+/** Closes the evaluation results dialog from its own control. */
+function evalResultsDialogCloseClicked(e: Event): void {
+    e.preventDefault();
+    requireEl<HTMLDialogElement>("eval-view-results-dialog").close();
+}
+
+/** Generates exactly one report for one activation. */
+function generateReportButtonClicked(): void {
+    renderEvalResultsDocx(getEvaluation());
+}
+
+/** Wires the evaluation results dialog controls once at startup. */
+export function addEvalResultsDialogEvents(): void {
+    requireEl("eval-view-results-dialog-close")
+        .addEventListener("click", evalResultsDialogCloseClicked);
+    requireEl("generate-pdf").addEventListener("click", generateReportButtonClicked);
 }

@@ -188,14 +188,7 @@ export function createResultsTable(
 export function viewResultsButtonClicked(e: Event): void {
     e.preventDefault();
     const viewResultsDialog = requireEl<HTMLDialogElement>("view-results-dialog");
-    const viewResultsDialogClose = requireEl("view-results-dialog-close");
     setSectionTitle('Functional Test Results');
-    viewResultsDialog.showModal();
-    requireEl('view-results-dialog-title').focus();
-    viewResultsDialogClose.addEventListener("click", (e) => {
-        e.preventDefault();
-        viewResultsDialog.close();
-    });
     const parentDiv = requireEl("test-results-issues");
     parentDiv.textContent = "";
     const test = getCurrentTest();
@@ -205,4 +198,17 @@ export function viewResultsButtonClicked(e: Event): void {
         title: `Detailed Results: ${testDisplayName(test)}`
     });
     parentDiv.appendChild(resultsDiv);
+    viewResultsDialog.showModal();
+    requireEl('view-results-dialog-title').focus();
+}
+
+/** Closes the per-test results dialog from its own control. */
+function viewResultsDialogCloseClicked(e: Event): void {
+    e.preventDefault();
+    requireEl<HTMLDialogElement>("view-results-dialog").close();
+}
+
+/** Wires the per-test results dialog controls once at startup. */
+export function addViewResultsDialogEvents(): void {
+    requireEl("view-results-dialog-close").addEventListener("click", viewResultsDialogCloseClicked);
 }

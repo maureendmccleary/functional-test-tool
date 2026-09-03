@@ -1,6 +1,6 @@
 import { testDisplayName } from '../domain/functional-test.js';
 import type { Evaluation } from '../types.js';
-import { normalizeEvaluation } from '../domain/migration.js';
+import { EvaluationFormatError, normalizeEvaluation } from '../domain/migration.js';
 import {
     forgetSavedFile, hasSavedFile, isFilePickerSupported, loadFile, saveEvaluation
 } from '../io/file-picker.js';
@@ -244,7 +244,9 @@ export async function loadEvalButtonClicked(e: Event): Promise<void> {
         }
         const detail = error instanceof SyntaxError
             ? 'That file is not valid JSON.'
-            : 'That file could not be read.';
+            : error instanceof EvaluationFormatError
+                ? error.message
+                : 'That file could not be read.';
         showStatusMessage('evaluation-msg', `${detail} No evaluation was loaded.`, 0);
         return;
     }

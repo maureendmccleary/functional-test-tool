@@ -396,16 +396,19 @@ dialog {
 
 .large-textarea {
     width: 600px;
+    max-width: 100%;
     height: 400px;
 }
 
 .step-contents {
     width: 600px;
+    max-width: 100%;
     height: 200px;
 }
 
 .issue-description {
     width: 600px;
+    max-width: 100%;
     height: 200px;
 }
 
@@ -418,6 +421,57 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
+}
+
+/*
+ * Evaluation results can hold thousands of rows. Chrome can skip layout and
+ * paint for test blocks below the viewport while keeping their contents in the
+ * accessibility tree and available to find-in-page.
+ */
+#eval-results-tests > div {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 24px 16px 48px;
+    }
+
+    dialog {
+        width: calc(100% - 24px);
+        height: calc(100% - 24px);
+        padding: 20px 16px;
+    }
+
+    /*
+     * Five intrinsic-width columns made the issue table wider than its dialog.
+     * A fixed layout plus wrapping keeps every value and action in the 400 CSS
+     * pixel view. The two action buttons stack in their narrow final column.
+     */
+    #add-issue-table {
+        table-layout: fixed;
+    }
+
+    #add-issue-table th,
+    #add-issue-table td {
+        padding: 8px 4px;
+        overflow-wrap: anywhere;
+    }
+
+    #add-issue-table th:nth-child(1),
+    #add-issue-table th:nth-child(4) {
+        width: 44px;
+    }
+
+    #add-issue-table th:nth-child(5) {
+        width: 52px;
+    }
+
+    #add-issue-table td:last-child button {
+        display: flex;
+        margin: 0 0 4px;
+    }
 }
 
 th {

@@ -5,7 +5,9 @@ import {
     addFormEvents, backButtonClicked, editTestButtonClicked, newExtensionButtonClicked,
     newStepButtonClick, saveTestButtonClicked
 } from './ui/editor-view.js';
-import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
+import {
+    addEvalResultsDialogEvents, evalViewResultsButtonClicked
+} from './ui/eval-results-view.js';
 import {
     addTestButtonClicked, backEvaluationButtonClicked, deleteTestButtonClicked,
     editEvaluationButtonClicked, editSelectedTestButtonClicked, newEvaluationButtonClicked,
@@ -22,6 +24,7 @@ import { restoreScreenTitle } from './ui/screens.js';
 import { hasUnsavedChanges } from './state/store.js';
 import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
+import { addViewResultsDialogEvents } from './ui/results-view.js';
 
 /** Wires the controls that exist in index.html from the start. */
 function initialize(): void {
@@ -86,6 +89,8 @@ function initialize(): void {
     });
 
     addIssueDialogEvents();
+    addEvalResultsDialogEvents();
+    addViewResultsDialogEvents();
     // Whatever closes a dialog -- its button, Escape, or code -- the page is
     // named for the screen underneath again.
     for (const dialog of document.querySelectorAll('dialog')) {
