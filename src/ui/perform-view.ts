@@ -59,6 +59,14 @@ export function populateIssuesList(): void {
 }
 
 /**
+ * Heading level for the severity banners in the Summary list.
+ *
+ * One below the "Summary" h2 in index.html that the list sits under. If that
+ * heading ever moves level, this moves with it.
+ */
+const SUMMARY_HEADING_LEVEL = 3;
+
+/**
  * Redraws the Summary list under the score from the selected run.
  *
  * Filled when the screen opens, not only when a summary is saved. The list is a
@@ -73,8 +81,10 @@ export function populateSummaryList(): void {
     }
     // Grouped exactly as the results dialog and the report group it, so what
     // the tester reads under the score is the order the client will read.
+    // Headings, one level under the "Summary" h2 they sit beneath, so a reader
+    // can jump between severities rather than walking the whole list.
     summaryList.appendChild(createGroupedList(
-        groupSummaryComments(getCurrentRun().comments), "No Issues"
+        groupSummaryComments(getCurrentRun().comments), "No Issues", SUMMARY_HEADING_LEVEL
     ));
 }
 

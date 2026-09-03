@@ -106,13 +106,17 @@ export function createUnorderedList(listItems: string[] | undefined, emptyText =
  * A summary printed in its severity groups: a banner, then the lines under it.
  *
  * Returns one element holding the lot, so it drops into the same place the flat
- * list used to. The banner is a paragraph rather than a heading because this is
- * rendered at three different depths -- the results dialog, the evaluation
- * results screen and inside the report -- and a heading would have to be a
- * different level in each; getting that wrong is worse for a reader navigating
- * by headings than not offering one.
+ * list used to.
+ *
+ * `headingLevel` makes each banner a heading of that level, which is what lets a
+ * reader jump between severities instead of walking the whole list. It has to be
+ * given rather than assumed: this is drawn at three different depths, and a
+ * heading at the wrong level is worse for someone navigating by headings than no
+ * heading at all. Left out, the banner is a bold paragraph.
  */
-export function createGroupedList(groups: SummaryGroup[], emptyText = ""): HTMLElement {
+export function createGroupedList(
+    groups: SummaryGroup[], emptyText = "", headingLevel?: number
+): HTMLElement {
     if (groups.length === 0) {
         const paragraphElem = document.createElement("p");
         paragraphElem.textContent = emptyText;
@@ -122,11 +126,17 @@ export function createGroupedList(groups: SummaryGroup[], emptyText = ""): HTMLE
     const container = document.createElement("div");
     groups.forEach((group) => {
         if (group.banner !== undefined) {
-            const banner = document.createElement("p");
-            const strong = document.createElement("strong");
-            strong.textContent = group.banner;
-            banner.appendChild(strong);
-            container.appendChild(banner);
+            if (headingLevel === undefined) {
+                const banner = document.createElement("p");
+                const strong = document.createElement("strong");
+                strong.textContent = group.banner;
+                banner.appendChild(strong);
+                container.appendChild(banner);
+            } else {
+                const banner = document.createElement(`h${headingLevel}`);
+                banner.textContent = group.banner;
+                container.appendChild(banner);
+            }
         }
         container.appendChild(
             createUnorderedList(group.comments.map((comment) => comment.text))

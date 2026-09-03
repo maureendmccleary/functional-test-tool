@@ -324,6 +324,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] The **Summary under the score** on the perform screen is grouped the same
       way the report is: any unbannered line first, then `Stoppers:` and the
       rest, most severe first
+- [ ] Each category is an **h3**, one level under the "Summary" h2, so the
+      reader's heading navigation moves between severities rather than walking
+      the whole list. The screen's outline reads h1, h2 Overview, h2/h3 per
+      step, h2 Summary, then an h3 per category
 - [ ] Clearing the summary entirely leaves a plain "No Issues" line there
 - [ ] Leaving the script and performing it again redraws the summary still
       grouped
