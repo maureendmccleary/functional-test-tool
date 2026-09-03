@@ -61,11 +61,11 @@ export const SCORING_KEY_PARAGRAPHS: ReadonlyArray<string> = [
 /**
  * Shading behind each score in the key, palest for the scores not achieved.
  *
- * One colour per score and nothing else: green for 5 down through blue, yellow
+ * One color per score and nothing else: green for 5 down through blue, yellow
  * and orange to red for 1. Neither shade is ever asked to carry the meaning on
  * its own -- the score's label sits on every fill, in the key and on the badge
  * alike -- which is what keeps the report readable to anyone who does not see
- * the colour, and in greyscale.
+ * the color, and in grayscale.
  *
  * Kept here with the rest of the report's presentation so the contrast of every
  * pairing can be asserted without building a document. See
@@ -91,7 +91,7 @@ export const HEADER_FILL = 'EEEEEE';
 export const REPORT_FONT = 'Arial';
 
 /**
- * Heading colour. Word's built-in heading styles are a blue that this report
+ * Heading color. Word's built-in heading styles are a blue that this report
  * does not want; every heading is plain black.
  */
 export const HEADING_COLOR = '000000';
@@ -108,12 +108,12 @@ export const HEADING_COLOR = '000000';
 export const BAND_FILL = 'BDD7EE';
 
 /**
- * Text colour for anything the report gives a background of its own.
+ * Text color for anything the report gives a background of its own.
  *
  * Word's "auto" adapts the text to the theme, which is right for ordinary
- * paragraphs and wrong on a cell whose fill is a fixed pale colour: in a dark
+ * paragraphs and wrong on a cell whose fill is a fixed pale color: in a dark
  * theme it can turn the text pale as well, leaving pale on pale. Wherever a
- * fill is set, the text colour is set with it, and the two are checked against
+ * fill is set, the text color is set with it, and the two are checked against
  * each other in `tests/contrast.test.ts`. Unshaded text is deliberately left on
  * "auto" so it still follows the reader's theme.
  */
@@ -125,7 +125,7 @@ export const REPORT_TEXT_COLOR = '000000';
  * The achieved row is bold as well as more strongly filled. The bold is not
  * decoration: the pale and strong fills of a given score differ by as little as
  * 1.29:1, so the fill alone would not tell a low vision reader which score was
- * reached, and colour would be carrying meaning on its own.
+ * reached, and color would be carrying meaning on its own.
  */
 export function scoreRowStyle(score: number, achieved: boolean): { fill: string; bold: boolean } {
     const fills = SCORE_FILLS[score];

@@ -66,6 +66,31 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       functional tests matches the landing screen's
 - [ ] **Add Test** opens the functional test editor with 5 blank steps already
       present and focus in the Name field
+- [ ] The **Assistive Technology** list is **collapsed** when the editor opens,
+      and tabbing from Application reaches the steps without walking through
+      thirty checkboxes
+- [ ] Enter or Space on the button expands it and lands focus in the list;
+      **Escape** collapses it and returns focus to the button
+- [ ] Shift+Tab back to the button and Enter also collapses it, and focus stays
+      on the button
+- [ ] Collapsing it **announces** "Assistive technology list collapsed.", by
+      either route, without having to ask the reader what is focused
+      <br>*(collapsing from the button moves no focus, and an aria-expanded that
+      flips under a reader is not reliably reported)*
+- [ ] Expanding announces nothing extra: focus moves into the list and the
+      reader speaks the checkbox it lands on
+- [ ] First letter navigation works once expanded **with the reader running**:
+      type `j` and focus moves to JAWS
+      <br>*(in browse mode a reader keeps single letter keys for its own quick
+      navigation, so this never reached the page. The open list carries
+      role="application", which makes the reader switch mode and pass the keys
+      through. Only a real screen reader can check this -- it cannot be seen in
+      the DOM)*
+- [ ] Arrow keys, Home and End move through the list the same way
+- [ ] Each checkbox still announces its own name and checked state inside the
+      open list, and the role is gone again once it is collapsed
+      <br>*(a `display` rule on the menu beat the browser's own `[hidden]`, so
+      it was never collapsed at all -- see the `[hidden]` rule in styles.css)*
 - [ ] **Back** in the editor warns that the unsaved test will be discarded;
       confirming returns to the evaluation screen with the list unchanged
 - [ ] **Delete Functional Test** on `01 ... - JAWS` asks first; cancelling
@@ -288,6 +313,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       refused; filing an "N/A" issue was the workaround the checkbox replaces)*
 - [ ] A valid save announces "Issue successfully saved!", adds a table row, and
       adds the issue under the step in the Perform dialog
+- [ ] It also appears in the **Summary under the score**, under its category,
+      without View Summary ever being opened
+- [ ] Deleting it takes it out of that summary again; marking its step **Out of
+      scope** does the same, and unticking brings it back
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one
@@ -318,6 +347,47 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
+- [ ] **Save** announces "General comments saved." and leaves it on screen; the
+      reader hears it from inside the dialog, since the page's own region is
+      inert while a modal is open
+- [ ] The **Summary under the score** on the perform screen is grouped the same
+      way the report is: any unbannered line first, then `Stoppers:` and the
+      rest, most severe first
+- [ ] Each category is an **h3**, one level under the "Summary" h2, so the
+      reader's heading navigation moves between severities rather than walking
+      the whole list. The screen's outline reads h1, h2 Overview, h2/h3 per
+      step, h2 Summary, then an h3 per category
+- [ ] Clearing the summary entirely leaves a plain "No Issues" line there
+- [ ] Leaving the script and performing it again redraws the summary still
+      grouped
+- [ ] Closing and reopening **View Summary** does not read that message again
+- [ ] Reword a line *under its banner*, save, and reopen **View Summary**: the
+      box comes back with its banners, and the reworded line is still under the
+      one you left it under
+      <br>*(a line's severity comes from where it sits, not from its text --
+      this is the whole of issue #25)*
+- [ ] Type a scoping note above the first banner, save and reopen: it is still
+      at the top, still under no banner
+- [ ] Write a comment that *mentions* a banner word mid-sentence -- "Advisory
+      only: the icon could be larger" -- save and reopen: the sentence is intact
+      <br>*(the old stripping deleted those words wherever they appeared)*
+- [ ] **View Results**: the Problem Summary is grouped, most severe first, with
+      any unbannered line printed above the groups
+- [ ] Each category there is a heading one level under "Problem Summary" -- an
+      h4 in the dialog, and an h6 in the same table inside the evaluation
+      results screen, where it is drawn deeper. No level is skipped in either
+      <br>*(the level is derived from the table's own, so a fixed one would be
+      wrong in one of the two places)*
+- [ ] **Generate Summary** on a box that already has text **merges**: your
+      wording stays, missing issues are added under their banners, and pressing
+      it a second time changes nothing
+- [ ] Load an evaluation saved **before severities were stored**: its summaries
+      show ungrouped, above where the banners would be, and its issue scores are
+      untouched. Pressing **Generate Summary** then groups it -- a line matching
+      an issue takes that issue's severity, and a note the tester wrote stays
+      unclassified at the top
+      <br>*(replacing was that tester's only route to a grouped summary and it
+      cost them everything they had written)*
 - [ ] Save a summary on script 1, go **Back**, then Perform script 2: the
       Summary under the score reads "No Issues", **not** script 1's summary
 - [ ] Back to script 1: its own summary is there again
@@ -345,14 +415,30 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Activating it opens a dialog titled "NVDA Overall comments" followed by
       the evaluation's name, and the page title says the same
 - [ ] The rating starts at the **worst** score any of that technology's tests
-      reached, and the box holds the three most severe issues found with it
-- [ ] **Generate Overall Comments** appends that technology's per test comments
-      below whatever is already written, keeping the tester's own wording, and
-      lists only that technology's tests
+      reached, and the box holds the three most severe issues found with it,
+      already under their banners
+- [ ] **Generate Overall Comments** fills the box with that technology's issues
+      **grouped by severity**, not by script -- no script names appear
+      <br>*(it used to head each block with a script name, leaving the tester to
+      sort the whole thing into severity order by hand)*
+- [ ] Pressing **Generate Overall Comments** a second time changes nothing: it
+      merges rather than appending a second copy under a second set of banners
+- [ ] Editing a line and generating again keeps the edit and adds only what is
+      missing
+- [ ] Only that technology's issues appear, never another's
 - [ ] Change the rating, edit the text, **Save**, close and reopen: both come
       back as saved rather than being recomputed
+- [ ] **Save** announces "Overall comments saved." the same way, and reopening
+      does not read it again
 - [ ] **View Evaluation Results**: Significant Issues shows that rating and
       those comments for that technology
+- [ ] Each technology there is an **h3** naming it, with its rating in a
+      paragraph under it and an **h4** per severity -- the same shape as
+      Assistive Technology Summaries below and Detailed Use Case Results
+      further down
+- [ ] With two technologies in the evaluation, the whole screen's outline runs
+      h1, then h2 per section, h3 per technology, h4 beneath, with no level
+      skipped anywhere
 - [ ] A technology whose overall comments were **never opened** still shows a
       rating and issues there, being the worst score it reached and its three
       most severe issues, rather than "Not rated" and "No issues."
@@ -383,6 +469,11 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] In the report, both Problem Summary and Significant Issues are grouped
+      under bold `Stoppers:` / `Major Issues:` / `Minor Issues` / `Advisory`
+      lines, most severe first, with any unbannered line printed above them
+      <br>*(the banners are bold paragraphs, not headings: they must not appear
+      in the table of contents)*
 - [ ] It arrives as `evaluation-results - <evaluation name>.docx`, so two
       reports from different evaluations do not land on each other as copies
 - [ ] An evaluation with no name set downloads as `evaluation-results.docx`,
@@ -459,10 +550,10 @@ Open that document and check:
       beside it
 - [ ] Open the report with Word in a **dark theme**: the filled score rows and
       the table headings still read as dark text on their pale fills
-      <br>*(the only colour check left by hand. `contrast.test.ts` asserts the
+      <br>*(the only color check left by hand. `contrast.test.ts` asserts the
       contrast of every label against its fill, and that the row marked is the
       one the use case scored, so neither needs an eye. What no test here can
-      reach is whether Word honours the explicit text colour in its own dark
+      reach is whether Word honours the explicit text color in its own dark
       theme.)*
 - [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that

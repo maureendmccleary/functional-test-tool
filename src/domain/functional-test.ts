@@ -180,14 +180,6 @@ export function isLastTestForItsTechnology(
     return numbers.length > 0 && test.testNumber === Math.max(...numbers);
 }
 
-/** Every comment recorded across all performances of this functional test. */
-export function getTestComments(test: FunctionalTest): string[] {
-    if (!Array.isArray(test.runs)) {
-        return [];
-    }
-    return test.runs.flatMap((p) => Array.isArray(p.comments) ? p.comments : []);
-}
-
 /**
  * Merges authoring text from the functional test with results from one performance.
  *

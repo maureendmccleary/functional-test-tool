@@ -48,7 +48,7 @@
             ],
             "score": 1,
             "comments": [
-                "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
+                "Availability is communicated with color alone, so it is not possible to tell which titles can be borrowed today.",
                 "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
             ],
             "performedUCs": [
@@ -57,7 +57,7 @@
                     "oses": "Windows",
                     "score": 1,
                     "comments": [
-                        "Availability is communicated with colour alone, so it is not possible to tell which titles can be borrowed today.",
+                        "Availability is communicated with color alone, so it is not possible to tell which titles can be borrowed today.",
                         "Placing a hold appears to do nothing: the confirmation dialog never takes focus and is not announced."
                     ],
                     "steps": [
@@ -90,8 +90,8 @@
                         {
                             "issues": [
                                 {
-                                    "description": "Availability is shown with a coloured dot and no text alternative, so there is no way to tell a title on the shelf from one already on loan.",
-                                    "findingURL": "https://findings.example.org/colour-alone",
+                                    "description": "Availability is shown with a colored dot and no text alternative, so there is no way to tell a title on the shelf from one already on loan.",
+                                    "findingURL": "https://findings.example.org/color-alone",
                                     "score": "1"
                                 },
                                 {

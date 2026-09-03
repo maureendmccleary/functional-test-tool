@@ -1,6 +1,6 @@
 import type {
-    AssistiveTechnologySummary, Evaluation, Extension, FunctionalTest, Issue, Step, TestRun,
-    TestRunStep
+    AssistiveTechnologySummary, Evaluation, Extension, FunctionalTest, Issue, Step, SummaryComment,
+    TestRun, TestRunStep
 } from '../types.js';
 import { collectAssistiveTechnologies } from './evaluation.js';
 import { splitByAssistiveTechnology } from './functional-test.js';
@@ -126,6 +126,35 @@ export function normalizeOperatingSystem(value: unknown): string {
     return value === undefined || value === null ? '' : String(value).trim();
 }
 
+/** The severities a summary line can be written under, matching Issue.score. */
+const LOWEST_SEVERITY = 1;
+const HIGHEST_SEVERITY = 4;
+
+/**
+ * Reads a stored summary into text-and-severity lines.
+ *
+ * Files written before severities were stored hold plain strings, which arrive
+ * as text with no severity: unclassified, which is honest, since nothing in
+ * them says what the tester had grouped them under. A severity outside 1..4 is
+ * dropped the same way rather than kept as a number nothing can print.
+ */
+export function normalizeComments(raw: unknown): SummaryComment[] {
+    return (Array.isArray(raw) ? raw : []).map((entry) => {
+        if (typeof entry !== 'object' || entry === null) {
+            return { text: entry === undefined || entry === null ? '' : String(entry) };
+        }
+        const record = entry as RawRecord;
+        const text = record.text === undefined || record.text === null ? '' : String(record.text);
+        const severity = record.severity;
+        return typeof severity === 'number'
+            && Number.isInteger(severity)
+            && severity >= LOWEST_SEVERITY
+            && severity <= HIGHEST_SEVERITY
+            ? { text, severity }
+            : { text };
+    });
+}
+
 /**
  * Moves issues recorded directly on a test's steps into a single run.
  *
@@ -152,7 +181,7 @@ export function migrateLegacyTestRun(test: FunctionalTest): void {
         assistiveTechnology: (Array.isArray(technologies) ? technologies[0] : technologies) || '',
         operatingSystem: test.operatingSystem || '',
         score: typeof test.score === 'number' ? test.score : -1,
-        comments: Array.isArray(test.comments) ? test.comments.slice() : [],
+        comments: normalizeComments(test.comments),
         steps: test.steps.map((step) => ({
             issues: Array.isArray(step.issues) ? step.issues.slice() : []
         })),
@@ -221,9 +250,7 @@ function normalizeRun(raw: RawRecord, path: string): TestRun {
     raw.operatingSystem = pick(raw, ['operatingSystem', LEGACY_FIELDS.operatingSystem], '');
     dropLegacy(raw, LEGACY_FIELDS.operatingSystem, 'operatingSystem');
 
-    if (!Array.isArray(raw.comments)) {
-        raw.comments = [];
-    }
+    raw.comments = normalizeComments(raw.comments);
     for (const field of ['steps', 'extensions'] as const) {
         raw[field] = optionalArray(raw[field], `${path}.${field}`);
         // issuesMap walks these directly, so a record missing its list would
@@ -306,9 +333,7 @@ function normalizeSummaries(raw: unknown, tests: FunctionalTest[]): AssistiveTec
         summaries.push({
             assistiveTechnology,
             overallRating: typeof record.overallRating === 'number' ? record.overallRating : -1,
-            significantIssues: Array.isArray(record.significantIssues)
-                ? record.significantIssues.map((issue) => String(issue ?? ''))
-                : []
+            significantIssues: normalizeComments(record.significantIssues)
         });
     });
 

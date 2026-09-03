@@ -1,6 +1,8 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
-import { summaryWithRenamedIssue, summaryWithoutIssues } from '../domain/summary.js';
+import {
+    summaryWithCurrentIssues, summaryWithRenamedIssue, summaryWithoutIssues
+} from '../domain/summary.js';
 import {
     getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
     getCurrentTest, markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
@@ -185,8 +187,11 @@ export function saveIssueButtonClick(e: Event): void {
     newIssue.score = requireEl<HTMLSelectElement>("add-issue-score").value;
     insertIssueTable(newIssue);
     getCurrentRecord().issues.push(newIssue);
+    const run = getCurrentRun();
+    run.comments = summaryWithCurrentIssues(run.comments, run);
     markEvaluationChanged();
     populateIssuesList();
+    populateSummaryList();
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
     // Focus, then announce. Hiding the Save button drops focus to the body, and
@@ -217,8 +222,9 @@ export function editSaveIssueButtonClick(e: Event): void {
     const previousDescription = getCurrentRecord().issues[currentIssue - 1].description;
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
     const run = getCurrentRun();
-    run.comments = summaryWithRenamedIssue(
-        run.comments, previousDescription, newIssue.description, run
+    run.comments = summaryWithCurrentIssues(
+        summaryWithRenamedIssue(run.comments, previousDescription, newIssue.description, run),
+        run
     );
     markEvaluationChanged();
     populateIssuesList();

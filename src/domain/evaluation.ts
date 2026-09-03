@@ -1,5 +1,5 @@
 import type {
-    AssistiveTechnologySummary, Evaluation, FunctionalTest, TestRun
+    AssistiveTechnologySummary, Evaluation, FunctionalTest, SummaryComment, TestRun
 } from '../types.js';
 import { issuesMap, minimumScore } from './scoring.js';
 import { isPerformed } from './test-run.js';
@@ -141,28 +141,42 @@ export function worstScoreFor(evaluation: Evaluation, assistiveTechnology: strin
 }
 
 /**
- * The most severe issue descriptions recorded with one assistive technology,
- * worst first and deduplicated.
+ * Every issue recorded with one assistive technology, bucketed by severity.
+ *
+ * The whole technology's issues merged into one map of the shape issuesMap
+ * returns, so a summary can be generated for a technology exactly as one is
+ * generated for a single run. Unperformed runs are left out, matching
+ * topIssuesFor: a script nobody has scored has not found anything yet.
+ */
+export function issuesMapFor(
+    evaluation: Evaluation, assistiveTechnology: string
+): Map<number, Set<string>> {
+    const merged = new Map<number, Set<string>>();
+    performedRunsFor(evaluation, assistiveTechnology).forEach((run) => {
+        issuesMap(run).forEach((descriptions, severity) => {
+            const bucket = merged.get(severity) || new Set<string>();
+            descriptions.forEach((description) => bucket.add(description));
+            merged.set(severity, bucket);
+        });
+    });
+    return merged;
+}
+
+/**
+ * The most severe issues recorded with one assistive technology, worst first
+ * and deduplicated, each keeping the severity it was found at.
  *
  * Fills the overall comments the first time they are opened, so the tester
  * starts from what actually went wrong rather than an empty box.
  */
 export function topIssuesFor(
     evaluation: Evaluation, assistiveTechnology: string, limit: number
-): string[] {
-    const runs = performedRunsFor(evaluation, assistiveTechnology);
-    const bySeverity = new Map<number, Set<string>>();
-    runs.forEach((run) => {
-        issuesMap(run).forEach((descriptions, severity) => {
-            const bucket = bySeverity.get(severity) || new Set<string>();
-            descriptions.forEach((description) => bucket.add(description));
-            bySeverity.set(severity, bucket);
-        });
-    });
-
-    return [...bySeverity.entries()]
+): SummaryComment[] {
+    return [...issuesMapFor(evaluation, assistiveTechnology).entries()]
         .sort((a, b) => a[0] - b[0])
-        .flatMap(([, descriptions]) => [...descriptions])
+        .flatMap(([severity, descriptions]) => (
+            [...descriptions].map((text) => ({ text, severity }))
+        ))
         .slice(0, limit);
 }
 
@@ -185,7 +199,7 @@ export function findSummary(
  */
 export function effectiveSummaryFor(
     evaluation: Evaluation, assistiveTechnology: string
-): { overallRating: number; significantIssues: string[] } {
+): { overallRating: number; significantIssues: SummaryComment[] } {
     const stored = findSummary(evaluation, assistiveTechnology);
     const rating = stored && stored.overallRating >= LOWEST_SCORE
         ? stored.overallRating
