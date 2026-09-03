@@ -73,6 +73,14 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       **Escape** collapses it and returns focus to the button
 - [ ] Shift+Tab back to the button and Enter also collapses it, and focus stays
       on the button
+- [ ] Collapsing it **announces** "Assistive technology list collapsed.", by
+      either route, without having to ask the reader what is focused
+      <br>*(collapsing from the button moves no focus, and an aria-expanded that
+      flips under a reader is not reliably reported)*
+- [ ] Expanding announces nothing extra: focus moves into the list and the
+      reader speaks the checkbox it lands on
+- [ ] First letter navigation still works once expanded -- type `j` and focus
+      moves to JAWS
       <br>*(a `display` rule on the menu beat the browser's own `[hidden]`, so
       it was never collapsed at all -- see the `[hidden]` rule in styles.css)*
 - [ ] **Back** in the editor warns that the unsaved test will be discarded;
