@@ -1,8 +1,9 @@
-import type { Evaluation, FunctionalTest, Issue, TestRun } from '../types.js';
+import type { Evaluation, FunctionalTest, Issue, SummaryComment, TestRun } from '../types.js';
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
 import { reportFileName } from '../domain/file-names.js';
+import { groupSummaryComments } from '../domain/summary.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { issueRows } from '../domain/test-run.js';
 import {
@@ -157,7 +158,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
-    // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
+    // The text color is set because the fill is: see REPORT_TEXT_COLOR.
     function headerCell(content: unknown) {
         return new TableCell({
             children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
@@ -166,7 +167,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
-    /** The shading a banded row's cells carry, and the text colour that goes with it. */
+    /** The shading a banded row's cells carry, and the text color that goes with it. */
     const bandShading = { type: ShadingType.CLEAR, fill: BAND_FILL, color: 'auto' };
 
     /**
@@ -260,6 +261,24 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             return [new Paragraph({ text: 'No issues.' })];
         }
         return items.map((item) => new Paragraph({ text: String(item || ''), bullet: { level: 0 } }));
+    }
+
+    /**
+     * A written summary in its severity groups: the banner, then its bullets.
+     *
+     * The banner is a bold paragraph rather than a heading, so it does not
+     * appear in the contents or shift the heading levels around it. Unclassified
+     * lines lead, under no banner at all.
+     */
+    function summaryParagraphs(comments: SummaryComment[] | undefined) {
+        const groups = groupSummaryComments(Array.isArray(comments) ? comments : []);
+        if (groups.length === 0) {
+            return [new Paragraph({ text: 'No issues.' })];
+        }
+        return groups.flatMap((group) => [
+            ...(group.banner === undefined ? [] : [text(group.banner, { bold: true })]),
+            ...bullets(group.comments.map((comment) => comment.text))
+        ]);
     }
 
     const children: unknown[] = [];
@@ -373,17 +392,18 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
             `Overall Rating: ${formatOverallRating(summary.overallRating)}`,
             { bold: true }
         ));
-        bullets(summary.significantIssues).forEach((paragraph) => children.push(paragraph));
+        summaryParagraphs(summary.significantIssues)
+            .forEach((paragraph) => children.push(paragraph));
     });
 
     // Scoring key.
     children.push(heading('Testing and Scoring Key', HeadingLevel.HEADING_1));
     SCORING_KEY_PARAGRAPHS.forEach((paragraph) => children.push(new Paragraph({ text: paragraph })));
     /*
-     * The one full legend in the report, and so the one place the colours are
+     * The one full legend in the report, and so the one place the colors are
      * given their meaning. Each score's own fill sits behind its number here and
      * behind the score row of every use case, and the label is written out
-     * beside it in both places, so the colour is a second cue and never the
+     * beside it in both places, so the color is a second cue and never the
      * only one.
      */
     const scoringKey = new Table({
@@ -475,7 +495,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         children.push(scoreRow(score));
 
         children.push(heading(`Problem Summary (${assistiveTechnology})`, HeadingLevel.HEADING_4));
-        bullets(report.comments).forEach((paragraph) => children.push(paragraph));
+        summaryParagraphs(report.comments).forEach((paragraph) => children.push(paragraph));
     }
 
     /*
@@ -491,7 +511,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      *
      * An unperformed run scores -1, which formatScore renders "Not rated" and
      * scoreRowStyle has no fill for, so it is left unshaded rather than being
-     * coloured as though somebody had judged it.
+     * colored as though somebody had judged it.
      */
     function scoreRow(score: number) {
         const style = SCORE_LABELS.some((entry) => entry.score === score)

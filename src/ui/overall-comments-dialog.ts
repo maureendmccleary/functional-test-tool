@@ -2,7 +2,10 @@ import type { AssistiveTechnologySummary, Evaluation } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import { findSummary, topIssuesFor, worstScoreFor } from '../domain/evaluation.js';
 import { testAssistiveTechnology } from '../domain/functional-test.js';
-import { buildOverallCommentsTextFor, splitSummaryComments } from '../domain/summary.js';
+import {
+    buildOverallCommentsTextFor, buildSummaryTextFromComments, mergeSummaryComments,
+    parseSummaryComments
+} from '../domain/summary.js';
 import { getCurrentTest, getEvaluation, markEvaluationChanged } from '../state/store.js';
 import { fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
@@ -41,16 +44,20 @@ function currentAssistiveTechnology(): string {
 }
 
 /**
- * Appends this technology's per test comments to whatever is already written.
+ * Fills in this technology's issues around whatever is already written.
  *
- * Appends rather than replaces: the box may hold the tester's own wording by
- * now, and generating a summary should not throw that away.
+ * Merged rather than appended: the box may hold the tester's own wording by
+ * now, and generating should neither throw that away nor stack a second copy of
+ * every line under a second set of banners. Pressing it twice is a no-op, and a
+ * line the tester had typed unclassified picks up the severity the issue it
+ * matches was found at.
  */
 export function generateOverallComments(): void {
     const box = requireEl<HTMLTextAreaElement>("overall-comments");
     const generated = buildOverallCommentsTextFor(getEvaluation(), currentAssistiveTechnology());
-    const existing = box.value.trim();
-    box.value = existing === "" ? generated : `${existing}\n\n${generated}`;
+    box.value = buildSummaryTextFromComments(mergeSummaryComments(
+        parseSummaryComments(box.value), parseSummaryComments(generated)
+    ));
     box.focus();
 }
 
@@ -61,8 +68,9 @@ export function overallCommentsSaveClicked(e: Event): void {
     const summary = summaryFor(evaluation, currentAssistiveTechnology());
 
     summary.overallRating = parseInt(requireEl<HTMLSelectElement>("overall-score").value, 10);
-    const written = requireEl<HTMLTextAreaElement>("overall-comments").value.trim();
-    summary.significantIssues = written === "" ? [] : splitSummaryComments(written);
+    summary.significantIssues = parseSummaryComments(
+        requireEl<HTMLTextAreaElement>("overall-comments").value
+    );
 
     markEvaluationChanged();
     showStatusMessage("overall-comments-msg", "Overall comments saved.", 0);
@@ -93,11 +101,12 @@ export function viewOverallCommentsButtonClicked(e: Event): void {
         : worstScoreFor(evaluation, assistiveTechnology);
     requireEl<HTMLSelectElement>("overall-score").value = String(rating);
 
-    // What the tester wrote, or the worst of what went wrong to start from.
+    // What the tester wrote, or the worst of what went wrong to start from,
+    // either way grouped under the banners that carry each line's severity.
     const box = requireEl<HTMLTextAreaElement>("overall-comments");
-    box.value = summary.significantIssues.length > 0
-        ? summary.significantIssues.join("\n\n")
-        : topIssuesFor(evaluation, assistiveTechnology, TOP_ISSUE_COUNT).join("\n\n");
+    box.value = buildSummaryTextFromComments(summary.significantIssues.length > 0
+        ? summary.significantIssues
+        : topIssuesFor(evaluation, assistiveTechnology, TOP_ISSUE_COUNT));
 
     requireEl<HTMLDialogElement>("view-overall-comments-dialog").showModal();
     heading.focus();

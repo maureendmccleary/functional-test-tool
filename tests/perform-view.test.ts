@@ -64,7 +64,7 @@ function twoTests(comments: string[][], index: number): void {
             assistiveTechnology: 'NVDA',
             operatingSystem: 'Windows',
             score: -1,
-            comments: runComments,
+            comments: runComments.map((text) => ({ text })),
             steps: [{ issues: [] }, { issues: [] }],
             extensions: [{ issues: [] }]
         }]
@@ -82,6 +82,24 @@ function changeEvent(id: string, checked: boolean): Event {
 /** The lines drawn into one issue list. */
 function linesIn(documentStub: DocumentStub, id: string): string[] {
     return documentStub.elements.get(id)!.children.map((child) => child.textContent);
+}
+
+/**
+ * Every line of the summary, banners included, in the order they are drawn.
+ *
+ * The summary is a tree now -- a banner paragraph and a list per severity --
+ * so this walks it rather than reading one level of children.
+ */
+function summaryLines(documentStub: DocumentStub): string[] {
+    const lines: string[] = [];
+    const walk = (node: { textContent: string; children: typeof node[] }): void => {
+        if (node.textContent !== '') {
+            lines.push(node.textContent);
+        }
+        node.children.forEach(walk);
+    };
+    documentStub.elements.get('summary-list')!.children.forEach(walk);
+    return lines;
 }
 
 let documentStub: DocumentStub;
@@ -127,20 +145,20 @@ describe('populateSummaryList', () => {
     test('lists the comments recorded against the run', () => {
         twoTests([['Stoppers:', 'Focus is lost']], 0);
         populateSummaryList();
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['Stoppers:', 'Focus is lost']);
+        expect(summaryLines(documentStub)).toEqual(['Stoppers:', 'Focus is lost']);
     });
 
     test('a run with no comments reads "No Issues"', () => {
         twoTests([[]], 0);
         populateSummaryList();
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+        expect(summaryLines(documentStub)).toEqual(['No Issues']);
     });
 
     test('redraws rather than appending to what is already there', () => {
         twoTests([['only once']], 0);
         populateSummaryList();
         populateSummaryList();
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['only once']);
+        expect(summaryLines(documentStub)).toEqual(['only once']);
     });
 });
 
@@ -148,14 +166,14 @@ describe('opening a run and the summary left by the last one', () => {
     test('the next script clears the previous script summary', () => {
         twoTests([['Script one had this'], []], 0);
         populateSummaryList();
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['Script one had this']);
+        expect(summaryLines(documentStub)).toEqual(['Script one had this']);
 
         // Selecting the second script and opening its run is what the tester
         // does by pressing Perform on it.
         setCurrentTestIndex(1);
         openTestRun();
 
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+        expect(summaryLines(documentStub)).toEqual(['No Issues']);
     });
 
     test('a script with its own summary shows that one, not the previous', () => {
@@ -163,7 +181,7 @@ describe('opening a run and the summary left by the last one', () => {
         populateSummaryList();
         setCurrentTestIndex(1);
         openTestRun();
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['Script two had that']);
+        expect(summaryLines(documentStub)).toEqual(['Script two had that']);
     });
 });
 
@@ -201,22 +219,23 @@ describe('outOfScopeChanged', () => {
         const test = evaluationWithRun();
         const run = test.runs[0];
         run.steps[1].issues = [{ description: 'count not announced', findingURL: '', score: '3' }];
-        run.comments = ['no label', 'count not announced'];
+        run.comments = [{ text: 'no label', severity: 2 }, { text: 'count not announced', severity: 3 }];
 
         outOfScopeChanged(changeEvent('out-of-scope[0]', true));
 
-        expect(run.comments).toEqual(['count not announced']);
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['count not announced']);
+        expect(run.comments).toEqual([{ text: 'count not announced', severity: 3 }]);
+        // Drawn under its banner, as the report draws it.
+        expect(summaryLines(documentStub)).toEqual(['Minor Issues', 'count not announced']);
     });
 
     test('a summary left with nothing in it reads "No Issues"', () => {
         const test = evaluationWithRun();
-        test.runs[0].comments = ['no label'];
+        test.runs[0].comments = [{ text: 'no label', severity: 2 }];
 
         outOfScopeChanged(changeEvent('out-of-scope[0]', true));
 
         expect(test.runs[0].comments).toEqual([]);
-        expect(linesIn(documentStub, 'summary-list')).toEqual(['No Issues']);
+        expect(summaryLines(documentStub)).toEqual(['No Issues']);
     });
 
     test('does not touch the score, which is the tester\'s', () => {

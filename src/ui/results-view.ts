@@ -1,38 +1,37 @@
-import type { Issue, TestReport } from '../types.js';
+import type { Issue, SummaryComment, TestReport } from '../types.js';
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
+import { groupSummaryComments } from '../domain/summary.js';
 import { issueRows } from '../domain/test-run.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
-import { createLabelValueTable } from './controls.js';
+import { createGroupedList, createLabelValueTable } from './controls.js';
 import { requireEl } from './dom.js';
 import { setSectionTitle } from './screens.js';
 
-/** The three most severe issue descriptions, or the recorded comments if any. */
-export function addTopIssues(topIssues: HTMLElement, test: TestReport): void {
+/** How many issues stand in for a summary nobody has written. */
+const TOP_ISSUE_COUNT = 3;
+
+/** There is no h7, so a table drawn deep enough stops nesting here. */
+const MAX_HEADING_LEVEL = 6;
+
+/**
+ * What the problem summary says: what the tester wrote, or the worst of what
+ * went wrong when they have written nothing yet.
+ *
+ * The fallback keeps each issue's severity, so an unwritten summary groups
+ * exactly as a written one does rather than reading as a flat list until
+ * somebody opens the dialog.
+ */
+export function problemSummaryComments(test: TestReport): SummaryComment[] {
     if (test.comments && test.comments.length > 0) {
-        test.comments.forEach(comment => {
-            const topIssue = document.createElement("li");
-            topIssue.textContent = comment;
-            topIssues.appendChild(topIssue);
-        });
-        return;
+        return test.comments;
     }
-
-    const allIssues = issuesMap(test);
-    const sortedIssues = [...allIssues.entries()].sort((a, b) => a[0] - b[0])
-        .flatMap((entry) => [...entry[1]]);
-
-    if (!sortedIssues || sortedIssues.length === 0) {
-        const topIssue = document.createElement("li");
-        topIssue.textContent = "No issues";
-        topIssues.appendChild(topIssue);
-        return;
-    }
-    for (let count = 0; count < 3 && count < sortedIssues.length; count++) {
-        const topIssue = document.createElement("li");
-        topIssue.textContent = sortedIssues[count];
-        topIssues.appendChild(topIssue);
-    }
+    return [...issuesMap(test).entries()]
+        .sort((a, b) => a[0] - b[0])
+        .flatMap(([severity, descriptions]) => (
+            [...descriptions].map((text) => ({ text, severity }))
+        ))
+        .slice(0, TOP_ISSUE_COUNT);
 }
 
 /**
@@ -178,9 +177,14 @@ export function createResultsTable(
     const score = minimumScore(issuesMap(test));
     p1.textContent = `${test.assistiveTechnology} Overall Rating: ${score}`;
     resultsDiv.appendChild(p1);
-    const topIssues = document.createElement("ul");
-    addTopIssues(topIssues, test);
-    resultsDiv.appendChild(topIssues);
+    // A heading per severity, one level under the "Problem Summary" heading
+    // above them, so a reader moves between severities rather than walking the
+    // list. Derived rather than fixed: this table is drawn at heading level 2
+    // in the results dialog and at 4 inside the evaluation results screen.
+    resultsDiv.appendChild(createGroupedList(
+        groupSummaryComments(problemSummaryComments(test)), "No issues",
+        Math.min(sectionLevel + 1, MAX_HEADING_LEVEL)
+    ));
     return resultsDiv;
 }
 

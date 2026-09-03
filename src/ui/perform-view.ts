@@ -5,7 +5,9 @@ import {
 } from '../domain/functional-test.js';
 import { normalizeOperatingSystem } from '../domain/migration.js';
 import { safeLinkUrl } from '../domain/safe-url.js';
-import { summaryWithoutSkippedIssues } from '../domain/summary.js';
+import {
+    groupSummaryComments, summaryWithCurrentIssues, summaryWithoutSkippedIssues
+} from '../domain/summary.js';
 import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
 } from '../domain/test-run.js';
@@ -13,7 +15,7 @@ import {
     getCurrentRun, getCurrentTest, getEvaluation, hasUnsavedChanges, markEvaluationChanged,
     setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
-import { appendNewlines, fillListbox } from './controls.js';
+import { appendNewlines, createGroupedList, fillListbox } from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
 import { showScreen } from './screens.js';
 import { saveFileButtonClick } from './evaluation-view.js';
@@ -59,6 +61,14 @@ export function populateIssuesList(): void {
 }
 
 /**
+ * Heading level for the severity banners in the Summary list.
+ *
+ * One below the "Summary" h2 in index.html that the list sits under. If that
+ * heading ever moves level, this moves with it.
+ */
+const SUMMARY_HEADING_LEVEL = 3;
+
+/**
  * Redraws the Summary list under the score from the selected run.
  *
  * Filled when the screen opens, not only when a summary is saved. The list is a
@@ -71,13 +81,13 @@ export function populateSummaryList(): void {
     while (summaryList.firstChild) {
         summaryList.removeChild(summaryList.firstChild);
     }
-    const comments = getCurrentRun().comments;
-    const lines = comments.length > 0 ? comments : ["No Issues"];
-    lines.forEach((text) => {
-        const summaryLi = document.createElement("LI");
-        summaryLi.textContent = text;
-        summaryList.appendChild(summaryLi);
-    });
+    // Grouped exactly as the results dialog and the report group it, so what
+    // the tester reads under the score is the order the client will read.
+    // Headings, one level under the "Summary" h2 they sit beneath, so a reader
+    // can jump between severities rather than walking the whole list.
+    summaryList.appendChild(createGroupedList(
+        groupSummaryComments(getCurrentRun().comments), "No Issues", SUMMARY_HEADING_LEVEL
+    ));
 }
 
 /**
@@ -106,7 +116,11 @@ export function outOfScopeChanged(e: Event): void {
         return;
     }
     setOutOfScope(record, checkbox.checked);
-    run.comments = summaryWithoutSkippedIssues(run.comments, run);
+    // Out first, then in: marking a record drops its issues from the summary,
+    // and unmarking one puts them back, since they count again.
+    run.comments = summaryWithCurrentIssues(
+        summaryWithoutSkippedIssues(run.comments, run), run
+    );
     markEvaluationChanged();
     populateIssuesList();
     populateSummaryList();

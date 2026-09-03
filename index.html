@@ -260,7 +260,12 @@
       <br><br>
       <h2>Summary</h2>
       <br>
-      <ul id="summary-list"></ul>
+      <!--
+        A div rather than a list: the summary is drawn in its severity
+        groups, a banner and then the lines under it, by the same
+        createGroupedList the results dialog and the report use.
+      -->
+      <div id="summary-list"></div>
       <br><br>
       <button type="button" id="view-summary">View Summary</button>
       <!--
@@ -282,6 +287,8 @@
       <br><br>
       <p>The following is a list of the most important issues encountered while testing this Functional Test.</p>
       <br><br>
+      <p id="general-comments-msg" class="status-text"></p>
+      <br>
       <label for="general-comments">General Comments</label>
       <textarea class="large-textarea" id="general-comments"></textarea>
       <br><br>
