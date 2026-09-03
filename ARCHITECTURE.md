@@ -129,6 +129,21 @@ renumbers the ones after it**, which no code can follow into the prose of a step
 that mentions them, so the editor warns before doing it and only ever appends
 new ones.
 
+A step or an extension can be marked **out of scope** for the run, which is
+what the tester does with a step the scripter wrote but nobody is meant to
+perform — signing in to the site being the common one. The mark belongs to the
+run rather than to the script, since the same script can have a step tested
+under one assistive technology and skipped under another, and it lives on the
+run's record as `outOfScope`. A marked record reads as "Out of scope" wherever
+its issues would be listed and prints `N/A` in place of a score, and its issues
+are dropped in `issuesMap` — the one place every total in the tool is built
+from — so a step nobody performed cannot contribute a finding to the run's
+score, the scorecard, the problem summary or the significant issues. Issues
+already recorded against it are kept in the file and still reachable through
+View Issues; they simply stop being reported. The flag is absent rather than
+`false` on a record nobody has marked, which is what a file written before it
+existed looks like, and `setOutOfScope` and the migration both hold that rule.
+
 The operating system belongs to the script the same way the assistive
 technology does, so one script performed with NVDA on Windows and another with
 VoiceOver on macOS keep separate results. Saving a script brings its run's
@@ -371,13 +386,30 @@ Three consequences worth knowing:
   "03" under every AT it was performed with even where it is the first one
   listed, and stays "03" after an earlier script is deleted.
 
-The two scores in the detailed section use **different rules on purpose**.
-`runScore` is the most severe issue in the run, or 5 when there are none and the
-run has been performed. `stepScore` is the mean of that
-step's issue scores, rounded down. So a step holding one stopper among minor
-issues reads as a 2 while the run it belongs to still reads as a 1. That is the
-reporting rule this export has always used; unifying them would be a scoring
-change, not a cleanup.
+The detailed section gives each issue **its own table row**, carrying the score
+the tester assigned to it. `issueRows` returns those score-and-description pairs
+for a step or extension: one row per issue, a single row reading 5 and "No
+issues" for a record with none, and a single row reading `N/A` and "Out of
+scope" for a record marked out of the test's scope.
+
+The score and the description are one object rather than two lists because they
+have to end up in the same table row. Kept apart, nothing said which number went
+with which finding: a reader met "1 3 3" in one cell and three sentences in the
+next, and a description long enough to wrap took even the visual pairing apart.
+
+Each step's rows are grouped: the results dialog gives every step its own
+`tbody`, headed by the step number in a `th` with `scope="rowgroup"` spanning
+its rows, and the report merges the number and instructions cells down the same
+span. So a reader on the third issue is still told which step it belongs to,
+without the number being repeated on every line. The report's banding follows
+the step rather than the row, so one step's issues read as one block.
+
+Nothing is averaged. A step used to report the mean of its issue scores rounded
+down, so a stopper sitting beside two minor issues printed a single "2" -- which
+read as the score of the first issue, and lost the rest (issue #27). The run's
+own score is still `runScore`, the most severe issue anywhere in it, so that
+step's stopper takes the use case to 1 while the step itself shows a 1 and two
+3s on rows of their own.
 
 The table of contents is written out from the evaluation, not left to a Word
 `TableOfContents` field. A field would carry page numbers, but only after Word

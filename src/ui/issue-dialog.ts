@@ -1,16 +1,17 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
+import { summaryWithRenamedIssue, summaryWithoutIssues } from '../domain/summary.js';
 import {
-    getCurrentIssue, getCurrentRecord, getCurrentSection, getCurrentStep, getCurrentTest,
-    markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
+    getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
+    getCurrentTest, markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
 } from '../state/store.js';
 import { clearTable, fillListbox } from './controls.js';
 import { requireEl } from './dom.js';
 import { createIcon } from './icons.js';
 import { showStatusMessage } from './status.js';
-import { populateIssuesList, updateAddIssueButtons } from './perform-view.js';
+import { populateIssuesList, populateSummaryList, updateAddIssueButtons } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
-import { getIssueListId, getStepNumber, isExtensionElementId } from './step-ids.js';
+import { getStepNumber, isExtensionElementId } from './step-ids.js';
 
 /*
  * This module and perform-view import each other: perform-view builds the
@@ -66,6 +67,12 @@ export function hideAddIssueControls(): void {
     requireEl("add-issue-dialog-new-issue").removeAttribute("disabled");
 }
 
+/** How the dialog names the record it is open on: "Step 3", "Extension 1". */
+export function currentRecordLabel(): string {
+    const kind = getCurrentSection() === 'extensions' ? "Extension" : "Step";
+    return `${kind} ${getCurrentStep() + 1}`;
+}
+
 // Description and Score are required; Finding URL is optional. Moves focus to the first invalid field.
 export function validateIssueInputs(): boolean {
     const descriptionInput = requireEl<HTMLInputElement>("add-issue-description");
@@ -79,37 +86,20 @@ export function validateIssueInputs(): boolean {
         descriptionInput.focus();
         return false;
     }
-    // The only thing keeping a "-1" score out of saved data.
+    // The only thing keeping a "-1" score out of saved data. Nothing downstream
+    // can read one: insertIssue has no bucket for it, so the issue would drop
+    // out of the summary and the significant issues, while stepScore would
+    // average it in and report the step below 1. Testers reach this by filing
+    // an "N/A" issue to say a step was not tested, which is what the Out of
+    // scope checkbox is for, so the message says so rather than only refusing.
     if (score === "-1") {
-        requireEl("add-issue-score-error").textContent = "Score is required.";
+        requireEl("add-issue-score-error").textContent = "Score is required. To record that "
+            + `${currentRecordLabel()} was not tested, close this dialog and mark it Out of scope.`;
         scoreInput.setAttribute("aria-invalid", "true");
         scoreInput.focus();
         return false;
     }
     return true;
-}
-
-/** Redraws the current step's or extension's issue list in the perform dialog. */
-export function updateIssueList(): void {
-    const issues = getCurrentRecord().issues;
-    const issueList = requireEl(getIssueListId(getCurrentSection(), getCurrentStep()));
-
-    while (issueList.firstChild) {
-        issueList.removeChild(issueList.firstChild);
-    }
-    if (issues.length === 0) {
-        const issueLI = document.createElement("LI");
-        issueLI.textContent = "No issues";
-        issueList.appendChild(issueLI);
-
-    }
-    else {
-        for (let i = 0; i < issues.length; i++) {
-            const issueLI = document.createElement("LI");
-            issueLI.textContent = issues[i].description;
-            issueList.appendChild(issueLI);
-        }
-    }
 }
 
 /** Appends a row for one issue, with edit and delete buttons. */
@@ -196,7 +186,7 @@ export function saveIssueButtonClick(e: Event): void {
     insertIssueTable(newIssue);
     getCurrentRecord().issues.push(newIssue);
     markEvaluationChanged();
-    updateIssueList();
+    populateIssuesList();
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
     // Focus, then announce. Hiding the Save button drops focus to the body, and
@@ -222,9 +212,17 @@ export function editSaveIssueButtonClick(e: Event): void {
     row.cells[1].innerText = newIssue.description;
     row.cells[2].innerText = newIssue.findingURL;
     row.cells[3].innerText = newIssue.score;
+    // Read before the overwrite, for the same reason deleteIssue reads on the
+    // way out: afterwards nothing says what the summary is still calling this.
+    const previousDescription = getCurrentRecord().issues[currentIssue - 1].description;
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
+    const run = getCurrentRun();
+    run.comments = summaryWithRenamedIssue(
+        run.comments, previousDescription, newIssue.description, run
+    );
     markEvaluationChanged();
-    updateIssueList();
+    populateIssuesList();
+    populateSummaryList();
     hideAddIssueControls();
     setCurrentIssue(getCurrentRecord().issues.length);
     // Focus, then announce. Hiding the Save button drops focus to the body, and
@@ -268,9 +266,16 @@ export function deleteIssue(e: Event): void {
     for (let i = 1; i < issueTable.rows.length; i++) {
         issueTable.rows[i].cells[0].textContent = String(i);
     }
-    getCurrentRecord().issues.splice(rowIndex - 1, 1);
+    // Captured on the way out: once it is spliced away, nothing left in the run
+    // says what the summary should stop describing.
+    const [removed] = getCurrentRecord().issues.splice(rowIndex - 1, 1);
+    const run = getCurrentRun();
+    run.comments = summaryWithoutIssues(
+        run.comments, removed ? [removed.description] : [], run
+    );
     markEvaluationChanged();
-    updateIssueList();
+    populateIssuesList();
+    populateSummaryList();
     // The row just removed held the button that had focus, so focus has to land
     // somewhere before the message, or it is discarded with the old context.
     requireEl("add-issue-dialog-new-issue").focus();
@@ -335,7 +340,7 @@ export function addIssueButtonClick(e: Event): void {
     const currentStep = getCurrentStep();
     const test = getCurrentTest();
     const isExtension = getCurrentSection() === 'extensions';
-    const label = `${isExtension ? "Extension" : "Step"} ${currentStep + 1}`;
+    const label = currentRecordLabel();
     const source = isExtension ? test.extensions : test.steps;
     const empty = getCurrentRecord().issues.length === 0;
 

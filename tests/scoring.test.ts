@@ -32,6 +32,30 @@ describe('issuesMap', () => {
         expect(map.get(2)!.size).toBe(0);
     });
 
+    test('skips a step or extension marked out of scope', () => {
+        const map = issuesMap({
+            steps: [
+                { issues: [issue('tested', '3')] },
+                { issues: [issue('skipped', '1')], outOfScope: true }
+            ],
+            extensions: [{ issues: [issue('also skipped', '2')], outOfScope: true }]
+        });
+        expect([...map.get(3)!]).toEqual(['tested']);
+        expect(map.get(1)!.size).toBe(0);
+        expect(map.get(2)!.size).toBe(0);
+    });
+
+    test('only the flag set to true skips a record', () => {
+        const map = issuesMap({
+            steps: [
+                { issues: [issue('a', '1')], outOfScope: false },
+                { issues: [issue('b', '2')] }
+            ]
+        });
+        expect([...map.get(1)!]).toEqual(['a']);
+        expect([...map.get(2)!]).toEqual(['b']);
+    });
+
     test('deduplicates by description, keeping first-seen order', () => {
         const map = issuesMap({
             steps: [

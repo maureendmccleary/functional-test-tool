@@ -86,6 +86,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       cancelling keeps the loaded evaluation intact
 - [ ] **New Evaluation** immediately after loading a file does **not** warn --
       nothing has been changed yet
+- [ ] **Load Evaluation File...** with unsaved changes warns in the same words
+      before the file dialog opens; cancelling leaves the loaded evaluation
+      alone and never opens the picker
+- [ ] Closing or reloading the tab with unsaved changes raises the browser's own
+      "leave site" prompt; with nothing unsaved it closes without one
+      <br>*(this is the only place the evaluation is genuinely lost -- every
+      other route keeps it in the store)*
 
 ## 3. Author a functional test
 
@@ -183,6 +190,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       "Perform Functional Test", and there is no dialog to escape from
 - [ ] **Back** returns to the landing screen with the test list intact, and the
       earlier "loaded successfully" message is **not** read out again
+- [ ] **Back** after recording anything warns that the results are not saved to a
+      file; cancelling stays on the perform screen with everything intact
+- [ ] Accepting that warning and going back, then performing the same test
+      again, shows every result still there -- Back keeps the work, and the
+      warning says so rather than claiming it is lost
+- [ ] **Back** with nothing recorded since the last save does not warn
 - [ ] The page title follows the screen: "Perform Functional Test", "Evaluation",
       "Functional Test Editor", and the app's name on the landing screen. Ask the
       reader for the title on each
@@ -215,6 +228,39 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       the same as one recorded against a step
 - [ ] A test with no extensions shows no extension blocks at all
 
+## 5a. Steps that are out of scope
+
+- [ ] Every step and every extension has an **Out of scope** checkbox after its
+      Add Issue button, and the reader announces it as a checkbox named
+      "Out of scope Step 3" -- the step's number is part of the name, since
+      every step on the screen has one of these
+- [ ] The label is clickable and **Space** toggles the box, both of which come
+      free from its being a real checkbox rather than something built to look
+      like one
+- [ ] Ticking it replaces that step's issue list with a single **Out of scope**
+      line, and no other step's list changes
+- [ ] Untick it: the step's own issues come back, or "No issues" if it had none
+- [ ] Leave the screen and come back: every box you ticked is still ticked
+- [ ] Tick the box on a step that already has an issue recorded. The list reads
+      "Out of scope", and the button still says "View 1 Issue" -- the issue is
+      kept and still reachable, it is only no longer reported
+- [ ] With a **stopper** recorded on that step, the use case's score is what the
+      rest of the steps make it, not 1. A step nobody performed contributes
+      nothing to the score, the summary or the significant issues
+- [ ] **View Results**: the out of scope steps read `N/A` in the Score column and
+      `Out of scope` under Issues Encountered, and their issues are absent
+      <br>*(one `N/A`, not one per issue it is hiding)*
+- [ ] Generate and save a summary, *then* tick Out of scope on a step whose
+      issues are in it: those issues leave the Summary under the score, and
+      leave the Problem Summary in View Results and the report with it
+      <br>*(the summary is stored as text, so it is the one thing that has to be
+      brought back into line rather than recomputed)*
+- [ ] Anything you typed into the summary yourself survives that; only text
+      matching an issue on the skipped step goes
+- [ ] The Score under the list is **not** changed by ticking the box -- the
+      score is the tester's
+- [ ] The same two cells read the same way in the generated `.docx`
+
 ## 6. Issues
 
 - [ ] Open the issue dialog on **step 1**, close it, then open it on **step 3**:
@@ -234,16 +280,28 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       never back up it
 - [ ] Saving with an empty description shows "Description is required." and moves
       focus to the description field
-- [ ] Saving with the score left on "Not Rated (-1)" shows "Score is required."
-      and moves focus to the score field
+- [ ] Saving with the score left on "Not Rated (-1)" is refused, moves focus to
+      the score field, and the message names the record and points at the
+      checkbox: "Score is required. To record that Step 3 was not tested, close
+      this dialog and mark it Out of scope."
+      <br>*(a -1 is the one score nothing downstream can read, so it stays
+      refused; filing an "N/A" issue was the workaround the checkbox replaces)*
 - [ ] A valid save announces "Issue successfully saved!", adds a table row, and
       adds the issue under the step in the Perform dialog
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one
+- [ ] Rewording a description updates the line for it in the Summary under the
+      score **in place**, keeping its position, rather than dropping it
+      <br>*(an edit is the same finding in better words; a delete is not)*
 - [ ] Reopen the dialog on a step whose issue count is unchanged -- the table
       renders without a console error
-- [ ] **Delete** on a row removes it from both the table and the step
+- [ ] **Delete** on a row removes it from both the table and the step, and takes
+      it out of the Summary under the score as well when a summary was already
+      written for the run
+- [ ] On a step already marked **Out of scope**, saving, editing or deleting an
+      issue leaves the list behind the dialog reading "Out of scope" -- the
+      dialog must not redraw it as the issues it is hiding
 - [ ] Typing a description and then closing the dialog with **Esc** or the X
       prompts to discard; cancelling the prompt keeps the dialog open
 - [ ] Reopening the dialog on a step shows a table matching that step exactly
@@ -260,7 +318,24 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
+- [ ] Save a summary on script 1, go **Back**, then Perform script 2: the
+      Summary under the score reads "No Issues", **not** script 1's summary
+- [ ] Back to script 1: its own summary is there again
+- [ ] Opening a script in the **editor** does not change what the perform
+      screen's Summary shows
+      <br>*(the list is on the perform screen; populateEditor used to write to
+      it from a screen it is not on, which is what left it stale)*
 - [ ] **View Results** shows the results table with the issues grouped by severity
+- [ ] A step carrying several issues gives each issue a row of its own, with its
+      score in the Score cell of that row, in both the results table and the
+      generated `.docx`
+- [ ] With a screen reader in that table, moving to a score announces it under
+      the "Score" column heading, and the step number is still reported for the
+      second and third issues of a step -- it heads the row group
+      <br>*(this is the association the old stacked-lines layout could not make:
+      "1 3 3" in one cell said nothing about which finding each belonged to)*
+- [ ] A description long enough to wrap does not take the columns out of
+      alignment, since the pairing is the row rather than the line
 
 ## 7a. Overall comments for an assistive technology
 
@@ -308,6 +383,20 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] It arrives as `evaluation-results - <evaluation name>.docx`, so two
+      reports from different evaluations do not land on each other as copies
+- [ ] An evaluation with no name set downloads as `evaluation-results.docx`,
+      with no dangling separator left on the end
+- [ ] An evaluation named with something a file name cannot carry -- try
+      `Q3/2026: audit` -- still downloads, with those characters spaced out
+      rather than the download failing
+- [ ] **Save Evaluation File** on a *new* evaluation opens the save dialog
+      already filled in with the evaluation's name and `.json`, or
+      `evaluation.json` when it has no name yet
+      <br>*(the file pickers cannot be driven from a test, so this one is only
+      ever checked by hand)*
+- [ ] Renaming the file in that dialog sticks: saving again writes straight to
+      the file you chose, without offering the suggestion a second time
       <br>*(needs network access -- `docx` loads from unpkg)*
 
 Open that document and check:
@@ -350,9 +439,17 @@ Open that document and check:
 - [ ] A use case nobody has scored reads "Not rated" rather than scoring 5
 - [ ] The step table's columns are Step #, Main Success Case, Score, Issues
       Encountered, in that order
-- [ ] A step with no issues scores 5; a step with issues scores the average of
-      them, rounded down -- so a step holding a stopper among minor issues can
-      read higher than the use case's own score, which is deliberate
+- [ ] A step with no issues is one row scoring 5. A step with issues gets **one
+      row per issue**, each score in the same row as the finding it belongs to,
+      so a step holding a stopper and two minor issues reads `1`, `3`, `3` on
+      three rows rather than the single `2` an average rounded down used to
+      print
+- [ ] The step number and its instructions are written once and merged down that
+      step's rows, rather than repeated on each
+- [ ] In Word, moving through the merged cells still reaches the step number
+      once per step, and each score sits beside its own issue
+- [ ] Nothing is averaged: the use case's own score is still the most severe
+      issue anywhere in it, so that step's stopper takes the use case to 1
 - [ ] With a screen reader in the metadata table, moving to a value announces
       its field name -- "Goal", "Operator", "Start Location" -- rather than
       reading the value bare

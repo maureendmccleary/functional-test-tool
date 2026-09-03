@@ -2,8 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { Evaluation, FunctionalTest, Issue } from '../src/types.js';
 import {
     buildScorecard, collectAssistiveTechnologies, findSummary,
-    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, stepScore, topIssuesFor,
-    worstScoreFor
+    effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore, topIssuesFor, worstScoreFor
 } from '../src/domain/evaluation.js';
 
 /** An issue at the given severity, which is all the scoring cares about. */
@@ -153,26 +152,24 @@ describe('runScore', () => {
     });
 });
 
-describe('stepScore', () => {
-    test('is 5 for a step with no issues', () => {
-        expect(stepScore({ issues: [] })).toBe(5);
+describe('out of scope and the totals', () => {
+    /** A run whose only stopper is on a step nobody performed. */
+    function withSkippedStopper(): FunctionalTest {
+        const subject = testWithRuns('Place a hold', { NVDA: [] });
+        subject.runs[0].steps = [{ issues: [issue('1')], outOfScope: true }, { issues: [] }];
+        return subject;
+    }
+
+    test('the run scores as if the skipped step were not there', () => {
+        expect(runScore(withSkippedStopper().runs[0])).toBe(5);
     });
 
-    test('averages the issue scores and rounds down', () => {
-        expect(stepScore({ issues: [issue('4'), issue('2')] })).toBe(3);
-        expect(stepScore({ issues: [issue('4'), issue('3')] })).toBe(3);
-        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3'), issue('3')] })).toBe(2);
-    });
-
-    test('does not take the most severe issue, unlike runScore', () => {
-        // One stopper among minor issues averages up; the run it belongs to
-        // still scores 1. See the note on stepScore.
-        expect(stepScore({ issues: [issue('1'), issue('3'), issue('3')] })).toBe(2);
-    });
-
-    test('counts an unrated issue as its own value and junk as zero', () => {
-        expect(stepScore({ issues: [issue('-1')] })).toBe(-1);
-        expect(stepScore({ issues: [issue('not a score'), issue('4')] })).toBe(2);
+    test('its issues stay out of the scorecard and the significant issues', () => {
+        const evaluation = evaluationOf([withSkippedStopper()]);
+        expect(buildScorecard(evaluation).countsByScore.get(5)).toBe(1);
+        expect(buildScorecard(evaluation).countsByScore.get(1)).toBe(0);
+        expect(topIssuesFor(evaluation, 'NVDA', 3)).toEqual([]);
+        expect(worstScoreFor(evaluation, 'NVDA')).toBe(5);
     });
 });
 

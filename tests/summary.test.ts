@@ -2,7 +2,8 @@ import { afterEach, describe, expect, test } from 'vitest';
 import type { Evaluation, Issue, TestRunStep, TestRun, FunctionalTest } from '../src/types.js';
 import {
     SUMMARY_BANNERS, buildOverallCommentsText, buildOverallCommentsTextFor, buildSummaryText,
-    splitSummaryComments
+    splitSummaryComments, summaryWithRenamedIssue, summaryWithoutIssues,
+    summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -136,6 +137,137 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         expect(document.getElementById('summary-list')!.children.map((li) => li.textContent))
             .toEqual(['second save']);
+    });
+});
+
+describe('summaryWithoutSkippedIssues', () => {
+    const stored = ['cannot activate the control', 'no status message on submit'];
+
+    test('leaves a run with nothing marked exactly as it was', () => {
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')] },
+                { issues: [issue('no status message on submit', '3')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(stored, run)).toEqual(stored);
+    });
+
+    test('drops the issues recorded against a step now out of scope', () => {
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')], outOfScope: true },
+                { issues: [issue('no status message on submit', '3')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(stored, run))
+            .toEqual(['no status message on submit']);
+    });
+
+    test('drops them for an extension the same way', () => {
+        const run = {
+            steps: [{ issues: [issue('no status message on submit', '3')] }],
+            extensions: [{
+                issues: [issue('cannot activate the control', '1')], outOfScope: true
+            }]
+        };
+        expect(summaryWithoutSkippedIssues(stored, run))
+            .toEqual(['no status message on submit']);
+    });
+
+    test('keeps a description that is also recorded on a step still in scope', () => {
+        // The same problem was hit twice. One of the steps being skipped does
+        // not make it stop having happened on the other.
+        const run = {
+            steps: [
+                { issues: [issue('cannot activate the control', '1')], outOfScope: true },
+                { issues: [issue('cannot activate the control', '1')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues(['cannot activate the control'], run))
+            .toEqual(['cannot activate the control']);
+    });
+
+    test('leaves prose the tester wrote themselves alone', () => {
+        const run = {
+            steps: [{ issues: [issue('cannot activate the control', '1')], outOfScope: true }],
+            extensions: []
+        };
+        const comments = ['Sign-in is out of scope for this engagement.',
+            'cannot activate the control'];
+        expect(summaryWithoutSkippedIssues(comments, run))
+            .toEqual(['Sign-in is out of scope for this engagement.']);
+    });
+
+    test('does not put a description back when the mark comes off', () => {
+        const run = {
+            steps: [{ issues: [issue('cannot activate the control', '1')] }],
+            extensions: []
+        };
+        expect(summaryWithoutSkippedIssues([], run)).toEqual([]);
+    });
+});
+
+describe('summaryWithoutIssues', () => {
+    test('removes the description of an issue that has been deleted', () => {
+        // The run no longer holds it, which is the state after the splice.
+        const run = { steps: [{ issues: [issue('still here', '3')] }], extensions: [] };
+        expect(summaryWithoutIssues(['deleted one', 'still here'], ['deleted one'], run))
+            .toEqual(['still here']);
+    });
+
+    test('keeps it when the same description is still recorded elsewhere', () => {
+        const run = { steps: [{ issues: [issue('hit twice', '2')] }], extensions: [] };
+        expect(summaryWithoutIssues(['hit twice'], ['hit twice'], run)).toEqual(['hit twice']);
+    });
+
+    test('leaves the summary alone when nothing is named', () => {
+        const run = { steps: [{ issues: [] }], extensions: [] };
+        const comments = ['written by hand'];
+        expect(summaryWithoutIssues(comments, [], run)).toBe(comments);
+    });
+});
+
+describe('summaryWithRenamedIssue', () => {
+    /** The run after the edit: the issue now carries the new wording. */
+    const edited = { steps: [{ issues: [issue('button has no name', '2')] }], extensions: [] };
+
+    test('rewrites the line in place, keeping its position', () => {
+        const comments = ['first finding', 'unlabelled button', 'third finding'];
+        expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
+            .toEqual(['first finding', 'button has no name', 'third finding']);
+    });
+
+    test('leaves a summary that never mentioned it alone', () => {
+        expect(summaryWithRenamedIssue(['something else'], 'unlabelled button', 'button has no name', edited))
+            .toEqual(['something else']);
+    });
+
+    test('does nothing when the description did not change', () => {
+        const comments = ['button has no name'];
+        expect(summaryWithRenamedIssue(comments, 'button has no name', 'button has no name', edited))
+            .toBe(comments);
+    });
+
+    test('keeps the old wording when another issue is still recorded under it', () => {
+        const run = {
+            steps: [
+                { issues: [issue('button has no name', '2')] },
+                { issues: [issue('unlabelled button', '2')] }
+            ],
+            extensions: []
+        };
+        expect(summaryWithRenamedIssue(['unlabelled button'], 'unlabelled button', 'button has no name', run))
+            .toEqual(['unlabelled button']);
+    });
+
+    test('drops the old line rather than duplicating wording already there', () => {
+        const comments = ['button has no name', 'unlabelled button'];
+        expect(summaryWithRenamedIssue(comments, 'unlabelled button', 'button has no name', edited))
+            .toEqual(['button has no name']);
     });
 });
 

@@ -1,4 +1,4 @@
-import type { TestRun, TestRunStep, FunctionalTest } from '../types.js';
+import type { Issue, TestRun, TestRunStep, FunctionalTest } from '../types.js';
 
 /** The lowest score a tester can assign. Below it means no score was chosen. */
 const LOWEST_SCORE = 1;
@@ -14,6 +14,101 @@ const LOWEST_SCORE = 1;
  */
 export function isPerformed(run: TestRun): boolean {
     return typeof run.score === 'number' && run.score >= LOWEST_SCORE;
+}
+
+/**
+ * How a record marked out of scope reads where its issues would be listed.
+ *
+ * The perform screen's issue list and the "Issues Encountered" column of both
+ * the results dialog and the report all say this, because all three are the
+ * same list of what the tester found. Kept beside isOutOfScope so the flag and
+ * the words it puts on the page cannot drift apart.
+ */
+export const OUT_OF_SCOPE_TEXT = 'Out of scope';
+
+/** How a record marked out of scope reads in a Score column. */
+export const OUT_OF_SCOPE_SCORE_TEXT = 'N/A';
+
+/** What an unmarked record with nothing recorded against it reads as. */
+export const NO_ISSUES_TEXT = 'No issues';
+
+/**
+ * The score a record with nothing recorded against it is reported at.
+ *
+ * Its own constant rather than a reach into evaluation.ts, which keeps its
+ * bounds private; the two are checked against each other in the tests.
+ */
+const CLEAN_PASS_SCORE = '5';
+
+/**
+ * True when the tester marked this step or extension outside the test's scope.
+ *
+ * Only the flag set to true counts. Files written before it existed leave it
+ * out entirely, and a hand-edited one may hold anything at all.
+ */
+export function isOutOfScope(record: { outOfScope?: boolean } | undefined): boolean {
+    return record !== undefined && record.outOfScope === true;
+}
+
+/** One reported line about a record: a score and the finding it belongs to. */
+export interface IssueRow {
+    score: string;
+    description: string;
+}
+
+/**
+ * What a record has to report, as score-and-description pairs.
+ *
+ * One row per issue, each carrying its own score rather than an average, so a
+ * step holding a stopper and two minor issues reports all three. The score and
+ * the description travel together because the report has to put them in the
+ * same table row: kept as two parallel lists, nothing said which number went
+ * with which finding, and a description long enough to wrap took the columns
+ * out of alignment as well.
+ *
+ * Out of scope wins over anything recorded, and collapses to a single row: a
+ * step the tester never performed has no findings to report whatever is stored
+ * against it, which is the same reason issuesMap leaves those issues out of the
+ * totals. They are kept in the file, and the View Issues button still reaches
+ * them.
+ */
+export function issueRows(record: { issues?: Issue[]; outOfScope?: boolean }): IssueRow[] {
+    if (isOutOfScope(record)) {
+        return [{ score: OUT_OF_SCOPE_SCORE_TEXT, description: OUT_OF_SCOPE_TEXT }];
+    }
+    const issues = Array.isArray(record.issues) ? record.issues : [];
+    if (issues.length === 0) {
+        return [{ score: CLEAN_PASS_SCORE, description: NO_ISSUES_TEXT }];
+    }
+    return issues.map((issue) => ({
+        score: String(issue.score ?? ''),
+        description: String(issue.description || '')
+    }));
+}
+
+/**
+ * Just the descriptions, for the perform screen's issue list.
+ *
+ * That list has no score column, so it takes the descriptions from the same
+ * rows the report is built from rather than working them out again.
+ */
+export function issueLines(record: { issues?: Issue[]; outOfScope?: boolean }): string[] {
+    return issueRows(record).map((row) => row.description);
+}
+
+/**
+ * Marks a record out of scope, or clears the mark.
+ *
+ * Clearing removes the field rather than storing false, so a record nobody has
+ * marked reads and saves the way one written before the flag existed does.
+ * The migration holds the same rule for the other direction.
+ */
+export function setOutOfScope(record: TestRunStep, outOfScope: boolean): void {
+    if (outOfScope) {
+        record.outOfScope = true;
+    } else {
+        delete record.outOfScope;
+    }
 }
 
 /** Creates an unscored run with an empty record per step and per extension. */

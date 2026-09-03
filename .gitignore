@@ -5,3 +5,6 @@ dist/
 ISSUE-BACKLOG.md
 issues-to-create.json
 create-issues.sh
+
+# Playwright MCP writes snapshots, screenshots and downloads here.
+.playwright-mcp/
