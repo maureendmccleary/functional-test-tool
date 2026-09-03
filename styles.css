@@ -211,6 +211,23 @@ label + textarea {
 }
 
 /*
+ * The hidden attribute, defended against every layout rule in this sheet.
+ *
+ * A browser hides it with `[hidden] { display: none }` in its own stylesheet,
+ * which any author rule beats. So `#test-edit-at-menu { display: grid }` left
+ * the assistive technology list showing whatever the disclosure button said:
+ * permanently open, with its thirty checkboxes in the tab order between the
+ * Application field and the steps, under an aria-expanded that read "false".
+ *
+ * `!important` is the point rather than a shortcut. `hidden` is a state, not a
+ * suggestion, and it has to outrank the display any rule here gives an element,
+ * including one written later and including one added for a different reason.
+ */
+[hidden] {
+    display: none !important;
+}
+
+/*
  * Every dialog, matched by element rather than by a list of ids.
  *
  * The lists these two rules used to carry had drifted apart from index.html:

@@ -14,7 +14,7 @@ import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
 import { refreshTestList } from './evaluation-view.js';
 import { type ScreenName, setSectionTitle, showScreen } from './screens.js';
-import { showStatusMessage } from './status.js';
+import { announce, showStatusMessage } from './status.js';
 import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
 
 /** Shown when Save cannot complete the script. */
@@ -318,32 +318,78 @@ function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): vo
  * shows and hides. Called once at startup, not from `populateEditor`, so the
  * Escape handler is not re-registered every time a test is opened.
  */
+/** What collapsing the list says, since nothing else says it. */
+const AT_LIST_COLLAPSED = 'Assistive technology list collapsed.';
+
+/**
+ * The role the open list carries, so a screen reader hands it the keyboard.
+ *
+ * In browse mode a screen reader keeps single letter keys for its own quick
+ * navigation, so first letter navigation never reached this group: the keys
+ * were spent before the page saw them. There is no way to ask a reader to
+ * change mode, but focus entering an application region makes it change by
+ * itself, and pass the keys through.
+ *
+ * The cost of an application region is that browse mode stops working inside
+ * it, which is why it is worth so little here and would be worth a lot
+ * elsewhere: the container holds nothing but the checkboxes, every one of them
+ * is focusable, and each announces its own label when focus arrives. It is
+ * added when the list opens and taken off when it closes, so it is present only
+ * while the widget really is handling arrows, Home, End and letters.
+ */
+const AT_LIST_ROLE = 'application';
+
+/**
+ * Closes the list, puts focus back on the button, and says it has closed.
+ *
+ * The announcement is the point. Collapsing from the button leaves focus where
+ * it already was, so there is no focus change for a reader to speak, and a
+ * screen reader will not reliably report an aria-expanded that flips underneath
+ * it: the tester had to ask what was focused to find out whether the list had
+ * closed. Escape collapses through here too, so both routes say the same thing.
+ *
+ * Expanding says nothing extra on purpose. Focus moves into the list and the
+ * reader speaks the checkbox it lands on, which is already the answer.
+ */
+export function collapseAssistiveTechnologies(
+    atMenuBtn: HTMLElement, atMenu: HTMLElement
+): void {
+    atMenuBtn.setAttribute("aria-expanded", "false");
+    atMenu.hidden = true;
+    atMenu.removeAttribute("role");
+    atMenuBtn.focus();
+    announce(AT_LIST_COLLAPSED);
+}
+
 function addAssistiveTechnologyDisclosureEvents(): void {
     const atMenuBtn = requireEl('test-edit-at-btn');
     const atMenu = requireEl("test-edit-at-menu");
 
     atMenuBtn.addEventListener("click", (e) => {
+        if (atMenuBtn.getAttribute("aria-expanded") === "true") {
+            collapseAssistiveTechnologies(atMenuBtn, atMenu);
+            return;
+        }
         toggleMenu(e);
+        // Set before focus moves, so the reader meets the application region as
+        // it arrives rather than a moment after.
+        atMenu.setAttribute("role", AT_LIST_ROLE);
         // Expanding lands inside the list rather than leaving focus on the
         // button. From the button the arrows and first letter navigation have
         // nothing to act on, so the group looked unresponsive until Tab was
         // pressed. It lands on the technology already assigned, since that is
         // what the scripter came to look at, and on the first entry only when
-        // nothing is assigned yet. Collapsing leaves focus on the button.
-        if (atMenuBtn.getAttribute("aria-expanded") === "true") {
-            const { checkboxes } = assistiveTechnologyCheckboxes(atMenu);
-            const target = checkboxes.find((checkbox) => checkbox.checked) || checkboxes[0];
-            if (target) {
-                target.focus();
-            }
+        // nothing is assigned yet.
+        const { checkboxes } = assistiveTechnologyCheckboxes(atMenu);
+        const target = checkboxes.find((checkbox) => checkbox.checked) || checkboxes[0];
+        if (target) {
+            target.focus();
         }
     });
     atMenu.addEventListener('keydown', (e) => {
         const event = e as KeyboardEvent;
         if (event.key === "Escape") {
-            atMenuBtn.setAttribute("aria-expanded", "false");
-            atMenu.hidden = true;
-            atMenuBtn.focus(); // Return focus to button
+            collapseAssistiveTechnologies(atMenuBtn, atMenu);
             return;
         }
         if (assistiveTechnologyArrowKeys(event, atMenu)) {
