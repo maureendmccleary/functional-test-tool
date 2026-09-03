@@ -16,7 +16,11 @@ vi.mock('../src/io/file-picker.js', () => ({
 }));
 
 const picker = await import('../src/io/file-picker.js');
-const { loadEvalButtonClicked, saveFileButtonClick } = await import('../src/ui/evaluation-view.js');
+const {
+    confirmDiscardingEvaluation, loadEvalButtonClicked, saveFileButtonClick
+} = await import('../src/ui/evaluation-view.js');
+const { getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation }
+    = await import('../src/state/store.js');
 
 const ELEMENT_IDS = [
     'select-test', 'eval-select-test', 'eval-edit', 'eval-view-results', 'eval-save-file',
@@ -54,6 +58,80 @@ afterEach(() => {
     vi.useRealTimers();
     vi.resetAllMocks();
     clearDocumentStub();
+});
+
+/** Answers window.confirm with `accepted` and counts the asking. */
+function stubConfirm(accepted: boolean): { calls: string[] } {
+    const calls: string[] = [];
+    (globalThis as unknown as { window: unknown }).window = {
+        confirm(message: string) {
+            calls.push(message);
+            return accepted;
+        }
+    };
+    return { calls };
+}
+
+describe('confirmDiscardingEvaluation', () => {
+    test('does not ask when there is nothing unsaved', () => {
+        markEvaluationSaved();
+        const confirmed = stubConfirm(false);
+
+        expect(confirmDiscardingEvaluation('Start a new one anyway?')).toBe(true);
+        expect(confirmed.calls).toEqual([]);
+    });
+
+    test('asks in the same words whatever the action, and reports the answer', () => {
+        markEvaluationChanged();
+        const declined = stubConfirm(false);
+        expect(confirmDiscardingEvaluation('Load another one anyway?')).toBe(false);
+        expect(declined.calls).toEqual([
+            'The evaluation has changes that have not been saved to a file. '
+            + 'Load another one anyway?'
+        ]);
+
+        const accepted = stubConfirm(true);
+        expect(confirmDiscardingEvaluation('Start a new one anyway?')).toBe(true);
+        expect(accepted.calls[0]).toContain('have not been saved to a file.');
+    });
+});
+
+describe('loading over unsaved work', () => {
+    test('asks first, and loads nothing when the tester declines', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'in progress' });
+        markEvaluationChanged();
+        stubConfirm(false);
+
+        await loadEvalButtonClicked(clickEvent());
+
+        // The picker never opens: the answer decides whether it should.
+        expect(picker.loadFile).not.toHaveBeenCalled();
+        expect(getEvaluation().name).toBe('in progress');
+    });
+
+    test('goes ahead once the tester accepts', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'in progress' });
+        markEvaluationChanged();
+        stubConfirm(true);
+        vi.mocked(picker.loadFile).mockResolvedValue({ name: 'loaded', evalUCs: [] });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(getEvaluation().name).toBe('loaded');
+    });
+
+    test('does not ask at all when nothing is unsaved', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'saved already' });
+        const confirmed = stubConfirm(false);
+        vi.mocked(picker.loadFile).mockResolvedValue({ name: 'loaded', evalUCs: [] });
+
+        await loadEvalButtonClicked(clickEvent());
+        vi.runAllTimers();
+
+        expect(confirmed.calls).toEqual([]);
+        expect(getEvaluation().name).toBe('loaded');
+    });
 });
 
 describe('loading', () => {

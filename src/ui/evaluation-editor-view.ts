@@ -2,12 +2,13 @@ import { normalizeEvaluation } from '../domain/migration.js';
 import { forgetSavedFile } from '../io/file-picker.js';
 import { testDisplayName } from '../domain/functional-test.js';
 import {
-    getEvaluation, hasUnsavedChanges, markEvaluationChanged, setEvaluation
+    getEvaluation, markEvaluationChanged, setEvaluation
 } from '../state/store.js';
 import { requireEl } from './dom.js';
 import { editTest, newTestButtonClicked } from './editor-view.js';
 import {
-    enableEvaluationControls, populateEvaluationDetails, refreshTestList
+    confirmDiscardingEvaluation, enableEvaluationControls, populateEvaluationDetails,
+    refreshTestList
 } from './evaluation-view.js';
 import { showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
@@ -21,13 +22,10 @@ import { showStatusMessage } from './status.js';
  * is choosing a functional test and performing it.
  */
 
-const DISCARD_WARNING =
-    'The evaluation has changes that have not been saved to a file. Start a new one anyway?';
-
 /** Starts an empty evaluation and opens the evaluation screen on it. */
 export function newEvaluationButtonClicked(e: Event): void {
     e.preventDefault();
-    if (hasUnsavedChanges() && !window.confirm(DISCARD_WARNING)) {
+    if (!confirmDiscardingEvaluation('Start a new one anyway?')) {
         return;
     }
 

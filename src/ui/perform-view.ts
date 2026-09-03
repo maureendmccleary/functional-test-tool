@@ -10,8 +10,8 @@ import {
     emptyTestRun, ensureTestRunShape, isOutOfScope, issueLines, setOutOfScope
 } from '../domain/test-run.js';
 import {
-    getCurrentRun, getCurrentTest, getEvaluation, markEvaluationChanged, setCurrentRunIndex,
-    setCurrentTestIndex
+    getCurrentRun, getCurrentTest, getEvaluation, hasUnsavedChanges, markEvaluationChanged,
+    setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox } from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
@@ -399,9 +399,26 @@ function showOverallCommentsButton(test: FunctionalTest): void {
     requireEl("view-overall-comments").classList.toggle("inactive", !last);
 }
 
+/**
+ * What Back asks when results have not been written to a file.
+ *
+ * Deliberately not "your changes will be lost". Going back keeps everything:
+ * the evaluation lives in the store and the tester can walk straight back into
+ * this test and find it as they left it. What the message is for is the thing
+ * that does lose it, which is closing the tab, and testers were reading Back as
+ * the culprit. Saying what is actually true is what makes the warning worth
+ * reading rather than something to click through.
+ */
+const UNSAVED_RESULTS_WARNING =
+    'These results have not been saved to a file. They are kept while the app is open, but '
+    + 'will be lost if you close it. Go back anyway?';
+
 /** Leaves the perform screen for the one it was opened from. */
 export function performBackButtonClicked(e: Event): void {
     e.preventDefault();
+    if (hasUnsavedChanges() && !window.confirm(UNSAVED_RESULTS_WARNING)) {
+        return;
+    }
     showScreen('landing');
 }
 
