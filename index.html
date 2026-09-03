@@ -149,14 +149,18 @@
       <br>
 
       <!--
-        A disclosure, not a menu, and the container below is deliberately bare:
-        no role, no name, no tabindex. Each of those adds a stop between the
-        button and the first checkbox. role="menu" is the worst of them, since
-        it also throws a screen reader into menu mode, but a named role="group"
-        is announced as a grouping boundary in browse mode and tabindex makes
-        the container a tab stop. The disclosure relationship is carried by the
-        button's aria-expanded and aria-controls, and the checkboxes inside
-        carry their own labels, so the container needs nothing.
+        A disclosure, not a menu, and the container below carries no name and no
+        tabindex. Each of those adds a stop between the button and the first
+        checkbox. role="menu" is worse still, since it throws a screen reader
+        into menu mode, but a named role="group" is announced as a grouping
+        boundary in browse mode and tabindex makes the container a tab stop. The
+        disclosure relationship is carried by the button's aria-expanded and
+        aria-controls, and the checkboxes carry their own labels.
+
+        role="application" is added while the list is open, by
+        addAssistiveTechnologyDisclosureEvents, and taken off again when it
+        closes. It is not written here because it is true only while the widget
+        is actually handling keys. See the note on that function for why.
       -->
       <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
         Assistive Technology

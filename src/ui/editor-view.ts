@@ -322,6 +322,24 @@ function assistiveTechnologyTypeAhead(e: KeyboardEvent, atMenu: HTMLElement): vo
 const AT_LIST_COLLAPSED = 'Assistive technology list collapsed.';
 
 /**
+ * The role the open list carries, so a screen reader hands it the keyboard.
+ *
+ * In browse mode a screen reader keeps single letter keys for its own quick
+ * navigation, so first letter navigation never reached this group: the keys
+ * were spent before the page saw them. There is no way to ask a reader to
+ * change mode, but focus entering an application region makes it change by
+ * itself, and pass the keys through.
+ *
+ * The cost of an application region is that browse mode stops working inside
+ * it, which is why it is worth so little here and would be worth a lot
+ * elsewhere: the container holds nothing but the checkboxes, every one of them
+ * is focusable, and each announces its own label when focus arrives. It is
+ * added when the list opens and taken off when it closes, so it is present only
+ * while the widget really is handling arrows, Home, End and letters.
+ */
+const AT_LIST_ROLE = 'application';
+
+/**
  * Closes the list, puts focus back on the button, and says it has closed.
  *
  * The announcement is the point. Collapsing from the button leaves focus where
@@ -338,6 +356,7 @@ export function collapseAssistiveTechnologies(
 ): void {
     atMenuBtn.setAttribute("aria-expanded", "false");
     atMenu.hidden = true;
+    atMenu.removeAttribute("role");
     atMenuBtn.focus();
     announce(AT_LIST_COLLAPSED);
 }
@@ -352,6 +371,9 @@ function addAssistiveTechnologyDisclosureEvents(): void {
             return;
         }
         toggleMenu(e);
+        // Set before focus moves, so the reader meets the application region as
+        // it arrives rather than a moment after.
+        atMenu.setAttribute("role", AT_LIST_ROLE);
         // Expanding lands inside the list rather than leaving focus on the
         // button. From the button the arrows and first letter navigation have
         // nothing to act on, so the group looked unresponsive until Tab was

@@ -79,8 +79,16 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       flips under a reader is not reliably reported)*
 - [ ] Expanding announces nothing extra: focus moves into the list and the
       reader speaks the checkbox it lands on
-- [ ] First letter navigation still works once expanded -- type `j` and focus
-      moves to JAWS
+- [ ] First letter navigation works once expanded **with the reader running**:
+      type `j` and focus moves to JAWS
+      <br>*(in browse mode a reader keeps single letter keys for its own quick
+      navigation, so this never reached the page. The open list carries
+      role="application", which makes the reader switch mode and pass the keys
+      through. Only a real screen reader can check this -- it cannot be seen in
+      the DOM)*
+- [ ] Arrow keys, Home and End move through the list the same way
+- [ ] Each checkbox still announces its own name and checked state inside the
+      open list, and the role is gone again once it is collapsed
       <br>*(a `display` rule on the menu beat the browser's own `[hidden]`, so
       it was never collapsed at all -- see the `[hidden]` rule in styles.css)*
 - [ ] **Back** in the editor warns that the unsaved test will be discarded;
