@@ -453,7 +453,7 @@ describe('buildOverallCommentsTextFor', () => {
         const jaws = parseSummaryComments(buildOverallCommentsTextFor(evaluation, 'JAWS'));
         const nvda = parseSummaryComments(buildOverallCommentsTextFor(evaluation, 'NVDA'));
 
-        // Availability shown by colour alone was only ever recorded under NVDA.
+        // Availability shown by color alone was only ever recorded under NVDA.
         const under = (comments: SummaryComment[]) => comments.map((comment) => comment.text);
         expect(under(nvda).some((text) => text.startsWith('Availability is shown'))).toBe(true);
         expect(under(jaws).some((text) => text.startsWith('Availability is shown'))).toBe(false);

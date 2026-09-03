@@ -158,7 +158,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
-    // The text colour is set because the fill is: see REPORT_TEXT_COLOR.
+    // The text color is set because the fill is: see REPORT_TEXT_COLOR.
     function headerCell(content: unknown) {
         return new TableCell({
             children: [text(content, { bold: true, color: REPORT_TEXT_COLOR })],
@@ -167,7 +167,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
         });
     }
 
-    /** The shading a banded row's cells carry, and the text colour that goes with it. */
+    /** The shading a banded row's cells carry, and the text color that goes with it. */
     const bandShading = { type: ShadingType.CLEAR, fill: BAND_FILL, color: 'auto' };
 
     /**
@@ -400,10 +400,10 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     children.push(heading('Testing and Scoring Key', HeadingLevel.HEADING_1));
     SCORING_KEY_PARAGRAPHS.forEach((paragraph) => children.push(new Paragraph({ text: paragraph })));
     /*
-     * The one full legend in the report, and so the one place the colours are
+     * The one full legend in the report, and so the one place the colors are
      * given their meaning. Each score's own fill sits behind its number here and
      * behind the score row of every use case, and the label is written out
-     * beside it in both places, so the colour is a second cue and never the
+     * beside it in both places, so the color is a second cue and never the
      * only one.
      */
     const scoringKey = new Table({
@@ -511,7 +511,7 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
      *
      * An unperformed run scores -1, which formatScore renders "Not rated" and
      * scoreRowStyle has no fill for, so it is left unshaded rather than being
-     * coloured as though somebody had judged it.
+     * colored as though somebody had judged it.
      */
     function scoreRow(score: number) {
         const style = SCORE_LABELS.some((entry) => entry.score === score)

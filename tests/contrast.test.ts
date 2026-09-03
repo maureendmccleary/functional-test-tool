@@ -5,7 +5,7 @@ import {
 } from '../src/domain/report-format.js';
 
 /**
- * Contrast of the report's own colours, checked by arithmetic.
+ * Contrast of the report's own colors, checked by arithmetic.
  *
  * The report gives some cells a fixed pale fill, and text on a fixed fill has
  * to be legible whatever theme the reader opens the document in. That is a
@@ -16,7 +16,7 @@ import {
  * The formula is WCAG 2.2's, unchanged since 2.0.
  */
 
-/** WCAG relative luminance of a six digit hex colour. */
+/** WCAG relative luminance of a six digit hex color. */
 function relativeLuminance(hex: string): number {
     const value = hex.replace('#', '');
     const channels = [0, 2, 4]
@@ -27,7 +27,7 @@ function relativeLuminance(hex: string): number {
     return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
-/** WCAG contrast ratio between two colours, from 1:1 to 21:1. */
+/** WCAG contrast ratio between two colors, from 1:1 to 21:1. */
 function contrastRatio(foreground: string, background: string): number {
     const a = relativeLuminance(foreground);
     const b = relativeLuminance(background);
@@ -45,7 +45,7 @@ describe('contrastRatio', () => {
         expect(contrastRatio('000000', 'FFFFFF')).toBeCloseTo(21, 2);
     });
 
-    test('a colour against itself is the minimum of 1 to 1', () => {
+    test('a color against itself is the minimum of 1 to 1', () => {
         expect(contrastRatio('92D050', '92D050')).toBeCloseTo(1, 2);
     });
 
@@ -69,7 +69,7 @@ describe('the score key', () => {
         }
     }
 
-    test('the achieved row is bold, so colour is not the only cue', () => {
+    test('the achieved row is bold, so color is not the only cue', () => {
         // The pale and strong fills of one score differ by as little as
         // 1.29:1, far below the 3:1 that would let the fill carry the meaning
         // on its own. The bold is what makes the row findable.
@@ -146,9 +146,9 @@ describe('banded rows', () => {
  *
  * styles.css names its palette once in :root and then only ever refers to those
  * tokens, so the pairs the sheet actually puts together are a short list and
- * checking them is the same calculation the report's colours already get. The
+ * checking them is the same calculation the report's colors already get. The
  * alternative is a comment claiming a ratio, which is exactly the kind of claim
- * that goes stale the first time somebody nudges a colour.
+ * that goes stale the first time somebody nudges a color.
  */
 describe('the stylesheet palette', () => {
     const stylesheet = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');

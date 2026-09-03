@@ -483,10 +483,10 @@ Open that document and check:
       beside it
 - [ ] Open the report with Word in a **dark theme**: the filled score rows and
       the table headings still read as dark text on their pale fills
-      <br>*(the only colour check left by hand. `contrast.test.ts` asserts the
+      <br>*(the only color check left by hand. `contrast.test.ts` asserts the
       contrast of every label against its fill, and that the row marked is the
       one the use case scored, so neither needs an eye. What no test here can
-      reach is whether Word honours the explicit text colour in its own dark
+      reach is whether Word honours the explicit text color in its own dark
       theme.)*
 - [ ] The cover credits "Produced by Functional Test Tool, Level Access Inc."
 - [ ] The report says "Use Case" throughout, **not** "Functional Test" -- that
