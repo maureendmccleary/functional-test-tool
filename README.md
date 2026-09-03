@@ -38,7 +38,12 @@ The rules are:
 
 ### An example
 
-**Generate Summary** fills the box from the issues you recorded:
+**Generate Summary** fills the box from the issues you recorded. It **merges**
+rather than replacing, so it is always safe to press: your wording stays,
+anything missing is added, and pressing it twice changes nothing the second
+time.
+
+It starts you with:
 
 ```
 Stoppers:
@@ -81,6 +86,21 @@ everything that technology ran into across the whole evaluation, grouped by
 severity, and pressing it again **merges** rather than appending: nothing
 duplicates, your edits survive, and a line you typed under no banner takes the
 severity of the issue it matches.
+
+### Opening an evaluation saved before this existed
+
+Older files stored summaries as plain text with no severities, and nothing in
+them records which banner a line was written under, so they load **unclassified**
+— printed above the banners rather than grouped. Nothing is guessed and nothing
+is lost; the issues themselves still carry their scores.
+
+To group one, open the summary and press **Generate Summary** (or **Generate
+Overall Comments**). A line matching an issue takes that issue's severity, a note
+you wrote yourself matches nothing and stays where it is, and anything not yet
+mentioned is added under its banner.
+
+A summary that was never written at all needs nothing: the tool falls back to the
+most severe issues, computed from the scores, and those come out grouped already.
 
 ### Worth knowing
 

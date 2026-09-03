@@ -330,6 +330,16 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       <br>*(the old stripping deleted those words wherever they appeared)*
 - [ ] **View Results**: the Problem Summary is grouped, most severe first, with
       any unbannered line printed above the groups
+- [ ] **Generate Summary** on a box that already has text **merges**: your
+      wording stays, missing issues are added under their banners, and pressing
+      it a second time changes nothing
+- [ ] Load an evaluation saved **before severities were stored**: its summaries
+      show ungrouped, above where the banners would be, and its issue scores are
+      untouched. Pressing **Generate Summary** then groups it -- a line matching
+      an issue takes that issue's severity, and a note the tester wrote stays
+      unclassified at the top
+      <br>*(replacing was that tester's only route to a grouped summary and it
+      cost them everything they had written)*
 - [ ] Save a summary on script 1, go **Back**, then Perform script 2: the
       Summary under the score reads "No Issues", **not** script 1's summary
 - [ ] Back to script 1: its own summary is there again

@@ -1,6 +1,6 @@
 import { issuesMap, minimumScore } from '../domain/scoring.js';
 import {
-    buildSummaryText, buildSummaryTextFromComments, parseSummaryComments
+    buildSummaryText, buildSummaryTextFromComments, mergeSummaryComments, parseSummaryComments
 } from '../domain/summary.js';
 import { getCurrentRun, markEvaluationChanged } from '../state/store.js';
 import { requireEl } from './dom.js';
@@ -12,14 +12,31 @@ import { requireEl } from './dom.js';
 import { populateSummaryList } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
 
-/** Fills the comment box with the run's issues grouped by severity, and updates its score. */
+/**
+ * Fills in the run's issues around whatever is already written, and updates the
+ * score.
+ *
+ * Merged rather than replaced, as Generate Overall Comments is: the box may
+ * hold the tester's own wording, and it holds it with no banners at all in an
+ * evaluation saved before severities were stored. Replacing was that tester's
+ * only route to a grouped summary, and it cost them everything they had
+ * written. Now pressing it groups what is there and adds what is missing, a
+ * line already written picks up the severity of the issue it matches, and
+ * pressing it twice does nothing the second time.
+ *
+ * The score is still written outright. That is this button's other job and the
+ * one deliberate exception to the score control owning the score.
+ */
 export function generateSummary(): void {
     const run = getCurrentRun();
     const allIssues = issuesMap(run);
-    requireEl<HTMLTextAreaElement>("general-comments").value = buildSummaryText(allIssues);
+    const box = requireEl<HTMLTextAreaElement>("general-comments");
+    box.value = buildSummaryTextFromComments(mergeSummaryComments(
+        parseSummaryComments(box.value), parseSummaryComments(buildSummaryText(allIssues))
+    ));
     run.score = minimumScore(allIssues);
     requireEl<HTMLSelectElement>("perform-score").value = String(run.score);
-    requireEl("general-comments").focus();
+    box.focus();
 }
 
 /** Click handler for Generate Summary. */

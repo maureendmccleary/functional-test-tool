@@ -244,6 +244,47 @@ describe('generateSummary', () => {
         generateSummary();
         expect(document.getElementById('general-comments')!.focused).toBe(true);
     });
+
+    test('keeps what the tester has already written and adds what is missing', () => {
+        const { document } = withTestRun([{ issues: [issue('a fresh finding', '1')] }]);
+        document.getElementById('general-comments')!.value =
+            'Major Issues:\ntheir own words';
+        generateSummary();
+        expect(document.getElementById('general-comments')!.value)
+            .toBe('Stoppers:\na fresh finding\n\nMajor Issues:\ntheir own words\n\n');
+    });
+
+    test('pressing it twice changes nothing the second time', () => {
+        const { document } = withTestRun([{ issues: [issue('a', '1'), issue('b', '3')] }]);
+        generateSummary();
+        const once = document.getElementById('general-comments')!.value;
+        generateSummary();
+        expect(document.getElementById('general-comments')!.value).toBe(once);
+    });
+
+    test('groups an old summary that was stored with no severities at all', () => {
+        // The case that made this merge rather than replace: a file saved
+        // before severities existed. Replacing was the only route to a grouped
+        // summary and it threw the tester's wording away.
+        const { run, document } = withTestRun([
+            { issues: [issue('cannot activate the control', '1')] }
+        ]);
+        run.comments = [
+            said('cannot activate the control'),
+            said('Sign-in was out of scope for this engagement.')
+        ];
+        document.getElementById('general-comments')!.value =
+            buildSummaryTextFromComments(run.comments);
+
+        generateSummary();
+
+        // The line matching an issue takes its severity; the tester's own note
+        // matches nothing and stays unclassified, at the top.
+        expect(document.getElementById('general-comments')!.value).toBe(
+            'Sign-in was out of scope for this engagement.\n\n'
+            + 'Stoppers:\ncannot activate the control\n\n'
+        );
+    });
 });
 
 describe('saveGeneralComments', () => {
