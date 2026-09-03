@@ -318,6 +318,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       writes the score, and it is a deliberate tester action)*
 - [ ] **Save** replaces the summary list; an empty comment box yields a single
       "No Issues" entry
+- [ ] **Save** announces "General comments saved." and leaves it on screen; the
+      reader hears it from inside the dialog, since the page's own region is
+      inert while a modal is open
+- [ ] Closing and reopening **View Summary** does not read that message again
 - [ ] Reword a line *under its banner*, save, and reopen **View Summary**: the
       box comes back with its banners, and the reworded line is still under the
       one you left it under
@@ -380,6 +384,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Only that technology's issues appear, never another's
 - [ ] Change the rating, edit the text, **Save**, close and reopen: both come
       back as saved rather than being recomputed
+- [ ] **Save** announces "Overall comments saved." the same way, and reopening
+      does not read it again
 - [ ] **View Evaluation Results**: Significant Issues shows that rating and
       those comments for that technology
 - [ ] A technology whose overall comments were **never opened** still shows a

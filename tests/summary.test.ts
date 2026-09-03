@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import type {
     Issue, SummaryComment, TestRunStep, TestRun, FunctionalTest
 } from '../src/types.js';
@@ -24,7 +24,12 @@ function said(text: string, severity?: number): SummaryComment {
     return severity === undefined ? { text } : { text, severity };
 }
 
-const SUMMARY_ELEMENT_IDS = ['general-comments', 'perform-score', 'summary-list'];
+/** How long announce leaves the region empty before filling it. */
+const SPOKEN_MS = 400;
+
+const SUMMARY_ELEMENT_IDS = [
+    'general-comments', 'perform-score', 'summary-list', 'general-comments-msg', 'app-status'
+];
 
 /** Points the store at a single run and installs a stub document. */
 function withTestRun(steps: TestRunStep[]) {
@@ -322,6 +327,33 @@ describe('saveGeneralComments', () => {
         saveGeneralComments(clickEvent);
         expect(run.comments)
             .toEqual([said('The "Place hold" button is announced only as "button".', 1)]);
+    });
+
+    test('confirms the save, so the tester is not left guessing', () => {
+        const { document } = withTestRun([{ issues: [] }]);
+        document.getElementById('general-comments')!.value = 'something worth keeping';
+        saveGeneralComments(clickEvent);
+        expect(document.getElementById('general-comments-msg')!.textContent)
+            .toBe('General comments saved.');
+    });
+
+    test('the confirmation is announced, not only shown', () => {
+        // The dialog is modal, so the page's own region is inert while it is
+        // open; the message has to reach a live region to be spoken at all.
+        // announce clears the region first and fills it in a later task, so
+        // that a repeated message still reads as a change.
+        vi.useFakeTimers();
+        try {
+            const { document } = withTestRun([{ issues: [] }]);
+            saveGeneralComments(clickEvent);
+            // Far enough for the message to land, not so far that announce has
+            // emptied the region again; running every timer would show nothing.
+            vi.advanceTimersByTime(SPOKEN_MS);
+            expect(document.getElementById('app-status')!.textContent)
+                .toBe('General comments saved.');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     test('replaces the previous list rather than appending to it', () => {

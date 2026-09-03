@@ -11,6 +11,7 @@ import { requireEl } from './dom.js';
  */
 import { populateSummaryList } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
+import { showStatusMessage } from './status.js';
 
 /**
  * Fills in the run's issues around whatever is already written, and updates the
@@ -52,6 +53,10 @@ export function saveGeneralComments(e: Event): void {
     const commentSummary = requireEl<HTMLTextAreaElement>("general-comments").value;
     run.comments = parseSummaryComments(commentSummary);
     populateSummaryList();
+    // Left on screen rather than timed out, as the overall comments dialog
+    // leaves its own: the tester has just pressed Save and may be some way from
+    // reading the confirmation.
+    showStatusMessage("general-comments-msg", "General comments saved.", 0);
 }
 
 /** Opens the summary dialog, seeding it from the comments already recorded. */
@@ -59,6 +64,8 @@ export function viewSummaryButtonClicked(e: Event): void {
     e.preventDefault();
     const viewSummaryDialog = requireEl<HTMLDialogElement>("view-summary-dialog");
     setSectionTitle('View Summary');
+    // A message belongs to the save that raised it, not to the next opening.
+    requireEl("general-comments-msg").textContent = "";
     viewSummaryDialog.showModal();
     requireEl('view-summary-dialog-title').focus();
     const viewSummaryDialogClose = requireEl("view-summary-dialog-close");
