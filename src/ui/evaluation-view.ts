@@ -5,7 +5,7 @@ import {
     forgetSavedFile, hasSavedFile, isFilePickerSupported, loadFile, saveEvaluation
 } from '../io/file-picker.js';
 import {
-    getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
+    getEvaluation, hasUnsavedChanges, markEvaluationChanged, markEvaluationSaved, setEvaluation
 } from '../state/store.js';
 import { fillListbox } from './controls.js';
 import { findEl, requireEl } from './dom.js';
@@ -207,10 +207,31 @@ function focusAfterLoad(hasTests: boolean): void {
  * Prompts for an evaluation file, loads it, and enables the controls it
  * unlocks. Cancelling the dialog leaves the loaded evaluation untouched.
  */
+/**
+ * Asks before an action that would throw the loaded evaluation away.
+ *
+ * Shared so that every such action asks in the same words, and so that adding
+ * one is a matter of calling this rather than remembering that the question
+ * exists. Only the closing sentence differs.
+ *
+ * @param action what the tester is about to do, as a question
+ * @returns true when it is safe to go ahead
+ */
+export function confirmDiscardingEvaluation(action: string): boolean {
+    return !hasUnsavedChanges() || window.confirm(
+        `The evaluation has changes that have not been saved to a file. ${action}`
+    );
+}
+
 export async function loadEvalButtonClicked(e: Event): Promise<void> {
     e.preventDefault();
     if (!isFilePickerSupported()) {
         showStatusMessage('evaluation-msg', UNSUPPORTED_BROWSER_MESSAGE, 0);
+        return;
+    }
+    // Asked before the picker opens rather than after a file has been chosen:
+    // the answer decides whether the tester wants the picker at all.
+    if (!confirmDiscardingEvaluation('Load another one anyway?')) {
         return;
     }
 

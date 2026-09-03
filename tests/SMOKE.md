@@ -86,6 +86,13 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       cancelling keeps the loaded evaluation intact
 - [ ] **New Evaluation** immediately after loading a file does **not** warn --
       nothing has been changed yet
+- [ ] **Load Evaluation File...** with unsaved changes warns in the same words
+      before the file dialog opens; cancelling leaves the loaded evaluation
+      alone and never opens the picker
+- [ ] Closing or reloading the tab with unsaved changes raises the browser's own
+      "leave site" prompt; with nothing unsaved it closes without one
+      <br>*(this is the only place the evaluation is genuinely lost -- every
+      other route keeps it in the store)*
 
 ## 3. Author a functional test
 
@@ -183,6 +190,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       "Perform Functional Test", and there is no dialog to escape from
 - [ ] **Back** returns to the landing screen with the test list intact, and the
       earlier "loaded successfully" message is **not** read out again
+- [ ] **Back** after recording anything warns that the results are not saved to a
+      file; cancelling stays on the perform screen with everything intact
+- [ ] Accepting that warning and going back, then performing the same test
+      again, shows every result still there -- Back keeps the work, and the
+      warning says so rather than claiming it is lost
+- [ ] **Back** with nothing recorded since the last save does not warn
 - [ ] The page title follows the screen: "Perform Functional Test", "Evaluation",
       "Functional Test Editor", and the app's name on the landing screen. Ask the
       reader for the title on each

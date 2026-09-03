@@ -19,6 +19,7 @@ import {
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { restoreScreenTitle } from './ui/screens.js';
+import { hasUnsavedChanges } from './state/store.js';
 import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
 
@@ -70,6 +71,19 @@ function initialize(): void {
             e.preventDefault();
         });
     }
+
+    // The only place the evaluation is genuinely lost. Everything else keeps it
+    // in the store, so this is the last thing between a long day's testing and
+    // a closed tab. The browser shows its own wording; nothing here can choose
+    // it, and it only fires at all once the tester has interacted with the page.
+    window.addEventListener('beforeunload', (e) => {
+        if (!hasUnsavedChanges()) {
+            return;
+        }
+        e.preventDefault();
+        // Set as well as prevented: older browsers went by this alone.
+        e.returnValue = '';
+    });
 
     addIssueDialogEvents();
     // Whatever closes a dialog -- its button, Escape, or code -- the page is
