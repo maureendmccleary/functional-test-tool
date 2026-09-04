@@ -8,7 +8,7 @@ import {
     getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
     getCurrentTest, markEvaluationChanged, setCurrentIssue, setCurrentSection, setCurrentStep
 } from '../state/store.js';
-import { clearTable, fillListbox } from './controls.js';
+import { clearTable, fillListbox, setLinkedText } from './controls.js';
 import { requireEl } from './dom.js';
 import { showStatusMessage } from './status.js';
 import { populateIssuesList, populateSummaryList, updateAddIssueButtons } from './perform-view.js';
@@ -365,7 +365,9 @@ export function addIssueButtonClick(e: Event): void {
     heading.textContent = empty ? `Add Issue ${label}` : `View Issue ${label}`;
     setSectionTitle(heading.textContent);
     requireEl("add-issue-step-label").textContent = label;
-    requireEl("add-issue-step").textContent = (source[currentStep] || { instructions: "" }).instructions;
+    setLinkedText(
+        requireEl("add-issue-step"), (source[currentStep] || { instructions: "" }).instructions
+    );
     setCurrentIssue(0);
     updateIssueTable();
 

@@ -99,6 +99,31 @@ The editor's Back returns to whichever screen opened it, and drops a script that
 was never saved: it has no assistive technology, so it has no place in the
 evaluation and would otherwise sit in every list as a nameless entry.
 
+### Links in a script's prose
+
+A step often tells the tester to go somewhere, with the address written into the
+instructions. `domain/linked-text.ts` finds those addresses so the tester can
+follow them instead of copying and pasting, and every script that already exists
+gains its links without being rewritten, since the addresses are already there.
+
+Nothing was added to the authoring format. A written out `http://` or `https://`
+is recognised where it stands; an address with no scheme is left as prose rather
+than guessed at, which is what `safe-url.ts` requires anyway. Punctuation that
+belongs to the sentence is not taken into the address: a full stop ends the
+sentence, and a closing bracket is only dropped when nothing in the address
+opened it, since real addresses carry balanced brackets of their own.
+
+Every address goes through `safeLinkUrl`, the same guard the start location
+uses, so only `http:` and `https:` can be followed and a `javascript:` URL in a
+saved file stays the text it is. The parts are built as elements — `innerHTML`
+is refused throughout this app, and instructions come out of an untrusted file.
+Links open in a new tab: performing a test in the same one would take the tool
+away mid-run and lose the results recorded so far.
+
+`ui/controls.ts` renders them for the four places instructions are displayed,
+and `io/docx-report.ts` writes real Word hyperlinks into the report, so a reader
+following up a finding can reach the page from the deliverable.
+
 ## Data model
 
 An **Evaluation** holds **functional tests** — previously called *use cases*,

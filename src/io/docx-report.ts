@@ -2,6 +2,7 @@ import type { Evaluation, FunctionalTest, Issue, SummaryComment, TestRun } from 
 import {
     buildScorecard, effectiveSummaryFor, groupRunsByAssistiveTechnology, runScore
 } from '../domain/evaluation.js';
+import { linkedParts } from '../domain/linked-text.js';
 import { reportFileName } from '../domain/file-names.js';
 import { groupSummaryComments } from '../domain/summary.js';
 import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
@@ -43,9 +44,9 @@ function useCaseBookmark(groupIndex: number, pairingIndex: number): string {
 }
 
 export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new Date()): unknown {
-    const { AlignmentType, Bookmark, Document, HeadingLevel, InternalHyperlink, PageBreak,
-            Paragraph, ShadingType, Table, TableCell, TableRow, TextRun, VerticalAlign,
-            VerticalMergeType, WidthType, XmlComponent } = docx;
+    const { AlignmentType, Bookmark, Document, ExternalHyperlink, HeadingLevel,
+            InternalHyperlink, PageBreak, Paragraph, ShadingType, Table, TableCell, TableRow,
+            TextRun, VerticalAlign, VerticalMergeType, WidthType, XmlComponent } = docx;
 
     /*
      * The width of the text on a Letter page inside Word's default one inch
@@ -69,6 +70,29 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
 
     function text(content: unknown, options: Record<string, unknown> = {}) {
         return new Paragraph({ children: [new TextRun({ text: String(content ?? ''), ...options })] });
+    }
+
+    /**
+     * A paragraph of a script's prose, with any web address in it as a real
+     * hyperlink.
+     *
+     * The report is the deliverable, so a reader following up a finding can go
+     * straight to the page the step names rather than retyping it. The address
+     * has been through safeLinkUrl already; Word is given only what a browser
+     * would have been given.
+     */
+    function linkedText(content: unknown, options: Record<string, unknown> = {}) {
+        const parts = linkedParts(String(content ?? ''));
+        return new Paragraph({
+            children: parts.map((part) => (
+                part.href === undefined
+                    ? new TextRun({ text: part.text, ...options })
+                    : new ExternalHyperlink({
+                        link: part.href,
+                        children: [new TextRun({ text: part.text, style: 'Hyperlink', ...options })]
+                    })
+            ))
+        });
     }
 
     function heading(content: string, level: unknown) {
@@ -95,15 +119,19 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
     }
 
     function cell(content: unknown, options: Record<string, unknown> = {}) {
+        // `linked` chooses the paragraph builder rather than describing a run,
+        // so it is taken out before the rest is handed to one.
+        const { linked, ...runOptions } = options;
+        const buildParagraph = linked ? linkedText : text;
         const lines = Array.isArray(content) ? content : [content];
         const paragraphs = lines.length > 0
-            ? lines.map((line: unknown) => text(line, options))
+            ? lines.map((line: unknown) => buildParagraph(line, runOptions))
             : [new Paragraph({ text: '' })];
         return new TableCell({
             children: paragraphs,
             verticalAlign: VerticalAlign.TOP,
-            ...(options.shading ? { shading: options.shading } : {}),
-            ...(options.verticalMerge ? { verticalMerge: options.verticalMerge } : {})
+            ...(runOptions.shading ? { shading: runOptions.shading } : {}),
+            ...(runOptions.verticalMerge ? { verticalMerge: runOptions.verticalMerge } : {})
         });
     }
 
@@ -132,14 +160,19 @@ export function buildEvalResultsDocument(evaluation: Evaluation, now: Date = new
                 : {};
             // A merged run of cells: the first carries the content, the rest
             // continue it. Word wants a cell in every row either way.
-            const spanning = (content: unknown, first: boolean) => cell(first ? content : [], {
+            const spanning = (
+                content: unknown, first: boolean, options: Record<string, unknown> = {}
+            ) => cell(first ? content : [], {
                 ...shading,
+                ...options,
                 verticalMerge: first ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE
             });
             return issues.map((issueRow, rowIndex) => new TableRow({
                 children: [
                     spanning(String(index + 1), rowIndex === 0),
-                    spanning(String(entry.instructions || ''), rowIndex === 0),
+                    // The one cell holding the scripter's prose, and so the one
+                    // that can carry an address the reader may want to follow.
+                    spanning(String(entry.instructions || ''), rowIndex === 0, { linked: true }),
                     cell(issueRow.score, shading),
                     cell(issueRow.description, shading)
                 ]

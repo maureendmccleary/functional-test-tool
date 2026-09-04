@@ -7,6 +7,21 @@ issues, and export an evaluation report.
 A script assigned several assistive technologies becomes one functional test per
 technology, so no technology an evaluation covers is left untested.
 
+## Links in a step
+
+Write a web address into a step's instructions as you normally would:
+
+```
+Sign in at https://catalogue.example.org/account and confirm the name is announced.
+```
+
+The address becomes a link the tester can activate while performing the script,
+opening in a new tab so the tool stays where it is. There is no markup to learn,
+and scripts you have already written gain their links without being changed.
+
+The address has to be written out in full, starting `http://` or `https://`.
+`catalogue.example.org/holds` is left as plain text rather than guessed at.
+
 ## Writing summaries
 
 Both written summaries — a test's **General Comments** and an assistive

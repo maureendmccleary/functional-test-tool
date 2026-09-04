@@ -15,7 +15,9 @@ import {
     getCurrentRun, getCurrentTest, getEvaluation, hasUnsavedChanges, markEvaluationChanged,
     setCurrentRunIndex, setCurrentTestIndex
 } from '../state/store.js';
-import { appendNewlines, createGroupedList, fillListbox } from './controls.js';
+import {
+    appendNewlines, createGroupedList, fillListbox, setLinkedText
+} from './controls.js';
 import { findEl, requireEl, requireForm } from './dom.js';
 import { showScreen } from './screens.js';
 import { saveFileButtonClick } from './evaluation-view.js';
@@ -236,7 +238,7 @@ function createStepInstructionsForPerform(stepNumber: number): HTMLElement {
     const test = getCurrentTest();
     const newStep = document.createElement('P');
     newStep.setAttribute("id", `perform-step-contents[${stepNumber}]`);
-    newStep.textContent = test.steps[stepNumber].instructions;
+    setLinkedText(newStep, test.steps[stepNumber].instructions);
     return newStep;
 }
 
@@ -318,7 +320,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
 
         const instructions = document.createElement("P");
         instructions.setAttribute("id", `perform-extension-contents[${index}]`);
-        instructions.textContent = extension.instructions;
+        setLinkedText(instructions, extension.instructions);
 
         const issuesHeading = document.createElement("H3");
         issuesHeading.textContent = "Issues";
@@ -388,7 +390,7 @@ export function populatePerform(): void {
     }
     for (let i = 0; i < test.steps.length; i++) {
         if (i === 0) {
-            requireEl("perform-step-contents[0]").textContent = test.steps[i].instructions;
+            setLinkedText(requireEl("perform-step-contents[0]"), test.steps[i].instructions);
         } else {
             addStepToPerform(test, i);
         }

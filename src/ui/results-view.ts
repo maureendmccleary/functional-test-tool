@@ -4,7 +4,7 @@ import { buildTestReport, testDisplayName } from '../domain/functional-test.js';
 import { groupSummaryComments } from '../domain/summary.js';
 import { issueRows } from '../domain/test-run.js';
 import { getCurrentRun, getCurrentTest } from '../state/store.js';
-import { createGroupedList, createLabelValueTable } from './controls.js';
+import { createGroupedList, createLabelValueTable, setLinkedText } from './controls.js';
 import { requireEl } from './dom.js';
 import { setSectionTitle } from './screens.js';
 
@@ -88,7 +88,7 @@ function appendResultsSection(
                 row.appendChild(number);
 
                 const instructions = document.createElement("td");
-                instructions.textContent = entry.instructions;
+                setLinkedText(instructions, entry.instructions);
                 instructions.classList.add("cell-centered");
                 row.appendChild(instructions);
 

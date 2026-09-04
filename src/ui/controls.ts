@@ -1,5 +1,6 @@
 import type { ListboxOption, TypeCatalogEntry } from '../types.js';
 import type { SummaryGroup } from '../domain/summary.js';
+import { linkedParts } from '../domain/linked-text.js';
 import { findEl, requireEl } from './dom.js';
 
 /**
@@ -100,6 +101,34 @@ export function createUnorderedList(listItems: string[] | undefined, emptyText =
     });
 
     return list;
+}
+
+/**
+ * Writes text into an element, with any web address in it as a link.
+ *
+ * The one place a step's prose is put on screen. Built as elements rather than
+ * markup: instructions come out of a saved file, which is untrusted, and
+ * innerHTML is refused throughout this app for exactly that reason. The address
+ * has already been through safeLinkUrl by the time it arrives here, so nothing
+ * but http and https can be followed.
+ *
+ * Links open in a new tab. Performing a test in the same one would take the
+ * tool away mid-run and lose the results recorded so far.
+ */
+export function setLinkedText(element: HTMLElement, value: string): void {
+    element.textContent = "";
+    linkedParts(value).forEach((part) => {
+        if (part.href === undefined) {
+            element.appendChild(document.createTextNode(part.text));
+            return;
+        }
+        const link = document.createElement("a");
+        link.href = part.href;
+        link.textContent = part.text;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        element.appendChild(link);
+    });
 }
 
 /**
