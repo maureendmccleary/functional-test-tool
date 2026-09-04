@@ -3,7 +3,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-    { ignores: ['dist/**', 'node_modules/**', 'font-awesome-4.7.0/**'] },
+    { ignores: ['dist/**', 'node_modules/**'] },
 
     js.configs.recommended,
     ...tseslint.configs.recommended,
@@ -58,6 +58,14 @@ export default tseslint.config(
 
     {
         files: ['*.config.ts', '*.config.js'],
+        languageOptions: { globals: { ...globals.node } }
+    },
+
+    {
+        // Build scripts run in Node, not in the browser the rest of this is
+        // written for. They are linted like everything else; only the globals
+        // available to them differ.
+        files: ['scripts/**/*.mjs'],
         languageOptions: { globals: { ...globals.node } }
     }
 );
