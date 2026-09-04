@@ -305,6 +305,18 @@ dialog {
     margin: 0;
 }
 
+/* Labelled controls keep their decorative icon and text aligned as one unit. */
+.control-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* The disclosure's right chevron points down while its controlled list is open. */
+[aria-expanded="true"] > .icon-expand {
+    transform: rotate(90deg);
+}
+
 /*
  * In the editor a step or an extension is a label, the text of it, and the
  * control that deletes it: a row, not three things in a stack.
@@ -550,14 +562,16 @@ td {
 }
 
 /*
- * Every delete control is an icon-only button, and the icon used to be dark red
+ * Icon-only delete controls use the danger treatment. The explicit class keeps
+ * a labelled action such as Delete Functional Test at its natural text width.
+ * The icon used to be dark red
  * on the button's own fill, which was unreadable against either the old teal or
  * the brand indigo. The color belongs to the button, and the icon inherits the
  * white that comes with it. Matched by the icon it contains because none of
  * these buttons is given a class, and :has failing to match would only leave
  * them looking like every other button rather than breaking anything.
  */
-button:has(.icon-trash) {
+button.icon-only:has(.icon-trash) {
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
@@ -569,12 +583,12 @@ button:has(.icon-trash) {
     border-color: var(--danger);
 }
 
-button:has(.icon-trash):hover {
+button.icon-only:has(.icon-trash):hover {
     background-color: var(--danger-hover);
     border-color: var(--danger-hover);
 }
 
-button:has(.icon-edit) {
+button.icon-only:has(.icon-edit) {
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;

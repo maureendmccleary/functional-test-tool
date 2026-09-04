@@ -102,7 +102,7 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Delete every functional test: **Delete Functional Test**, **Edit
       Functional Test** and **Perform** all become disabled
 - [ ] Reload `/tmp/smoke.json` to carry on
-- [ ] **Save** on the evaluation screen returns to the landing screen; the
+- [ ] **Save and go back** on the evaluation screen returns to the landing screen; the
       functional test list is there with Edit and Perform, and there is no
       **New Functional Test** button
 - [ ] **Back** on the evaluation screen also returns to the landing screen, and

@@ -65,3 +65,10 @@ describe('dialog close controls', () => {
             .toMatch(/border-color:\s*var\(--danger-hover\)/);
     });
 });
+
+describe('disclosure icons', () => {
+    test('turns the right chevron down when the disclosure is expanded', () => {
+        expect(ruleBody('[aria-expanded="true"] > .icon-expand'))
+            .toMatch(/transform:\s*rotate\(90deg\)/);
+    });
+});

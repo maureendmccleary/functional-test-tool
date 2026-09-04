@@ -60,6 +60,7 @@ function addStepToEditor(stepNumber: number): HTMLElement {
     const newStep = createStepForEditor(stepNumber);
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
+    deleteBtn.classList.add("icon-only");
     deleteBtn.setAttribute("id", `step-delete[${stepNumber}]`);
     deleteBtn.setAttribute("aria-label", "delete");
     deleteBtn.appendChild(createIcon("trash"));
@@ -101,6 +102,7 @@ function addExtensionToEditor(index: number): HTMLElement {
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
+    deleteBtn.classList.add("icon-only");
     deleteBtn.setAttribute("id", `extension-delete[${index}]`);
     deleteBtn.setAttribute("aria-label", "delete");
     deleteBtn.appendChild(createIcon("trash"));

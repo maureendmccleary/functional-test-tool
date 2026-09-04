@@ -26,9 +26,11 @@ import { hasUnsavedChanges } from './state/store.js';
 import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
 import { addViewResultsDialogEvents } from './ui/results-view.js';
+import { decorateIconLabels } from './ui/icons.js';
 
 /** Wires the controls that exist in index.html from the start. */
 function initialize(): void {
+    decorateIconLabels();
     requireEl("eval-file-load").addEventListener("click", loadEvalButtonClicked);
     requireEl("eval-new").addEventListener("click", newEvaluationButtonClicked);
     requireEl("eval-edit").addEventListener("click", editEvaluationButtonClicked);

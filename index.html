@@ -51,9 +51,6 @@
       <div role="group" aria-label="Evaluation File Actions">
         <button type="button" id="eval-file-load">Load Evaluation File...</button>
         <button type="button" id="eval-new">New Evaluation</button>
-        <button type="button" id="eval-edit" disabled>Edit Evaluation</button>
-        <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
-        <button type="button" id="eval-save-file" disabled>Download Evaluation File</button>
       </div>
       <br><br>
       <div role="group" aria-labelledby="landing-details-heading">
@@ -61,13 +58,18 @@
         <p>Workspace: <span id="landing-workspace"></span></p>
         <p>Asset: <span id="landing-asset"></span></p>
         <p>Evaluation: <span id="landing-name"></span></p>
+        <div role="group" aria-label="Evaluation Details Actions">
+          <button type="button" id="eval-edit" data-icon="edit" disabled>Edit Evaluation</button>
+          <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
+          <button type="button" id="eval-save-file" disabled>Download Evaluation File</button>
+        </div>
       </div>
       <br><br>
       <label for="select-test">Select a Functional Test: </label>
       <select name="select-test" id="select-test"></select>
       <br><br>
       <div role="group" aria-label="Functional Test Actions">
-        <button id="edit-test" type="button" disabled>Edit Functional Test</button>
+        <button id="edit-test" type="button" data-icon="edit" disabled>Edit Functional Test</button>
         <button id="perform-test" type="button" disabled>Perform</button>
       </div>
       <br><br>
@@ -77,7 +79,10 @@
   <form id="evaluation-editor-form" class="inactive" name="evaluationEditor">
     <div>
       <h1 id="evaluation-editor-heading" tabindex="-1">Evaluation</h1>
-      <br><br>
+      <div role="group" aria-label="Evaluation Editor Actions">
+        <a id="evaluation-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
+        <button id="eval-editor-save" type="button">Save and go back</button>
+      </div>
       <p id="evaluation-editor-msg" class="status-text"></p>
       <br><br>
       <div role="group" aria-labelledby="evaluation-details-heading">
@@ -97,14 +102,9 @@
       <select name="eval-select-test" id="eval-select-test"></select>
       <br><br>
       <div role="group" aria-label="Functional Test Actions">
-        <button id="eval-add-test" type="button">Add Test</button>
-        <button id="eval-edit-test" type="button" disabled>Edit Functional Test</button>
-        <button id="eval-delete-test" type="button" disabled>Delete Functional Test</button>
-      </div>
-      <br><br>
-      <div role="group" aria-label="Evaluation Editor Actions">
-        <button id="eval-editor-save" type="button">Save</button>
-        <a id="evaluation-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home">Back</a>
+        <button id="eval-add-test" type="button" data-icon="add">Add Test</button>
+        <button id="eval-edit-test" type="button" data-icon="edit" disabled>Edit Functional Test</button>
+        <button id="eval-delete-test" type="button" data-icon="trash" disabled>Delete Functional Test</button>
       </div>
       <br><br>
     </div>
@@ -112,8 +112,8 @@
   <form id="test-editor-form" class="inactive" name="testEditor">
     <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
     <div role="group" aria-label="Functional Test Editor Actions">
+      <a id="test-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
       <button type="button" disabled id="test-save">Save</button>
-      <a id="test-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home">Back</a>
     </div>
     <p id="test-editor-msg" class="status-text"></p>
     <!--
@@ -161,7 +161,7 @@
         closes. It is not written here because it is true only while the widget
         is actually handling keys. See the note on that function for why.
       -->
-      <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
+      <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu" data-icon="expand" data-icon-position="after">
         Assistive Technology
       </button>
       <div id="test-edit-at-menu" hidden></div>
@@ -173,6 +173,10 @@
     <div id="step-list">
     </div>
 
+    <div class="button-row">
+      <button type="button" id="new-step-btn">New Step</button>
+    </div>
+
     <h2 id="extensions-heading">Extensions</h2>
     <p>Deviations from the main success path: credentials to sign in with, an error condition to
       trigger. A step refers to one by number, as in "Login credentials are located in extension 1".
@@ -180,13 +184,10 @@
     <div id="extension-list">
     </div>
     <!--
-      Both editor actions on one row. New Step used to sit outside the form,
-      which put it on a line of its own and made it a screen of its own for
-      showScreen to hide. It needs type="button" in here: the form has no
-      action, so a submit button would reload the page.
+      Each editor action follows the list it changes. They need type="button"
+      in here: the form has no action, so a submit button would reload the page.
     -->
     <div class="button-row">
-      <button type="button" id="new-step-btn">New Step</button>
       <button type="button" id="new-extension-btn">New Extension</button>
     </div>
   </form>
@@ -200,7 +201,7 @@
     <label for="step-number">Step Number</label>
     <select id="step-number"></select>
     <br><br>
-    <button id="add-step">Add Step</button>
+    <button id="add-step" data-icon="add">Add Step</button>
   </dialog>
   <!--
     A screen, not a dialog. Performing a test is where a tester spends most of
@@ -215,7 +216,7 @@
     <form id="perform-form" name="performForm">
       <h1 id="perform-heading" tabindex="-1">Perform Functional Test</h1>
       <div role="group" aria-label="Perform Actions">
-        <a id="perform-back" href="#landing-heading" aria-label="Back to Evaluation Home">Back</a>
+        <a id="perform-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
         <button type="button" id="perform-save">Download Functional Test Results</button>
         <button type="button" id="view-test-results">View Results</button>
       </div>
@@ -243,7 +244,7 @@
       <h3>Issues</h3>
       <ul id="perform-step-results[0]"></ul>
       <br><br>
-      <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]">Add Issue</button>
+      <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]" data-icon="add">Add Issue</button>
       <!--
         Marks a step the scripter wrote but the tester is not meant to perform,
         such as signing in. Named by its own label together with the step's

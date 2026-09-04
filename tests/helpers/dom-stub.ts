@@ -14,6 +14,11 @@ export interface ElementStub {
     focused: boolean;
     children: ElementStub[];
     attributes: Map<string, string>;
+    classList: {
+        add(...tokens: string[]): void;
+        remove(...tokens: string[]): void;
+        contains(token: string): boolean;
+    };
     focus(): void;
     appendChild(child: ElementStub): ElementStub;
     removeChild(child: ElementStub): ElementStub;
@@ -30,6 +35,7 @@ export interface ElementStub {
 }
 
 export function createElementStub(tagName = 'DIV'): ElementStub {
+    const classes = new Set<string>();
     const element: ElementStub = {
         tagName,
         value: '',
@@ -38,6 +44,17 @@ export function createElementStub(tagName = 'DIV'): ElementStub {
         focused: false,
         children: [],
         attributes: new Map<string, string>(),
+        classList: {
+            add(...tokens) {
+                tokens.forEach((token) => classes.add(token));
+            },
+            remove(...tokens) {
+                tokens.forEach((token) => classes.delete(token));
+            },
+            contains(token) {
+                return classes.has(token);
+            }
+        },
         focus() {
             element.focused = true;
         },
@@ -75,6 +92,7 @@ export interface DocumentStub {
     elements: Map<string, ElementStub>;
     getElementById(id: string): ElementStub | null;
     createElement(tagName: string): ElementStub;
+    createElementNS(namespace: string, tagName: string): ElementStub;
     querySelector(selector: string): ElementStub | null;
 }
 
@@ -108,6 +126,9 @@ export function installDocumentStub(ids: string[]): DocumentStub {
             return elements.get(id) ?? null;
         },
         createElement(tagName) {
+            return createElementStub(tagName);
+        },
+        createElementNS(_namespace, tagName) {
             return createElementStub(tagName);
         },
         querySelector(selector) {

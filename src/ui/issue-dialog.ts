@@ -120,11 +120,13 @@ export function insertIssueTable(newIssue: Issue): void {
     cell4.textContent = newIssue.score;
     cell4.classList.add("cell-centered");
     const deleteIssueButton = document.createElement('button');
+    deleteIssueButton.classList.add('icon-only');
     deleteIssueButton.setAttribute("aria-label", "delete");
     deleteIssueButton.appendChild(createIcon("trash"));
     deleteIssueButton.type = "button";
     deleteIssueButton.addEventListener("click", deleteIssue);
     const editIssueButton = document.createElement('button');
+    editIssueButton.classList.add('icon-only');
     editIssueButton.setAttribute("aria-label", "edit");
     editIssueButton.appendChild(createIcon("edit"));
     editIssueButton.type = "button";
@@ -334,6 +336,13 @@ export function addIssueDialogEvents(): void {
  *
  * Focus is the exception: it can only be placed once the dialog is open.
  */
+/** Gets the owning button even when its decorative icon received the click. */
+export function getIssueButtonControlId(e: Event): string {
+    return (e.currentTarget as HTMLElement | null)?.id
+        || (e.target as HTMLElement | null)?.id
+        || "";
+}
+
 export function addIssueButtonClick(e: Event): void {
     e.preventDefault();
     const addIssueDialog = requireEl<HTMLDialogElement>("add-issue-dialog");
@@ -341,7 +350,7 @@ export function addIssueButtonClick(e: Event): void {
 
     // Which button was pressed decides both the index and the list it indexes,
     // so an issue found in extension 2 is not filed against step 2.
-    const buttonId = (e.target as HTMLElement).id;
+    const buttonId = getIssueButtonControlId(e);
     setCurrentSection(isExtensionElementId(buttonId) ? 'extensions' : 'steps');
     setCurrentStep(getStepNumber(buttonId));
 

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import { emptyFunctionalTest } from '../src/domain/functional-test.js';
+import { toggleMenu } from '../src/ui/controls.js';
 import {
     blurFormField, collapseAssistiveTechnologies, getEventControlId, updateTestEditorBackLink
 } from '../src/ui/editor-view.js';
@@ -155,5 +156,27 @@ describe('collapsing the assistive technology list', () => {
         vi.advanceTimersByTime(SPOKEN_MS);
         expect(documentStub.getElementById('app-status')!.textContent)
             .toBe('Assistive technology list collapsed.');
+    });
+});
+
+describe('expanding the assistive technology list', () => {
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('uses the disclosure button when its nested chevron receives the click', () => {
+        const documentStub = installDocumentStub(['test-edit-at-menu']);
+        const button = createElementStub('BUTTON');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', 'test-edit-at-menu');
+
+        toggleMenu({
+            currentTarget: button,
+            target: createElementStub('svg')
+        } as unknown as Event);
+
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        expect((documentStub.getElementById('test-edit-at-menu') as unknown as { hidden: boolean }).hidden)
+            .toBe(false);
     });
 });

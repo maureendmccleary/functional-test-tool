@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
-import { clearDocumentStub, installDocumentStub, type DocumentStub } from './helpers/dom-stub.js';
+import {
+    clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
+} from './helpers/dom-stub.js';
 import { setCurrentRunIndex, setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
 import {
-    openTestRun, outOfScopeChanged, populateIssuesList, populateSummaryList
+    openTestRun, outOfScopeChanged, populateIssuesList, populateSummaryList,
+    setIssueButtonContent
 } from '../src/ui/perform-view.js';
 
 /**
@@ -138,6 +141,26 @@ describe('populateIssuesList', () => {
         populateIssuesList();
         populateIssuesList();
         expect(linesIn(documentStub, 'perform-step-results[0]')).toEqual(['no label']);
+    });
+});
+
+describe('issue button labels', () => {
+    test('adds, removes and restores the plus with the Add Issue label', () => {
+        const button = createElementStub('BUTTON');
+
+        setIssueButtonContent(button as unknown as HTMLElement, 0);
+        expect(button.children[0].classList.contains('icon-add')).toBe(true);
+        expect(button.children[1].textContent).toBe('Add Issue');
+        expect(button.classList.contains('control-with-icon')).toBe(true);
+
+        setIssueButtonContent(button as unknown as HTMLElement, 2);
+        expect(button.children).toHaveLength(1);
+        expect(button.children[0].textContent).toBe('View 2 Issues');
+        expect(button.classList.contains('control-with-icon')).toBe(false);
+
+        setIssueButtonContent(button as unknown as HTMLElement, 0);
+        expect(button.children).toHaveLength(2);
+        expect(button.children[0].classList.contains('icon-add')).toBe(true);
     });
 });
 

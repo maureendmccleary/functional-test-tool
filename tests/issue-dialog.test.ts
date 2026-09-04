@@ -4,7 +4,9 @@ import { clearDocumentStub, installDocumentStub, type DocumentStub } from './hel
 import {
     setCurrentRunIndex, setCurrentSection, setCurrentStep, setCurrentTestIndex, setEvaluation
 } from '../src/state/store.js';
-import { currentRecordLabel, validateIssueInputs } from '../src/ui/issue-dialog.js';
+import {
+    currentRecordLabel, getIssueButtonControlId, validateIssueInputs
+} from '../src/ui/issue-dialog.js';
 
 /**
  * The score field rejecting "Not Rated (-1)" is the only thing keeping a score
@@ -74,6 +76,17 @@ describe('currentRecordLabel', () => {
         setCurrentSection('extensions');
         setCurrentStep(0);
         expect(currentRecordLabel()).toBe('Extension 1');
+    });
+});
+
+describe('Add Issue button events', () => {
+    test('uses the button id when a nested decorative icon is clicked', () => {
+        const event = {
+            currentTarget: { id: 'add-extension-issue-btn[1]' },
+            target: { id: '' }
+        } as unknown as Event;
+
+        expect(getIssueButtonControlId(event)).toBe('add-extension-issue-btn[1]');
     });
 });
 
