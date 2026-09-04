@@ -330,6 +330,14 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       without View Summary ever being opened
 - [ ] Deleting it takes it out of that summary again; marking its step **Out of
       scope** does the same, and unticking brings it back
+- [ ] **Editing an issue's score moves its line between categories.** Record one
+      at 4, then edit it to 3: it leaves Advisory and appears under Minor
+      Issues. Rewording and rescoring in the same edit does both
+      <br>*(generating deliberately leaves a line the tester moved by hand
+      alone, which is why an edit has to re-file it outright)*
+- [ ] Record the same wording twice at two different scores, then delete one of
+      them: the line left behind sits at the score still recorded, not the
+      deleted one
 - [ ] **Edit** on a row loads that issue into the fields, announces "Editing
       issue N", and puts focus in the description field; saving updates the same
       row rather than adding one

@@ -6,7 +6,7 @@ import {
     SUMMARY_BANNERS, bannerSeverity, buildOverallCommentsTextFor, buildSummaryText,
     buildSummaryTextFromComments, groupSummaryComments, mergeSummaryComments,
     parseSummaryComments, summaryWithCurrentIssues, summaryWithRenamedIssue,
-    summaryWithoutIssues, summaryWithoutSkippedIssues
+    summaryWithRescoredIssue, summaryWithoutIssues, summaryWithoutSkippedIssues
 } from '../src/domain/summary.js';
 import { issuesMap } from '../src/domain/scoring.js';
 import { normalizeEvaluation } from '../src/domain/migration.js';
@@ -383,6 +383,44 @@ describe('saveGeneralComments', () => {
     });
 });
 
+describe('summaryWithRescoredIssue', () => {
+    test('moves the line to the severity the issue now carries', () => {
+        // Rescoring an advisory down to a minor issue left it under Advisory.
+        expect(summaryWithRescoredIssue([said('the finding', 4)], 'the finding', '3'))
+            .toEqual([said('the finding', 3)]);
+    });
+
+    test('moves it even when the tester had put it somewhere else by hand', () => {
+        // Unlike generating, which leaves a hand placed line alone. Here the
+        // tester has just changed the score, so the score is what they mean.
+        expect(summaryWithRescoredIssue([said('the finding', 1)], 'the finding', '3'))
+            .toEqual([said('the finding', 3)]);
+    });
+
+    test('gives a severity to a line that had none', () => {
+        expect(summaryWithRescoredIssue([said('the finding')], 'the finding', '2'))
+            .toEqual([said('the finding', 2)]);
+    });
+
+    test('leaves every other line alone', () => {
+        const comments = [said('another finding', 1), said('the finding', 4), said('a note')];
+        expect(summaryWithRescoredIssue(comments, 'the finding', '3'))
+            .toEqual([said('another finding', 1), said('the finding', 3), said('a note')]);
+    });
+
+    test('does nothing when the summary does not mention it', () => {
+        const comments = [said('something else', 2)];
+        expect(summaryWithRescoredIssue(comments, 'the finding', '3')).toEqual(comments);
+    });
+
+    test('refuses a score outside the four severities', () => {
+        const comments = [said('the finding', 4)];
+        ['-1', '0', '5', '', 'not a score'].forEach((score) => {
+            expect(summaryWithRescoredIssue(comments, 'the finding', score)).toEqual(comments);
+        });
+    });
+});
+
 describe('summaryWithCurrentIssues', () => {
     test('builds a summary for a run nobody has written one for', () => {
         const run = {
@@ -531,6 +569,21 @@ describe('summaryWithoutIssues', () => {
         const run = { steps: [{ issues: [] }], extensions: [] };
         const comments = [said('written by hand')];
         expect(summaryWithoutIssues(comments, [], run)).toBe(comments);
+    });
+
+    test('keeps it only at a severity that still records it', () => {
+        // The same wording was recorded twice, once as an advisory and once as
+        // a minor issue, so the summary carries two lines. Deleting the
+        // advisory must take its line, even though the wording still counts.
+        const run = { steps: [{ issues: [issue('hit twice', '3')] }], extensions: [] };
+        const comments = [said('hit twice', 4), said('hit twice', 3)];
+        expect(summaryWithoutIssues(comments, ['hit twice'], run))
+            .toEqual([said('hit twice', 3)]);
+    });
+
+    test('drops an unclassified line naming a deleted issue', () => {
+        const run = { steps: [{ issues: [] }], extensions: [] };
+        expect(summaryWithoutIssues([said('gone now')], ['gone now'], run)).toEqual([]);
     });
 });
 

@@ -245,10 +245,17 @@ export function summaryWithoutIssues(
     if (dropping.size === 0) {
         return comments;
     }
-    const counted = countedDescriptions(run);
-    return comments.filter(
-        (comment) => !dropping.has(comment.text) || counted.has(comment.text)
-    );
+    // Counted *at the line's own severity*, not merely counted somewhere. The
+    // same description recorded twice at different scores is two lines in the
+    // summary, and deleting one of the issues has to take its line with it: a
+    // description still counted as a 3 does not keep a line under Advisory
+    // alive.
+    const allIssues = issuesMap(run);
+    return comments.filter((comment) => (
+        !dropping.has(comment.text)
+        || (comment.severity !== undefined
+            && (allIssues.get(comment.severity)?.has(comment.text) ?? false))
+    ));
 }
 
 /** The stored summary with the issues of every out of scope record taken out. */
@@ -285,6 +292,32 @@ export function summaryWithRenamedIssue(
         : comments.map((comment) => (
             comment.text === from ? { ...comment, text: to } : comment
         ));
+}
+
+/**
+ * The stored summary with one issue's line moved to the severity it now carries.
+ *
+ * Rescoring an issue is the one moment the tool knows a severity changed and
+ * why, so it re-files the line outright. mergeSummaryComments cannot do this:
+ * it fills in a severity only where a line has none, on purpose, so that
+ * generating does not undo a line the tester moved to another banner by hand.
+ * That rule left an issue rescored from 4 to 3 sitting under Advisory.
+ *
+ * A severity outside 1..4 leaves the summary alone. Issue scores are validated
+ * on entry, so that is a hand-edited file rather than anything a tester can do.
+ */
+export function summaryWithRescoredIssue(
+    comments: SummaryComment[], description: string, score: string
+): SummaryComment[] {
+    const severity = parseInt(score, 10);
+    if (!Number.isInteger(severity) || severity < LOWEST_SEVERITY || severity > HIGHEST_SEVERITY) {
+        return comments;
+    }
+    return comments.map((comment) => (
+        comment.text === description && comment.severity !== severity
+            ? { ...comment, severity }
+            : comment
+    ));
 }
 
 /**

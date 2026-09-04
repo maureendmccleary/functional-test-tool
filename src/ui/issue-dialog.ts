@@ -1,7 +1,8 @@
 import type { Issue } from '../types.js';
 import { defaults } from '../config/defaults.js';
 import {
-    summaryWithCurrentIssues, summaryWithRenamedIssue, summaryWithoutIssues
+    summaryWithCurrentIssues, summaryWithRenamedIssue, summaryWithRescoredIssue,
+    summaryWithoutIssues
 } from '../domain/summary.js';
 import {
     getCurrentIssue, getCurrentRecord, getCurrentRun, getCurrentSection, getCurrentStep,
@@ -223,11 +224,14 @@ export function editSaveIssueButtonClick(e: Event): void {
     // way out: afterwards nothing says what the summary is still calling this.
     const previousDescription = getCurrentRecord().issues[currentIssue - 1].description;
     getCurrentRecord().issues[currentIssue - 1] = newIssue;
+    // Three steps, in this order: the line follows any new wording, then any new
+    // score, and finally anything the summary does not mention yet is added.
     const run = getCurrentRun();
-    run.comments = summaryWithCurrentIssues(
-        summaryWithRenamedIssue(run.comments, previousDescription, newIssue.description, run),
-        run
+    const renamed = summaryWithRenamedIssue(
+        run.comments, previousDescription, newIssue.description, run
     );
+    const rescored = summaryWithRescoredIssue(renamed, newIssue.description, newIssue.score);
+    run.comments = summaryWithCurrentIssues(rescored, run);
     markEvaluationChanged();
     populateIssuesList();
     populateSummaryList();
@@ -277,9 +281,13 @@ export function deleteIssue(e: Event): void {
     // Captured on the way out: once it is spliced away, nothing left in the run
     // says what the summary should stop describing.
     const [removed] = getCurrentRecord().issues.splice(rowIndex - 1, 1);
+    // Out, then in, as the out of scope checkbox does it: the deleted issue
+    // leaves the summary, and anything the summary no longer mentions but the
+    // run still records comes back at the severity it now carries.
     const run = getCurrentRun();
-    run.comments = summaryWithoutIssues(
-        run.comments, removed ? [removed.description] : [], run
+    run.comments = summaryWithCurrentIssues(
+        summaryWithoutIssues(run.comments, removed ? [removed.description] : [], run),
+        run
     );
     markEvaluationChanged();
     populateIssuesList();
