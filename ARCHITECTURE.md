@@ -591,6 +591,19 @@ Vite, with **`base: './'`**. The app is served from a project sub-path on GitHub
 Pages, where Vite's default base of `/` emits absolute asset URLs that 404.
 Relative URLs work there, on and under `vite preview` alike.
 
+The build has a second step after Vite: `scripts/build-user-guide.mjs` renders
+`USER-GUIDE.md` into `dist/user-guide.html`. Pages deploys the Vite output with
+Jekyll turned off, so Markdown put in `public/` would be served as raw text
+rather than rendered; the guide has to reach the site as HTML. Keeping the
+Markdown as the source and generating the page is what stops the published copy
+drifting from the one that gets edited. `marked` is a devDependency and never
+reaches a user.
+
+Heading anchors are generated in that script rather than by `marked`, which
+stopped emitting them and ignores the option asking it to — the guide's own
+contents list depends on them, so they are produced to the same shape GitHub
+gives a heading.
+
 `docx@8.5.0` is loaded from unpkg by a `<script>` tag in `index.html`, so it is
 a runtime network dependency and is typed as `any` in `globals.d.ts`. The tag
 carries a subresource integrity hash: if the CDN ever serves different bytes for

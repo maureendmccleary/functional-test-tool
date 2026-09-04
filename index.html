@@ -48,6 +48,14 @@
   <form id="evaluation-form">
     <div>
       <h1 id="landing-heading" tabindex="-1">Functional Accessibility Testing Tool</h1>
+      <!--
+        The guide is a separate page of the same site, built from USER-GUIDE.md
+        by scripts/build-user-guide.mjs. A new tab because a tester reading it
+        partway through a run must not lose what they have recorded, and the
+        link says so rather than leaving the new window to be discovered.
+      -->
+      <p><a id="user-guide-link" href="./user-guide.html" target="_blank"
+          rel="noopener noreferrer">User guide (opens in a new tab)</a></p>
       <div role="group" aria-label="Evaluation File Actions">
         <button type="button" id="eval-file-load">Load Evaluation File...</button>
         <button type="button" id="eval-new">New Evaluation</button>
