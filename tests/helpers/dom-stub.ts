@@ -12,6 +12,7 @@ export interface ElementStub {
     innerHTML: string;
     textContent: string;
     focused: boolean;
+    open: boolean;
     children: ElementStub[];
     attributes: Map<string, string>;
     classList: {
@@ -20,6 +21,10 @@ export interface ElementStub {
         contains(token: string): boolean;
     };
     focus(): void;
+    showModal(): void;
+    close(): void;
+    addEventListener(type: string, listener: EventListener): void;
+    dispatchEvent(event: Event): boolean;
     appendChild(child: ElementStub): ElementStub;
     removeChild(child: ElementStub): ElementStub;
     setAttribute(name: string, value: string): void;
@@ -36,12 +41,14 @@ export interface ElementStub {
 
 export function createElementStub(tagName = 'DIV'): ElementStub {
     const classes = new Set<string>();
+    const listeners = new Map<string, EventListener[]>();
     const element: ElementStub = {
         tagName,
         value: '',
         innerHTML: '',
         textContent: '',
         focused: false,
+        open: false,
         children: [],
         attributes: new Map<string, string>(),
         classList: {
@@ -57,6 +64,25 @@ export function createElementStub(tagName = 'DIV'): ElementStub {
         },
         focus() {
             element.focused = true;
+        },
+        showModal() {
+            element.open = true;
+        },
+        close() {
+            element.open = false;
+        },
+        addEventListener(type, listener) {
+            const registered = listeners.get(type) || [];
+            if (!registered.includes(listener)) {
+                registered.push(listener);
+            }
+            listeners.set(type, registered);
+        },
+        dispatchEvent(event) {
+            (listeners.get(event.type) || []).forEach((listener) => {
+                listener.call(element as unknown as EventTarget, event);
+            });
+            return true;
         },
         appendChild(child) {
             element.children.push(child);

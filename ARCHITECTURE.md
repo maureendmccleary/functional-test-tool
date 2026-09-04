@@ -19,6 +19,7 @@ src/
     docx-report.ts   builds and downloads the .docx report
   ui/
     dom, step-ids, status, controls        primitives
+    page-edit.ts    editor save state and the shared unsaved-changes dialog
     screens.ts       shows one of the three screens and moves focus to it
     evaluation-view, evaluation-editor-view, editor-view, perform-view,
     issue-dialog, summary-dialog, results-view, eval-results-view
@@ -62,7 +63,8 @@ changed.
 - **Functional test editor** — one script: its metadata, its assistive
   technologies, and its steps.
 - **Perform** — one run of one script: every step, every extension, an issue
-  list and Add Issue button per step, the score and the summary.
+  list and Add Issue button per step, the score and the summary. Its Download
+  action writes the current evaluation data without leaving the run.
 
 Perform was a modal dialog, and Add Issue, View Results and View Summary all
 open from it, which made those nested modals. Nesting cost real bugs: a message
@@ -90,14 +92,21 @@ Escape does not leave a screen. None of the others offer it either, and Back is
 the way out; a document level Escape handler would have to know whether a dialog
 above it had already claimed the key.
 
-Both the evaluation screen and the editor have a Back. Nothing on either is held
-back until Save — the evaluation is changed in place as it is edited — so Back
-differs from Save only in not announcing that the evaluation is ready to
-perform. Leaving a screen should not require claiming to be finished with it.
+Both editor screens use an explicit transaction. `state/store.ts` exposes a
+private evaluation draft through the ordinary getters while an editor is open,
+but keeps the last committed evaluation separate. Save changes commits the whole
+draft, stays on the page, and resets the comparison baseline. A changed Back,
+Add Test, or Edit Test opens the shared Unsaved changes dialog; its three actions
+keep editing, discard the complete draft, or save before continuing.
 
-The editor's Back returns to whichever screen opened it, and drops a script that
-was never saved: it has no assistive technology, so it has no place in the
-evaluation and would otherwise sit in every list as a nameless entry.
+A new functional test is inserted only into the private draft. Its blank
+scaffold becomes the clean baseline, so leaving it untouched asks nothing, while
+typing anything makes the normal exit guard apply. Ending or discarding that
+session drops the uncommitted test without leaving a nameless list entry.
+
+Pending page changes and committed changes not yet written to a file are tracked
+separately. Back from an editor cares only about the former. Starting or loading
+another evaluation cares about the latter, and closing the tab cares about both.
 
 ## Data model
 
@@ -392,13 +401,13 @@ announce only the first.
 The File System Access API is Chromium-only and both pickers reject with an
 `AbortError` when the user dismisses the dialog. `ui/evaluation-view.ts` treats
 that as a normal outcome, reports unreadable files and write failures in the
-status region belonging to whichever control was used, and checks
+status region belonging to the control used, and checks
 `isFilePickerSupported()` before offering the action at all — a large share of
 screen reader users work in Firefox, where these APIs do not exist.
 
 **Saving asks where only once.** `io/file-picker.ts` keeps the handle from the
-first save and writes straight to it afterwards, so a tester performing a long
-evaluation can save often without a file dialog stealing focus every time, which
+first save and writes straight to it afterwards, so a tester can download an
+updated evaluation without a file dialog stealing focus every time, which
 is most of what makes saving disruptive with a screen reader. The handle is
 deliberately *not* taken from opening a file: Save would then overwrite whatever
 was loaded with no prompt, and the first thing anyone opens is a file they did

@@ -66,6 +66,19 @@ describe('dialog close controls', () => {
     });
 });
 
+describe('the unsaved changes dialog', () => {
+    test('fits its short decision content instead of taking the generic dialog height', () => {
+        expect(ruleBody('#unsaved-changes-dialog')).toMatch(/height:\s*fit-content/);
+        expect(ruleBody('#unsaved-changes-dialog')).toMatch(/width:\s*min\(620px/);
+    });
+
+    test('makes the destructive choice visually distinct', () => {
+        expect(ruleBody('.danger-action')).toMatch(/background-color:\s*var\(--danger\)/);
+        expect(ruleBody('.danger-action:hover'))
+            .toMatch(/background-color:\s*var\(--danger-hover\)/);
+    });
+});
+
 describe('disclosure icons', () => {
     test('turns the right chevron down when the disclosure is expanded', () => {
         expect(ruleBody('[aria-expanded="true"] > .icon-expand'))

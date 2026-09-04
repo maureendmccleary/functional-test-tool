@@ -1,11 +1,14 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import {
     clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
 } from './helpers/dom-stub.js';
-import { setCurrentRunIndex, setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
 import {
-    openTestRun, outOfScopeChanged, populateIssuesList, populateSummaryList,
+    markEvaluationChanged, markEvaluationSaved, setCurrentRunIndex, setCurrentTestIndex,
+    setEvaluation
+} from '../src/state/store.js';
+import {
+    openTestRun, outOfScopeChanged, performBackButtonClicked, populateIssuesList, populateSummaryList,
     setIssueButtonContent
 } from '../src/ui/perform-view.js';
 
@@ -273,5 +276,23 @@ describe('outOfScopeChanged', () => {
     test('a checkbox with no record behind it is left alone', () => {
         evaluationWithRun();
         expect(() => outOfScopeChanged(changeEvent('out-of-scope[7]', true))).not.toThrow();
+    });
+});
+
+describe('leaving Perform', () => {
+    test('keeps the existing file-save warning exactly', () => {
+        markEvaluationChanged();
+        const confirm = vi.fn(() => false);
+        (globalThis as unknown as { window: { confirm: typeof confirm } }).window = { confirm };
+        const preventDefault = vi.fn();
+
+        performBackButtonClicked({ preventDefault } as unknown as Event);
+
+        expect(preventDefault).toHaveBeenCalledOnce();
+        expect(confirm).toHaveBeenCalledWith(
+            'These results have not been saved to a file. They are kept while the app is open, '
+            + 'but will be lost if you close it. Go back anyway?'
+        );
+        markEvaluationSaved();
     });
 });

@@ -39,7 +39,8 @@ failure handling, build). The essentials:
   `domain/` and `config/` must not import from `ui/`, `state/`, or `io/`. `domain/`
   imports only `types.ts` and is where testable logic belongs.
 - `state/store.ts` is the only owner of mutable state, deliberately a plain mutable
-  module. Everything mutates the evaluation in place.
+  module. Perform and dialog actions mutate the committed evaluation in place;
+  the two full-page editors mutate a private evaluation draft until Save changes.
 - `domain/migration.ts` is the only place untrusted file contents become an `Evaluation`.
   Downstream code may assume the normalized shape. Add new legacy field spellings there,
   never in a view.
@@ -77,7 +78,7 @@ tested commit.
 - `currentTestIndex` in the store is `string | number`; array indexing coerces.
 - `ui/issue-dialog.ts` and `ui/perform-view.ts` import each other; the cycle is safe
   because both sides only call hoisted declarations at event time.
-- An editor input's `name` attribute is the model property it writes. Naming one for a
+- An editor input's `name` attribute is the draft-model property it writes. Naming one for a
   spelling only `domain/migration.ts` should know writes a field nothing reads.
 - `requireEl` throws, `findEl` returns null — pick the one matching what the original
   code did at that call site.

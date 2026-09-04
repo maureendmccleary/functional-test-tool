@@ -8,12 +8,17 @@ import {
     nextTestNumber, testDisplayName
 } from '../domain/functional-test.js';
 import {
-    getCurrentTest, getCurrentTestIndex, getEvaluation, markEvaluationChanged, setCurrentTestIndex
+    beginPageEditSession, commitPageEditSession, getCurrentTest, getCurrentTestIndex,
+    getEvaluation, resetPageEditBaseline, setCurrentTestIndex
 } from '../state/store.js';
 import { appendNewlines, fillListbox, toggleMenu } from './controls.js';
 import { requireEl, requireForm } from './dom.js';
-import { refreshTestList } from './evaluation-view.js';
+import { openEvaluationEditor, populateEvaluationDetails, refreshTestList } from './evaluation-view.js';
 import { createIcon } from './icons.js';
+import {
+    CHANGES_SAVED_MESSAGE, type PageSaveResult, pageDraftChanged, pageSaveIsDisabled,
+    requestPageExit, updatePageSaveState
+} from './page-edit.js';
 import { type ScreenName, setSectionTitle, showScreen } from './screens.js';
 import { announce, showStatusMessage } from './status.js';
 import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
@@ -21,8 +26,6 @@ import { getExtensionId, getStepId, getStepNumber } from './step-ids.js';
 /** Shown when Save cannot complete the script. */
 const NAME_REQUIRED = 'Enter a name for the functional test before saving.';
 const TECHNOLOGY_REQUIRED = 'Choose at least one assistive technology before saving.';
-const DISCARD_DRAFT =
-    'This functional test has not been saved and will be discarded. Leave anyway?';
 
 /**
  * The screen the editor returns to, set by whoever opened it.
@@ -49,7 +52,7 @@ function createStepForEditor(stepNumber: number): HTMLTextAreaElement {
     newStep.setAttribute("class", "step-contents");
     newStep.value = test.steps[stepNumber].instructions;
     newStep.setAttribute("name", "steps");
-    newStep.addEventListener('blur', blurFormField);
+    newStep.addEventListener('input', blurFormField);
     return newStep;
 }
 
@@ -98,7 +101,7 @@ function addExtensionToEditor(index: number): HTMLElement {
     instructions.setAttribute("class", "step-contents");
     instructions.setAttribute("name", "extensions");
     instructions.value = test.extensions[index].instructions;
-    instructions.addEventListener('blur', blurFormField);
+    instructions.addEventListener('input', blurFormField);
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
@@ -153,7 +156,7 @@ export function deleteExtensionButtonClicked(e: Event): void {
     }
 
     test.extensions.splice(index, 1);
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
     redrawExtensions(test);
     requireEl("new-extension-btn").focus();
     showStatusMessage("test-editor-msg", `Extension ${index + 1} was deleted.`);
@@ -164,7 +167,7 @@ export function newExtensionButtonClicked(e: Event): void {
     e.preventDefault();
     const test = getCurrentTest();
     test.extensions.push({ instructions: "" });
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
     redrawExtensions(test);
     requireEl(getExtensionId(test.extensions.length - 1)).focus();
 }
@@ -192,7 +195,7 @@ export function deleteStepButtonClicked(e: Event): void {
     const test = getCurrentTest();
     const i = getStepNumber(stepId);
     test.steps.splice(i, 1);
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
     redrawSteps(test);
 
     // Focus before announcing: the step that had focus has just been removed,
@@ -207,7 +210,7 @@ export function deleteStepButtonClicked(e: Event): void {
 }
 
 /**
- * Writes an edited field back to the test when focus leaves it.
+ * Writes an edited field into the page draft as the user changes it.
  *
  * The field's `name` attribute is the property it writes, so every input in the
  * editor must be named for the property it edits. Naming them for the spellings
@@ -229,7 +232,7 @@ export function blurFormField(e: Event): void {
     } else {
         (test as unknown as Record<string, unknown>)[target.name] = target.value;
     }
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
 }
 
 /** Writes the checked assistive technologies back to the test, by field name as above. */
@@ -240,7 +243,7 @@ export function changeFormField(e: Event): void {
         `input[type="checkbox"][name="${target.name}"]:checked`
     );
     (test as unknown as Record<string, unknown>)[target.name] = collectSelectedValues(checkedElements);
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
 }
 
 /**
@@ -407,7 +410,7 @@ function addAssistiveTechnologyDisclosureEvents(): void {
     });
 }
 
-/** Wires blur and change handlers onto every field of the editor form. */
+/** Wires input and change handlers onto every field of the editor form. */
 export function addFormEvents(): void {
     const form = requireForm("testEditor");
     form.addEventListener('submit', (e) => {
@@ -417,7 +420,7 @@ export function addFormEvents(): void {
     for (const element of formelements) {
         const field = element as HTMLInputElement;
         if (field.tagName === "INPUT" && field.type !== "checkbox" || field.tagName === "TEXTAREA") {
-            field.addEventListener('blur', blurFormField);
+            field.addEventListener('input', blurFormField);
         } else if (field.tagName === "INPUT" && field.type === "checkbox") {
             field.addEventListener('change', changeFormField);
         }
@@ -471,10 +474,9 @@ function showAssistiveTechnologies(test: FunctionalTest): void {
  * This is where a script written once becomes the several tests that have to be
  * performed, which is the whole point of assigning more than one technology.
  * The editor stays where it is and reports what was created; the evaluation is
- * written to a file from the evaluation screen, not here.
+ * written to a file from the landing screen, not here.
  */
-export function saveTestButtonClicked(e: Event): void {
-    e.preventDefault();
+export function saveTestChanges(): PageSaveResult {
     const tests = getEvaluation().tests;
     const index = Number(getCurrentTestIndex());
     const test = tests[index];
@@ -482,24 +484,44 @@ export function saveTestButtonClicked(e: Event): void {
     if ((test.name || "").trim() === "") {
         showStatusMessage("test-editor-msg", NAME_REQUIRED, 0);
         requireEl("test-edit-name").focus();
-        return;
+        return { saved: false };
     }
     if (test.assistiveTechnologies.length === 0) {
         showStatusMessage("test-editor-msg", TECHNOLOGY_REQUIRED, 0);
         requireEl("test-edit-at-btn").focus();
-        return;
+        return { saved: false };
     }
 
     const added = addAssistiveTechnologyCopies(tests, index);
-    markEvaluationChanged();
-    refreshTestList();
-    showAssistiveTechnologies(tests[index]);
-
     const saved = `Saved as ${testDisplayName(tests[index])}.`;
     const copies = added.length === 0
         ? ""
         : ` Created ${added.length} more: ${added.map(testDisplayName).join(", ")}.`;
-    showStatusMessage("test-editor-msg", `${saved}${copies}`, 0);
+    if (!commitPageEditSession()) {
+        return { saved: false };
+    }
+
+    refreshTestList();
+    showAssistiveTechnologies(getCurrentTest());
+    updatePageSaveState('test-save');
+
+    return {
+        saved: true,
+        message: `${CHANGES_SAVED_MESSAGE} ${saved}${copies}`
+    };
+}
+
+/** Saves the Functional Test draft without treating Save as navigation. */
+export function saveTestButtonClicked(e: Event): void {
+    e.preventDefault();
+    if (pageSaveIsDisabled('test-save')) {
+        return;
+    }
+
+    const result = saveTestChanges();
+    if (result.saved) {
+        showStatusMessage('test-editor-msg', result.message || CHANGES_SAVED_MESSAGE, 0);
+    }
 }
 
 /** Names and points the editor's Back link at the screen that opened it. */
@@ -518,34 +540,33 @@ export function updateTestEditorBackLink(from: ScreenName): void {
 function openTestEditor(from: ScreenName): void {
     returnScreen = from;
     updateTestEditorBackLink(from);
+    beginPageEditSession();
+    updatePageSaveState('test-save');
     showScreen('test');
-}
-
-/** True for a script that has never been saved, so has no run of its own yet. */
-function isUnsavedDraft(test: FunctionalTest | undefined): boolean {
-    return test !== undefined && (!Array.isArray(test.runs) || test.runs.length === 0);
 }
 
 /**
  * Leaves the editor for the screen it was opened from.
  *
- * A script that was never saved is dropped on the way out. It has no assistive
- * technology and so no place in the evaluation, and leaving it behind would put
- * a nameless entry in every list of functional tests.
+ * A clean draft leaves immediately. A changed one uses the shared three-choice
+ * dialog, so no field can leak into the evaluation after Discard changes.
  */
 export function backButtonClicked(e: Event): void {
-    e.preventDefault();
-    const tests = getEvaluation().tests;
-    const index = Number(getCurrentTestIndex());
-
-    if (isUnsavedDraft(tests[index])) {
-        if (!window.confirm(DISCARD_DRAFT)) {
-            return;
-        }
-        tests.splice(index, 1);
-        refreshTestList();
-    }
-    showScreen(returnScreen);
+    requestPageExit(e, {
+        save: saveTestChanges,
+        continueNavigation: () => {
+            if (returnScreen === 'evaluation') {
+                openEvaluationEditor();
+                return;
+            }
+            refreshTestList();
+            populateEvaluationDetails();
+            showScreen('landing');
+        },
+        successStatusId: returnScreen === 'evaluation'
+            ? 'evaluation-editor-msg'
+            : 'evaluation-msg'
+    });
 }
 
 /**
@@ -580,6 +601,7 @@ export function newTestButtonClicked(from: ScreenName = 'landing'): void {
     evaluation.tests.push(
         emptyFunctionalTest(DEFAULT_NEW_TEST_STEPS, nextTestNumber(evaluation.tests))
     );
+    resetPageEditBaseline();
     populateEditor();
     requireEl("test-edit-name").focus();
 }
@@ -591,7 +613,7 @@ export function addStepButtonClicked(): void {
     const newStep = { instructions: "", issues: [] };
     const i = Number(requireEl<HTMLSelectElement>("step-number").value);
     test.steps.splice(i, 0, newStep);
-    markEvaluationChanged();
+    pageDraftChanged('test-save', 'test-editor-msg');
     redrawSteps(test);
     requireEl(getStepId(i)).focus();
 }

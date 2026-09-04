@@ -128,9 +128,15 @@ button:hover {
     border-color: var(--brand-hover);
 }
 
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
     opacity: 0.45;
     cursor: not-allowed;
+}
+
+button[aria-disabled="true"]:hover {
+    background-color: var(--brand);
+    border-color: var(--brand);
 }
 
 input,
@@ -251,6 +257,13 @@ dialog {
     border-radius: 8px;
     box-shadow: 0 12px 32px rgba(17, 18, 21, 0.22);
     padding: 20px 24px;
+}
+
+/* A short decision should not look like a full-screen workflow. */
+#unsaved-changes-dialog {
+    width: min(620px, calc(100% - 24px));
+    height: fit-content;
+    max-height: calc(100vh - 48px);
 }
 
 /*
@@ -557,6 +570,18 @@ td {
 }
 
 .dialog-close:hover {
+    background-color: var(--danger-hover);
+    border-color: var(--danger-hover);
+}
+
+/* The unsaved-changes dialog has one destructive action that is not its dismissal. */
+.danger-action {
+    background-color: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+}
+
+.danger-action:hover {
     background-color: var(--danger-hover);
     border-color: var(--danger-hover);
 }

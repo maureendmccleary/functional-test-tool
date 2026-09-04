@@ -22,9 +22,10 @@ import {
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { restoreScreenTitle } from './ui/screens.js';
-import { hasUnsavedChanges } from './state/store.js';
+import { hasUnsavedWork } from './state/store.js';
 import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
+import { addPageEditDialogEvents } from './ui/page-edit.js';
 import { addViewResultsDialogEvents } from './ui/results-view.js';
 import { decorateIconLabels } from './ui/icons.js';
 
@@ -52,7 +53,6 @@ function initialize(): void {
 
     const testSave = requireEl("test-save");
     testSave.addEventListener('click', saveTestButtonClicked);
-    testSave.removeAttribute("disabled");
     requireEl("test-editor-back").addEventListener('click', backButtonClicked);
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
@@ -83,7 +83,7 @@ function initialize(): void {
     // a closed tab. The browser shows its own wording; nothing here can choose
     // it, and it only fires at all once the tester has interacted with the page.
     window.addEventListener('beforeunload', (e) => {
-        if (!hasUnsavedChanges()) {
+        if (!hasUnsavedWork()) {
             return;
         }
         e.preventDefault();
@@ -92,6 +92,7 @@ function initialize(): void {
     });
 
     addIssueDialogEvents();
+    addPageEditDialogEvents();
     addEvalResultsDialogEvents();
     addViewResultsDialogEvents();
     addModalDialogEvents();

@@ -40,7 +40,9 @@ describe('file download controls', () => {
     test('file-writing actions say Download while in-memory actions still say Save', () => {
         expect(html).toContain('id="eval-save-file" disabled>Download Evaluation File</button>');
         expect(html).toContain('id="perform-save">Download Functional Test Results</button>');
-        expect(html).toContain('id="eval-editor-save" type="button">Save and go back</button>');
+        expect(tagWithId('eval-editor-save')).toContain('aria-disabled="true"');
+        expect(html).toContain('aria-disabled="true">Save changes</button>');
+        expect(tagWithId('test-save')).toContain('aria-disabled="true"');
         expect(html).toContain('id="add-issue-dialog-save" type="button">Save Issue</button>');
     });
 });
@@ -98,7 +100,7 @@ describe('labelled action icons', () => {
 });
 
 describe('dialog close controls', () => {
-    test('every dialog has a close control with the shared danger class', () => {
+    test('dismissible content dialogs have a close control with the shared danger class', () => {
         const dialogCount = [...html.matchAll(/<dialog\b/g)].length;
         const topCloseIds = [
             'new-step-dialog-close',
@@ -109,10 +111,27 @@ describe('dialog close controls', () => {
             'eval-view-results-dialog-close'
         ];
 
-        expect(dialogCount).toBe(6);
+        expect(dialogCount).toBe(7);
         for (const id of topCloseIds) {
             expect(tagWithId(id)).toContain('class="dialog-close"');
         }
+    });
+
+    test('the unsaved changes dialog has three explicit, accessible choices', () => {
+        const dialog = html.slice(
+            html.indexOf('<dialog id="unsaved-changes-dialog"'),
+            html.indexOf('</dialog>', html.indexOf('<dialog id="unsaved-changes-dialog"'))
+        );
+
+        expect(tagWithId('unsaved-changes-dialog'))
+            .toContain('aria-labelledby="unsaved-changes-heading"');
+        expect(tagWithId('unsaved-changes-dialog'))
+            .toContain('aria-describedby="unsaved-changes-description"');
+        expect(dialog.indexOf('unsaved-changes-keep-editing'))
+            .toBeLessThan(dialog.indexOf('unsaved-changes-discard'));
+        expect(dialog.indexOf('unsaved-changes-discard'))
+            .toBeLessThan(dialog.indexOf('unsaved-changes-save'));
+        expect(tagWithId('unsaved-changes-discard')).toContain('class="danger-action"');
     });
 
     test('Add Issue has a bottom Close beside its changing primary action', () => {

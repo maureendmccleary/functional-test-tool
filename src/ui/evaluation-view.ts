@@ -5,10 +5,12 @@ import {
     forgetSavedFile, hasSavedFile, isFilePickerSupported, loadFile, saveEvaluation
 } from '../io/file-picker.js';
 import {
-    getEvaluation, hasUnsavedChanges, markEvaluationChanged, markEvaluationSaved, setEvaluation
+    beginPageEditSession, getEvaluation, hasUnsavedChanges, markEvaluationSaved, setEvaluation
 } from '../state/store.js';
 import { fillListbox } from './controls.js';
 import { findEl, requireEl } from './dom.js';
+import { pageDraftChanged, updatePageSaveState } from './page-edit.js';
+import { showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
 
 /**
@@ -19,18 +21,11 @@ import { showStatusMessage } from './status.js';
 const LOAD_ANNOUNCE_DELAY_MS = 100;
 const SAVE_ANNOUNCE_DELAY_MS = 500;
 
-/**
- * Status region for each control that can trigger a file save.
- *
- * The functional test editor's Save is not one of them: it completes the script
- * and its copies in memory, and the file is written from the evaluation screen.
- */
+/** Status and focus destinations for each durable file-saving action. */
 const SAVE_STATUS_TARGETS: Record<
     string, { elementId: string; message: string; focusId?: string }
 > = {
-    // Focus goes to Back rather than to Save. Landing on Save again made a
-    // reader read on into the next button; Back is quieter, and it is where the
-    // tester is heading once the results are saved.
+    // Back is quieter than returning to Save and reading on into View Results.
     'perform-save': {
         elementId: 'perform-msg',
         message: 'Functional Test data saved!',
@@ -112,18 +107,18 @@ const LANDING_DETAIL_FIELDS = {
 /** Shown in place of a detail the evaluation has not been given. */
 const DETAIL_UNSET = 'Not set';
 
-/** Writes an edited evaluation detail back to the loaded evaluation. */
+/** Writes an edited evaluation detail into the current page draft. */
 function evaluationDetailChanged(e: Event): void {
     const field = e.target as HTMLInputElement;
     const property = EVALUATION_DETAIL_FIELDS[field.id as keyof typeof EVALUATION_DETAIL_FIELDS];
     getEvaluation()[property] = field.value;
-    markEvaluationChanged();
+    pageDraftChanged('eval-editor-save', 'evaluation-editor-msg');
 }
 
 /** Wires the evaluation detail inputs. Called once at startup. */
 export function addEvaluationDetailEvents(): void {
     for (const elementId of Object.keys(EVALUATION_DETAIL_FIELDS)) {
-        requireEl(elementId).addEventListener('blur', evaluationDetailChanged);
+        requireEl(elementId).addEventListener('input', evaluationDetailChanged);
     }
 }
 
@@ -143,6 +138,15 @@ export function populateEvaluationDetails(): void {
         const value = (evaluation[property] || '').trim();
         requireEl(elementId).textContent = value === '' ? DETAIL_UNSET : value;
     }
+}
+
+/** Opens a clean transactional Evaluation editor on the committed evaluation. */
+export function openEvaluationEditor(): void {
+    beginPageEditSession();
+    populateEvaluationDetails();
+    refreshTestList();
+    updatePageSaveState('eval-editor-save');
+    showScreen('evaluation');
 }
 
 /**
@@ -276,8 +280,7 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
     e.preventDefault();
     const sourceId = (e.currentTarget as HTMLElement | null)?.id;
     const status = (sourceId && SAVE_STATUS_TARGETS[sourceId]) || DEFAULT_SAVE_STATUS;
-    // Where focus belongs afterwards: the control that opened the picker unless
-    // that target names somewhere better.
+    // Read before the first await: a file picker ends event dispatch and clears currentTarget.
     const focusId: string | undefined =
         (status as { focusId?: string }).focusId || sourceId;
 

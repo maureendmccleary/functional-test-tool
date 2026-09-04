@@ -6,12 +6,16 @@ import type { FunctionalTest } from '../src/types.js';
 import { emptyFunctionalTest } from '../src/domain/functional-test.js';
 import { toggleMenu } from '../src/ui/controls.js';
 import {
-    blurFormField, collapseAssistiveTechnologies, getEventControlId, updateTestEditorBackLink
+    blurFormField, collapseAssistiveTechnologies, getEventControlId, saveTestChanges,
+    updateTestEditorBackLink
 } from '../src/ui/editor-view.js';
 import {
     clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
 } from './helpers/dom-stub.js';
-import { setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
+import {
+    beginPageEditSession, discardPageEditSession, getCurrentTest, hasPendingPageChanges,
+    hasUnsavedChanges, setCurrentTestIndex, setEvaluation
+} from '../src/state/store.js';
 
 /**
  * The editor writes each field straight onto the test using the field's `name`
@@ -43,7 +47,8 @@ function withTest(): FunctionalTest {
     const test = emptyFunctionalTest(1);
     setEvaluation({ tests: [test], score: 0 });
     setCurrentTestIndex(0);
-    return test;
+    beginPageEditSession();
+    return getCurrentTest();
 }
 
 describe('editor field names', () => {
@@ -62,6 +67,14 @@ describe('editor field names', () => {
 });
 
 describe('blurFormField', () => {
+    beforeEach(() => {
+        installDocumentStub(['test-save', 'test-editor-msg']);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
     test('writes the start location and operating system onto the test', () => {
         const test = withTest();
         blurFormField(blurEvent('startLocation', 'https://example.org'));
@@ -178,5 +191,60 @@ describe('expanding the assistive technology list', () => {
         expect(button.getAttribute('aria-expanded')).toBe('true');
         expect((documentStub.getElementById('test-edit-at-menu') as unknown as { hidden: boolean }).hidden)
             .toBe(false);
+    });
+});
+
+describe('saving Functional Test changes', () => {
+    const saveIds = [
+        'select-test', 'eval-select-test', 'edit-test', 'perform-test',
+        'eval-edit-test', 'eval-delete-test', 'test-edit-at-menu', 'test-save',
+        'test-editor-msg', 'test-edit-name', 'test-edit-at-btn', 'app-status'
+    ];
+
+    beforeEach(() => {
+        installDocumentStub(saveIds);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('commits a valid draft, creates its run, and resets Save changes', () => {
+        const test = emptyFunctionalTest(1);
+        test.name = 'Original';
+        test.assistiveTechnologies = ['NVDA'];
+        setEvaluation({ tests: [test], score: 0 });
+        setCurrentTestIndex(0);
+        beginPageEditSession();
+        getCurrentTest().name = 'Updated';
+
+        const result = saveTestChanges();
+
+        expect(result.saved).toBe(true);
+        expect(result.message).toContain('Changes saved successfully.');
+        expect(hasPendingPageChanges()).toBe(false);
+        expect(hasUnsavedChanges()).toBe(true);
+        expect(document.getElementById('test-save')!.getAttribute('aria-disabled')).toBe('true');
+
+        discardPageEditSession();
+        expect(getCurrentTest().name).toBe('Updated');
+        expect(getCurrentTest().runs).toHaveLength(1);
+    });
+
+    test('keeps an invalid draft pending and focuses its first invalid field', () => {
+        const test = emptyFunctionalTest(1);
+        test.assistiveTechnologies = ['NVDA'];
+        setEvaluation({ tests: [test], score: 0 });
+        setCurrentTestIndex(0);
+        beginPageEditSession();
+        getCurrentTest().goal = 'Changed';
+
+        const result = saveTestChanges();
+
+        expect(result).toEqual({ saved: false });
+        expect(hasPendingPageChanges()).toBe(true);
+        expect(hasUnsavedChanges()).toBe(false);
+        expect((document.getElementById('test-edit-name') as unknown as { focused: boolean }).focused)
+            .toBe(true);
     });
 });
