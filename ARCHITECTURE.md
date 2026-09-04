@@ -233,6 +233,16 @@ wording and the severity they moved a line to both survive. The consequence to
 know: a line deleted from the summary while its issue is still recorded comes
 back on the next change, and deleting the issue is what removes it for good.
 
+Changing an issue re-files its line, which the merge cannot do. The merge fills
+in a severity only where a line has none, on purpose, so that generating does
+not undo a line the tester moved to another banner by hand — but that same rule
+left an issue rescored from 4 to 3 sitting under Advisory. An edit is the one
+moment the tool knows a severity changed and why, so `summaryWithRescoredIssue`
+moves the line outright. Deletion works to the same rule from the other side:
+`summaryWithoutIssues` keeps a line only where its description is still recorded
+*at that line's own severity*, so deleting one of two issues that share wording
+takes its line and leaves the other's.
+
 Files saved by earlier versions used different field names (`evalUCs`,
 `performedUCs`, `ats`, `oses`, `startlocation`). `domain/migration.ts` accepts
 both spellings on load and always writes the current ones, so opening an old
