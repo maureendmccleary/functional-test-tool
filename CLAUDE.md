@@ -112,8 +112,6 @@ tested commit.
   means recomputing the hash (command in ARCHITECTURE.md).
 - `vite.config.ts` sets `base: './'` for the GitHub Pages sub-path; absolute asset URLs
   404 there.
-- `font-awesome-4.7.0/` is a legacy asset bundle; the UI uses inline SVG icons so it
-  does not depend on a downloadable icon font.
 - Generated step element ids (`step-contents[N]`, `step-label[N]` in `ui/step-ids.ts`)
   are a contract with `index.html` and with `querySelectorAll` prefix matches.
 

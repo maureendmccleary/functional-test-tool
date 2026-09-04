@@ -591,10 +591,6 @@ Vite, with **`base: './'`**. The app is served from a project sub-path on GitHub
 Pages, where Vite's default base of `/` emits absolute asset URLs that 404.
 Relative URLs work there, on and under `vite preview` alike.
 
-Font Awesome is deliberately *not* in `public/`. Letting Vite process its CSS
-rewrites the `../fonts/` URLs to hashed assets, which fingerprints the fonts and
-keeps every reference relative.
-
 `docx@8.5.0` is loaded from unpkg by a `<script>` tag in `index.html`, so it is
 a runtime network dependency and is typed as `any` in `globals.d.ts`. The tag
 carries a subresource integrity hash: if the CDN ever serves different bytes for
