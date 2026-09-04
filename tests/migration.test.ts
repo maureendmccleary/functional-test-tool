@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import {
-    migrateLegacyTestRun, normalizeEvaluation, normalizeOperatingSystem
+    EvaluationFormatError, migrateLegacyTestRun, normalizeEvaluation, normalizeOperatingSystem
 } from '../src/domain/migration.js';
 import { testDisplayName } from '../src/domain/functional-test.js';
 import { loadFixture } from './helpers/fixtures.js';
@@ -25,6 +25,81 @@ describe('normalizeOperatingSystem', () => {
     test('trims and stringifies anything else', () => {
         expect(normalizeOperatingSystem('  Windows  ')).toBe('Windows');
         expect(normalizeOperatingSystem(42)).toBe('42');
+    });
+});
+
+describe('malformed evaluation files', () => {
+    test.each([null, [], 42, 'evaluation'])('rejects a non-object top level', (value) => {
+        expect(() => normalizeEvaluation(value)).toThrow(EvaluationFormatError);
+        expect(() => normalizeEvaluation(value)).toThrow('The top level must be an object');
+    });
+
+    test('rejects a tests field of the wrong type instead of replacing it with an empty list', () => {
+        expect(() => normalizeEvaluation({ tests: 'lost tests' }))
+            .toThrow('tests must be a list');
+        expect(() => normalizeEvaluation({ tests: null }))
+            .toThrow('tests must be a list');
+    });
+
+    test('rejects a non-object test with its location in the message', () => {
+        expect(() => normalizeEvaluation({ tests: [[]] }))
+            .toThrow('tests[0] must be an object');
+    });
+
+    test.each([
+        { value: null, message: 'issues[0] must be an object' },
+        { value: { description: 'missing score' }, message: 'issues[0].score must be 1, 2, 3, or 4' },
+        { value: { description: 'bad score', score: {} }, message: 'issues[0].score must be 1, 2, 3, or 4' },
+        { value: { score: '2' }, message: 'issues[0].description must be text' }
+    ])('rejects an invalid issue before it reaches scoring: $message', ({ value, message }) => {
+        expect(() => normalizeEvaluation({
+            tests: [{
+                name: 'one', ats: ['NVDA'], steps: [],
+                performedUCs: [{
+                    ats: 'NVDA', score: 2,
+                    steps: [{ issues: [value] }], extensions: []
+                }]
+            }]
+        })).toThrow(message);
+    });
+
+    test('normalizes a numeric issue score and keeps unknown issue fields', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [{
+                name: 'one', ats: ['NVDA'], steps: [],
+                performedUCs: [{
+                    ats: 'NVDA', score: 2,
+                    steps: [{
+                        issues: [{
+                            description: 'kept', findingURL: null, score: 2, futureField: 'kept'
+                        }]
+                    }],
+                    extensions: []
+                }]
+            }]
+        });
+        const issue = evaluation.tests[0].runs[0].steps[0].issues[0];
+
+        expect(issue).toMatchObject({
+            description: 'kept', findingURL: '', score: '2', futureField: 'kept'
+        });
+    });
+
+    test('trims a text issue score before validating it', () => {
+        const evaluation = normalizeEvaluation({
+            tests: [{
+                name: 'one', ats: ['NVDA'], steps: [],
+                runs: [{
+                    assistiveTechnology: 'NVDA', score: 2,
+                    steps: [{
+                        issues: [{ description: 'kept', findingURL: '', score: ' 2 ' }]
+                    }],
+                    extensions: []
+                }]
+            }]
+        });
+
+        expect(evaluation.tests[0].runs[0].steps[0].issues[0].score).toBe('2');
     });
 });
 

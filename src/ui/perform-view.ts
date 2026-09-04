@@ -21,6 +21,7 @@ import {
 import { findEl, requireEl, requireForm } from './dom.js';
 import { showScreen } from './screens.js';
 import { saveFileButtonClick } from './evaluation-view.js';
+import { setIconLabel } from './icons.js';
 import { addIssueButtonClick } from './issue-dialog.js';
 import { viewResultsButtonClicked } from './results-view.js';
 import {
@@ -176,12 +177,17 @@ function relabelIssueButtons(selector: string, records: TestRunStep[]): void {
     requireEl('perform-screen').querySelectorAll(selector).forEach((button, index) => {
         const record = records[index];
         const count = record && record.issues ? record.issues.length : 0;
-        if (count === 0) {
-            button.textContent = "Add Issue";
-            return;
-        }
-        button.textContent = "View " + count + (count === 1 ? " Issue" : " Issues");
+        setIssueButtonContent(button as HTMLElement, count);
     });
+}
+
+/** Shows a plus only while the button is an Add action. */
+export function setIssueButtonContent(button: HTMLElement, count: number): void {
+    if (count === 0) {
+        setIconLabel(button, "Add Issue", "add");
+        return;
+    }
+    setIconLabel(button, "View " + count + (count === 1 ? " Issue" : " Issues"));
 }
 
 /** Relabels each step's and extension's button to reflect how many issues it holds. */
@@ -258,7 +264,7 @@ function createAddIssueButtonForPerform(stepNumber: number): HTMLElement {
     const addIssueButton = document.createElement('BUTTON');
     const stepLabelId = getStepLabelIdForPerform(stepNumber);
     (addIssueButton as HTMLButtonElement).type = "button";
-    (addIssueButton as HTMLButtonElement).innerText = "Add Issue";
+    setIssueButtonContent(addIssueButton, 0);
     addIssueButton.addEventListener('click', addIssueButtonClick);
     addIssueButton.setAttribute("id", `add-issue-btn[${stepNumber}]`);
     addIssueButton.setAttribute("aria-labelledby", `${addIssueButton.id} ${stepLabelId}`);
@@ -330,7 +336,7 @@ function renderExtensionsForPerform(test: FunctionalTest): void {
 
         const addIssueButton = document.createElement("BUTTON");
         (addIssueButton as HTMLButtonElement).type = "button";
-        (addIssueButton as HTMLButtonElement).innerText = "Add Issue";
+        setIssueButtonContent(addIssueButton, 0);
         addIssueButton.setAttribute("id", `add-extension-issue-btn[${index}]`);
         addIssueButton.setAttribute("aria-labelledby", `${addIssueButton.id} ${label.id}`);
         addIssueButton.addEventListener('click', addIssueButtonClick);

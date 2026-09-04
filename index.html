@@ -28,7 +28,6 @@
     form-action 'none'">
   <title>Functional Accessibility Testing Tool</title>
   <link rel="stylesheet" type="text/css" href="styles.css">
-  <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
   <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"
           integrity="sha384-4xaIisuLEy2lo2HkB2C4rEf7v8jbTb2kuogX6TkuEt9feTWKBSFSOzsqNNbV+sKh"
           crossorigin="anonymous"></script>
@@ -52,9 +51,6 @@
       <div role="group" aria-label="Evaluation File Actions">
         <button type="button" id="eval-file-load">Load Evaluation File...</button>
         <button type="button" id="eval-new">New Evaluation</button>
-        <button type="button" id="eval-edit" disabled>Edit Evaluation</button>
-        <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
-        <button type="button" id="eval-save-file" disabled>Save Evaluation File</button>
       </div>
       <br><br>
       <div role="group" aria-labelledby="landing-details-heading">
@@ -62,13 +58,18 @@
         <p>Workspace: <span id="landing-workspace"></span></p>
         <p>Asset: <span id="landing-asset"></span></p>
         <p>Evaluation: <span id="landing-name"></span></p>
+        <div role="group" aria-label="Evaluation Details Actions">
+          <button type="button" id="eval-edit" data-icon="edit" disabled>Edit Evaluation</button>
+          <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
+          <button type="button" id="eval-save-file" disabled>Download Evaluation File</button>
+        </div>
       </div>
       <br><br>
       <label for="select-test">Select a Functional Test: </label>
       <select name="select-test" id="select-test"></select>
       <br><br>
       <div role="group" aria-label="Functional Test Actions">
-        <button id="edit-test" type="button" disabled>Edit Functional Test</button>
+        <button id="edit-test" type="button" data-icon="edit" disabled>Edit Functional Test</button>
         <button id="perform-test" type="button" disabled>Perform</button>
       </div>
       <br><br>
@@ -78,7 +79,10 @@
   <form id="evaluation-editor-form" class="inactive" name="evaluationEditor">
     <div>
       <h1 id="evaluation-editor-heading" tabindex="-1">Evaluation</h1>
-      <br><br>
+      <div role="group" aria-label="Evaluation Editor Actions">
+        <a id="evaluation-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
+        <button id="eval-editor-save" type="button" aria-disabled="true">Save changes</button>
+      </div>
       <p id="evaluation-editor-msg" class="status-text"></p>
       <br><br>
       <div role="group" aria-labelledby="evaluation-details-heading">
@@ -98,14 +102,9 @@
       <select name="eval-select-test" id="eval-select-test"></select>
       <br><br>
       <div role="group" aria-label="Functional Test Actions">
-        <button id="eval-add-test" type="button">Add Test</button>
-        <button id="eval-edit-test" type="button" disabled>Edit Functional Test</button>
-        <button id="eval-delete-test" type="button" disabled>Delete Functional Test</button>
-      </div>
-      <br><br>
-      <div role="group" aria-label="Evaluation Editor Actions">
-        <button id="eval-editor-save" type="button">Save</button>
-        <button id="evaluation-editor-back" type="button">Back</button>
+        <button id="eval-add-test" type="button" data-icon="add">Add Test</button>
+        <button id="eval-edit-test" type="button" data-icon="edit" disabled>Edit Functional Test</button>
+        <button id="eval-delete-test" type="button" data-icon="trash" disabled>Delete Functional Test</button>
       </div>
       <br><br>
     </div>
@@ -113,8 +112,8 @@
   <form id="test-editor-form" class="inactive" name="testEditor">
     <h1 id="test-editor-heading" tabindex="-1">Functional Test Editor</h1>
     <div role="group" aria-label="Functional Test Editor Actions">
-      <button type="button" disabled id="test-save">Save</button>
-      <button type="button" id="test-editor-back">Back</button>
+      <a id="test-editor-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
+      <button type="button" id="test-save" aria-disabled="true">Save changes</button>
     </div>
     <p id="test-editor-msg" class="status-text"></p>
     <!--
@@ -162,7 +161,7 @@
         closes. It is not written here because it is true only while the widget
         is actually handling keys. See the note on that function for why.
       -->
-      <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu">
+      <button type="button" id="test-edit-at-btn" aria-expanded="false" aria-controls="test-edit-at-menu" data-icon="expand" data-icon-position="after">
         Assistive Technology
       </button>
       <div id="test-edit-at-menu" hidden></div>
@@ -174,6 +173,10 @@
     <div id="step-list">
     </div>
 
+    <div class="button-row">
+      <button type="button" id="new-step-btn">New Step</button>
+    </div>
+
     <h2 id="extensions-heading">Extensions</h2>
     <p>Deviations from the main success path: credentials to sign in with, an error condition to
       trigger. A step refers to one by number, as in "Login credentials are located in extension 1".
@@ -181,27 +184,34 @@
     <div id="extension-list">
     </div>
     <!--
-      Both editor actions on one row. New Step used to sit outside the form,
-      which put it on a line of its own and made it a screen of its own for
-      showScreen to hide. It needs type="button" in here: the form has no
-      action, so a submit button would reload the page.
+      Each editor action follows the list it changes. They need type="button"
+      in here: the form has no action, so a submit button would reload the page.
     -->
     <div class="button-row">
-      <button type="button" id="new-step-btn">New Step</button>
       <button type="button" id="new-extension-btn">New Extension</button>
     </div>
   </form>
+  <dialog id="unsaved-changes-dialog" aria-labelledby="unsaved-changes-heading" aria-describedby="unsaved-changes-description">
+    <div class="app-status visually-hidden" role="alert"></div>
+    <h1 id="unsaved-changes-heading" tabindex="-1">Unsaved changes</h1>
+    <p id="unsaved-changes-description">You have changes on this page that have not been saved.</p>
+    <div role="group" aria-label="Unsaved Changes Actions">
+      <button type="button" id="unsaved-changes-keep-editing">Keep editing</button>
+      <button type="button" id="unsaved-changes-discard" class="danger-action">Discard changes</button>
+      <button type="button" id="unsaved-changes-save">Save and continue</button>
+    </div>
+  </dialog>
   <dialog id="new-step-dialog" aria-labelledby="add-step-heading">
     <div class="app-status visually-hidden" role="alert"></div>
     <br><br>
     <h1 id="add-step-heading" tabindex="-1">Select Step Number To Add</h1>
     <div class="close-button">
-      <button type="button" id="new-step-dialog-close" aria-label="close"><span class="fa fa-times"></span></button>
+      <button class="dialog-close" type="button" id="new-step-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
     </div>
     <label for="step-number">Step Number</label>
     <select id="step-number"></select>
     <br><br>
-    <button id="add-step">Add Step</button>
+    <button id="add-step" data-icon="add">Add Step</button>
   </dialog>
   <!--
     A screen, not a dialog. Performing a test is where a tester spends most of
@@ -216,8 +226,8 @@
     <form id="perform-form" name="performForm">
       <h1 id="perform-heading" tabindex="-1">Perform Functional Test</h1>
       <div role="group" aria-label="Perform Actions">
-        <button type="button" id="perform-back">Back</button>
-        <button type="button" id="perform-save">Save Functional Test Results</button>
+        <a id="perform-back" href="#landing-heading" aria-label="Back to Evaluation Home" data-icon="back">Back</a>
+        <button type="button" id="perform-save">Download Functional Test Results</button>
         <button type="button" id="view-test-results">View Results</button>
       </div>
       <br><br>
@@ -244,7 +254,7 @@
       <h3>Issues</h3>
       <ul id="perform-step-results[0]"></ul>
       <br><br>
-      <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]">Add Issue</button>
+      <button type="button" id="add-issue-btn[0]" aria-labelledby="add-issue-btn[0] perform-test-step-label[0]" data-icon="add">Add Issue</button>
       <!--
         Marks a step the scripter wrote but the tester is not meant to perform,
         such as signing in. Named by its own label together with the step's
@@ -285,8 +295,7 @@
     <form id="view-summary-" name="viewSummary">
       <h1 id="view-summary-dialog-title" tabindex="-1">View Summary</h1>
       <div class="close-button">
-        <button type="button" id="view-summary-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button class="dialog-close" type="button" id="view-summary-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <p>The following is a list of the most important issues encountered while testing this Functional Test.</p>
@@ -305,8 +314,7 @@
     <form id="view-overall-comments-form" name="viewOverallComments">
       <h1 id="view-overall-comments-dialog-title" tabindex="-1">View Overall Comments</h1>
       <div class="close-button">
-        <button type="button" id="view-overall-comments-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button class="dialog-close" type="button" id="view-overall-comments-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <p>The most important problems encountered with this assistive technology across the whole
@@ -329,8 +337,7 @@
     <form id="add-issue-btn-dialog-form" name="ucAddIssueDialog">
       <h2 id="add-issue-dialog-title" tabindex="-1"></h2>
       <div class="close-button">
-        <button type="button" id="add-issue-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+        <button class="dialog-close" type="button" id="add-issue-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br>
       <p id="add-issue-msg" class="status-text"></p>
@@ -348,8 +355,6 @@
         </tr>
       </table>
       <br><br>
-      <button id="add-issue-dialog-new-issue" type="button">New Issue</button>
-      <br><br>
       <div class="inactive" id="add-issue-controls">
         <label id="add-issue-description-label" for="add-issue-description">Description</label>
         <textarea class="issue-description" id="add-issue-description" required aria-describedby="add-issue-description-error"></textarea>
@@ -362,9 +367,11 @@
         <label id="add-issue-findingURL-label" for="add-issue-findingURL">Finding URL</label>
         <input id="add-issue-findingURL">
       </div>
-      <br>
-      <br>
-      <button class="inactive" id="add-issue-dialog-save" type="button">Save Issue</button>
+      <div role="group" aria-label="Issue Actions">
+        <button id="add-issue-dialog-new-issue" type="button">New Issue</button>
+        <button class="inactive" id="add-issue-dialog-save" type="button">Save Issue</button>
+        <button class="dialog-close" id="add-issue-dialog-close-bottom" type="button">Close</button>
+      </div>
     </form>
   </dialog>
   <dialog id="view-results-dialog" aria-labelledby="view-results-dialog-title">
@@ -373,8 +380,7 @@
       <br>
       <h1 id="view-results-dialog-title" tabindex="-1">Functional Test Results</h1>
       <div class="close-button">
-        <button type="button" id="view-results-dialog-close" aria-label="close"><span
-            class="fa fa-times"></span></button>
+          <button class="dialog-close" type="button" id="view-results-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
       </div>
       <br><br>
       <div id="test-results-issues"></div>
@@ -387,8 +393,7 @@
         <!-- Heading first, as in every other dialog: it is what the dialog is named by. -->
         <h1 id="eval-view-results-dialog-title" tabindex="-1">Evaluation Results</h1>
         <div class="close-button">
-          <button type="button" id="eval-view-results-dialog-close" aria-label="close"><span
-              class="fa fa-times"></span></button>
+            <button class="dialog-close" type="button" id="eval-view-results-dialog-close" aria-label="Close"><svg class="icon icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg></button>
         </div>
         <div role="group" aria-label="Report Actions">
           <button id="generate-pdf" type="button">Generate Report (.docx)</button>

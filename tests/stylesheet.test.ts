@@ -50,3 +50,38 @@ describe('the hidden attribute', () => {
         expect(ruleBody('#test-edit-at-menu')).toMatch(/display:\s*grid/);
     });
 });
+
+describe('dialog close controls', () => {
+    test('use the danger fill at rest', () => {
+        expect(ruleBody('.dialog-close')).toMatch(/background-color:\s*var\(--danger\)/);
+        expect(ruleBody('.dialog-close')).toMatch(/border-color:\s*var\(--danger\)/);
+        expect(ruleBody('.dialog-close')).toMatch(/color:\s*#ffffff/);
+    });
+
+    test('use the darker danger fill on hover', () => {
+        expect(ruleBody('.dialog-close:hover'))
+            .toMatch(/background-color:\s*var\(--danger-hover\)/);
+        expect(ruleBody('.dialog-close:hover'))
+            .toMatch(/border-color:\s*var\(--danger-hover\)/);
+    });
+});
+
+describe('the unsaved changes dialog', () => {
+    test('fits its short decision content instead of taking the generic dialog height', () => {
+        expect(ruleBody('#unsaved-changes-dialog')).toMatch(/height:\s*fit-content/);
+        expect(ruleBody('#unsaved-changes-dialog')).toMatch(/width:\s*min\(620px/);
+    });
+
+    test('makes the destructive choice visually distinct', () => {
+        expect(ruleBody('.danger-action')).toMatch(/background-color:\s*var\(--danger\)/);
+        expect(ruleBody('.danger-action:hover'))
+            .toMatch(/background-color:\s*var\(--danger-hover\)/);
+    });
+});
+
+describe('disclosure icons', () => {
+    test('turns the right chevron down when the disclosure is expanded', () => {
+        expect(ruleBody('[aria-expanded="true"] > .icon-expand'))
+            .toMatch(/transform:\s*rotate\(90deg\)/);
+    });
+});

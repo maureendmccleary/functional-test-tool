@@ -2,14 +2,18 @@ import { normalizeEvaluation } from '../domain/migration.js';
 import { forgetSavedFile } from '../io/file-picker.js';
 import { testDisplayName } from '../domain/functional-test.js';
 import {
-    getEvaluation, markEvaluationChanged, setEvaluation
+    commitPageEditSession, getEvaluation, setEvaluation
 } from '../state/store.js';
 import { requireEl } from './dom.js';
 import { editTest, newTestButtonClicked } from './editor-view.js';
 import {
     confirmDiscardingEvaluation, enableEvaluationControls, populateEvaluationDetails,
-    refreshTestList
+    openEvaluationEditor, refreshTestList
 } from './evaluation-view.js';
+import {
+    CHANGES_SAVED_MESSAGE, type PageSaveResult, pageDraftChanged, pageSaveIsDisabled,
+    requestPageExit, updatePageSaveState
+} from './page-edit.js';
 import { showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
 
@@ -31,25 +35,24 @@ export function newEvaluationButtonClicked(e: Event): void {
 
     forgetSavedFile();
     setEvaluation(normalizeEvaluation({}));
-    populateEvaluationDetails();
-    refreshTestList();
     enableEvaluationControls();
-    showScreen('evaluation');
+    openEvaluationEditor();
     showStatusMessage('evaluation-editor-msg', 'Started a new evaluation.');
 }
 
 /** Opens the evaluation screen on the evaluation already loaded. */
 export function editEvaluationButtonClicked(e: Event): void {
     e.preventDefault();
-    populateEvaluationDetails();
-    refreshTestList();
-    showScreen('evaluation');
+    openEvaluationEditor();
 }
 
 /** Opens the functional test editor on a new script. */
 export function addTestButtonClicked(e: Event): void {
-    e.preventDefault();
-    newTestButtonClicked('evaluation');
+    requestPageExit(e, {
+        save: saveEvaluationChanges,
+        continueNavigation: () => newTestButtonClicked('evaluation'),
+        successStatusId: 'test-editor-msg'
+    });
 }
 
 /**
@@ -61,8 +64,22 @@ export function addTestButtonClicked(e: Event): void {
  * it. This is where a copy is given instructions of its own.
  */
 export function editSelectedTestButtonClicked(e: Event): void {
-    e.preventDefault();
-    editTest('eval-select-test', 'evaluation');
+    const select = requireEl<HTMLSelectElement>('eval-select-test');
+    const selectedName = testDisplayName(getEvaluation().tests[Number(select.value)]);
+    requestPageExit(e, {
+        save: saveEvaluationChanges,
+        continueNavigation: () => {
+            refreshTestList();
+            const restoredIndex = getEvaluation().tests.findIndex(
+                (test) => testDisplayName(test) === selectedName
+            );
+            requireEl<HTMLSelectElement>('eval-select-test').value = String(
+                Math.max(0, restoredIndex)
+            );
+            editTest('eval-select-test', 'evaluation');
+        },
+        successStatusId: 'test-editor-msg'
+    });
 }
 
 /**
@@ -87,7 +104,7 @@ export function deleteTestButtonClicked(e: Event): void {
     }
 
     tests.splice(index, 1);
-    markEvaluationChanged();
+    pageDraftChanged('eval-editor-save', 'evaluation-editor-msg');
     refreshTestList();
 
     // Land on the script that took its place, or the last one when it was the
@@ -97,27 +114,40 @@ export function deleteTestButtonClicked(e: Event): void {
     showStatusMessage('evaluation-editor-msg', `${name} was deleted.`);
 }
 
-/** Finishes with the evaluation screen and hands the tester the landing screen. */
-export function saveEvaluationButtonClicked(e: Event): void {
-    e.preventDefault();
+/** Commits every Evaluation-page change while keeping the editor open. */
+export function saveEvaluationChanges(): PageSaveResult {
+    if (!commitPageEditSession()) {
+        return { saved: false };
+    }
+
     refreshTestList();
-    // The details may have been edited here, and the landing screen shows them.
     populateEvaluationDetails();
-    showScreen('landing');
-    showStatusMessage('evaluation-msg', 'Evaluation ready to perform.');
+    updatePageSaveState('eval-editor-save');
+    return { saved: true, message: CHANGES_SAVED_MESSAGE };
 }
 
-/**
- * Leaves the evaluation screen without declaring it finished.
- *
- * Nothing is held back until Save -- the evaluation is changed in place as it
- * is edited -- so this differs from Save only in not announcing that the
- * evaluation is ready to perform. It exists because leaving a screen should
- * never require claiming to be done with it.
- */
-export function backEvaluationButtonClicked(e: Event): void {
+/** Saves Evaluation-page changes without treating Save as navigation. */
+export function saveEvaluationButtonClicked(e: Event): void {
     e.preventDefault();
-    refreshTestList();
-    populateEvaluationDetails();
-    showScreen('landing');
+    if (pageSaveIsDisabled('eval-editor-save')) {
+        return;
+    }
+
+    const result = saveEvaluationChanges();
+    if (result.saved) {
+        showStatusMessage('evaluation-editor-msg', result.message || CHANGES_SAVED_MESSAGE, 0);
+    }
+}
+
+/** Leaves the Evaluation editor, guarding only its uncommitted page draft. */
+export function backEvaluationButtonClicked(e: Event): void {
+    requestPageExit(e, {
+        save: saveEvaluationChanges,
+        continueNavigation: () => {
+            refreshTestList();
+            populateEvaluationDetails();
+            showScreen('landing');
+        },
+        successStatusId: 'evaluation-msg'
+    });
 }

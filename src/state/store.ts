@@ -19,6 +19,27 @@ let evaluation: Evaluation = {
 };
 
 /**
+ * A full-page editor works against a private evaluation draft.
+ *
+ * `evaluation` remains the last committed version. The draft is exposed
+ * through the normal getters while an editor is open, which lets the existing
+ * UI keep mutating plain objects without leaking those mutations to the rest
+ * of the app before Save changes is pressed.
+ */
+let pageEditDraft: Evaluation | null = null;
+let pageEditBaseline = '';
+
+/** Evaluations are JSON data, so the saved representation is also a safe clone boundary. */
+function cloneEvaluation(value: Evaluation): Evaluation {
+    return JSON.parse(JSON.stringify(value)) as Evaluation;
+}
+
+/** The comparison users care about: whether saving would change the evaluation. */
+function serializedEvaluation(value: Evaluation): string {
+    return JSON.stringify(value);
+}
+
+/**
  * Index of the functional test being edited.
  *
  * Assigned a *string* from selectUC.value in some paths and a number in others.
@@ -42,27 +63,85 @@ let currentRunIndex = -1;
 /**
  * Whether the evaluation has changed since it was last written to a file.
  *
- * Set by the handlers that knowingly change the evaluation rather than by the
- * store itself: everything mutates the evaluation in place, so there is no one
- * place a write passes through. It exists so that starting a new evaluation can
- * warn before discarding work, and it errs towards not warning.
+ * Set when a page draft is committed, or by Perform and dialog handlers that
+ * knowingly change the committed evaluation in place. It exists so that
+ * starting a new evaluation can warn before discarding work.
  */
 let unsavedChanges = false;
 
 /** The evaluation currently loaded. */
 export function getEvaluation(): Evaluation {
-    return evaluation;
+    return pageEditDraft || evaluation;
 }
 
 /** Replaces the loaded evaluation, discarding any previous one. */
 export function setEvaluation(value: Evaluation): void {
     evaluation = value;
+    pageEditDraft = null;
+    pageEditBaseline = '';
     unsavedChanges = false;
+}
+
+/** Starts a full-page edit session from the last committed evaluation. */
+export function beginPageEditSession(): void {
+    pageEditDraft = cloneEvaluation(evaluation);
+    pageEditBaseline = serializedEvaluation(pageEditDraft);
+}
+
+/**
+ * Treats the current draft as the untouched starting state.
+ *
+ * A new functional test is inserted into the private draft so the existing
+ * editor can render it. The blank scaffold must not itself trigger a warning,
+ * but dropping the session still removes it because it was never committed.
+ */
+export function resetPageEditBaseline(): void {
+    if (pageEditDraft) {
+        pageEditBaseline = serializedEvaluation(pageEditDraft);
+    }
+}
+
+/** True when the current editor draft differs from its last saved state. */
+export function hasPendingPageChanges(): boolean {
+    return pageEditDraft !== null
+        && serializedEvaluation(pageEditDraft) !== pageEditBaseline;
+}
+
+/**
+ * Commits the whole editor draft and keeps a clean draft open for further edits.
+ */
+export function commitPageEditSession(): boolean {
+    if (!pageEditDraft || !hasPendingPageChanges()) {
+        return false;
+    }
+
+    evaluation = cloneEvaluation(pageEditDraft);
+    unsavedChanges = true;
+    pageEditDraft = cloneEvaluation(evaluation);
+    pageEditBaseline = serializedEvaluation(pageEditDraft);
+    return true;
+}
+
+/** Drops every uncommitted page change and returns to the committed evaluation. */
+export function discardPageEditSession(): void {
+    pageEditDraft = null;
+    pageEditBaseline = '';
+}
+
+/** Ends a clean or committed edit session before another screen is shown. */
+export function endPageEditSession(): void {
+    pageEditDraft = null;
+    pageEditBaseline = '';
 }
 
 /** True when the evaluation holds changes that have not been written to a file. */
 export function hasUnsavedChanges(): boolean {
     return unsavedChanges;
+}
+
+/** True when closing the tab would lose either committed or still-pending work. */
+export function hasUnsavedWork(): boolean {
+    return unsavedChanges || hasPendingPageChanges();
 }
 
 /** Records that the evaluation has been changed. */
@@ -132,7 +211,7 @@ export function setCurrentRunIndex(value: number): void {
 
 /** The test currently selected. Throws nothing: an out-of-range index yields undefined. */
 export function getCurrentTest(): FunctionalTest {
-    return evaluation.tests[currentTestIndex as number];
+    return getEvaluation().tests[currentTestIndex as number];
 }
 
 /** The run currently selected within the current test. */

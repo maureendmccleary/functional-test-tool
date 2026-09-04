@@ -25,9 +25,9 @@ const { getEvaluation, markEvaluationChanged, markEvaluationSaved, setEvaluation
 const ELEMENT_IDS = [
     'select-test', 'eval-select-test', 'eval-edit', 'eval-view-results', 'eval-save-file',
     'edit-test', 'perform-test', 'eval-edit-test', 'eval-delete-test', 'evaluation-msg',
-    'test-editor-msg',
-    'perform-msg', 'eval-workspace', 'eval-asset', 'eval-name',
-    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file', 'perform-save', 'perform-back'
+    'test-editor-msg', 'perform-msg', 'perform-save', 'perform-back',
+    'eval-workspace', 'eval-asset', 'eval-name',
+    'landing-workspace', 'landing-asset', 'landing-name', 'app-status', 'landing-heading', 'eval-save-file'
 ];
 
 /** An AbortError, exactly as the pickers reject on cancel. */
@@ -151,6 +151,39 @@ describe('loading', () => {
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('That file is not valid JSON. No evaluation was loaded.');
+    });
+
+    test('an unsupported JSON shape is reported without replacing the current evaluation', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'still loaded' });
+        vi.mocked(picker.loadFile).mockResolvedValue([]);
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toBe('That file is not a supported evaluation: The top level must be an object. '
+                + 'No evaluation was loaded.');
+        expect(getEvaluation().name).toBe('still loaded');
+    });
+
+    test('a malformed issue is reported before results can crash', async () => {
+        setEvaluation({ tests: [], score: 0, name: 'still loaded' });
+        vi.mocked(picker.loadFile).mockResolvedValue({
+            tests: [{
+                name: 'bad issue', ats: ['NVDA'], steps: [],
+                runs: [{
+                    assistiveTechnology: 'NVDA', score: 2,
+                    steps: [{ issues: [null] }], extensions: []
+                }]
+            }]
+        });
+
+        await loadEvalButtonClicked(clickEvent());
+
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toContain('issues[0] must be an object');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toContain('No evaluation was loaded.');
+        expect(getEvaluation().name).toBe('still loaded');
     });
 
     test('an unsupported browser is told so before any dialog opens', async () => {
@@ -293,44 +326,41 @@ describe('saving', () => {
     test('a cancelled dialog reports nothing', async () => {
         vi.mocked(picker.saveEvaluation).mockRejectedValue(cancellation());
 
-        await expect(saveFileButtonClick(clickEvent('perform-save'))).resolves.toBeUndefined();
+        await expect(saveFileButtonClick(clickEvent('eval-save-file'))).resolves.toBeUndefined();
 
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
-        expect(documentStub.getElementById('perform-msg')!.textContent).toBe('');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
     });
 
-    test('a write failure is reported in the right region', async () => {
+    test('a write failure is reported on the landing screen', async () => {
         vi.mocked(picker.saveEvaluation).mockRejectedValue(new Error('disk full'));
 
-        await saveFileButtonClick(clickEvent('perform-save'));
+        await saveFileButtonClick(clickEvent('eval-save-file'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
-        expect(documentStub.getElementById('perform-msg')!.textContent)
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('The file could not be saved.');
     });
 
-    test('the status goes to the region belonging to the control that was used', async () => {
+    test('the durable file action reports success on the landing screen', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
-        await saveFileButtonClick(clickEvent('perform-save'));
+        await saveFileButtonClick(clickEvent('eval-save-file'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
         // Read before the first await: once the picker opens, dispatch is over
         // and event.currentTarget is null.
-        expect(documentStub.getElementById('perform-msg')!.textContent)
-            .toBe('Functional Test data saved!');
-        expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toBe('Evaluation data saved.');
     });
 
-    test('saving results sends focus to Back, not to Save', async () => {
+    test('saving returns focus to the Download Evaluation File button', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
-        await saveFileButtonClick(clickEvent('perform-save'));
+        await saveFileButtonClick(clickEvent('eval-save-file'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
-        // Landing on Save again made a reader read on into the next button.
-        expect(documentStub.getElementById('perform-back')!.focused).toBe(true);
-        expect(documentStub.getElementById('perform-save')!.focused).toBe(false);
+        expect(documentStub.getElementById('eval-save-file')!.focused).toBe(true);
     });
 
     test('cancelling also puts focus back rather than stranding it', async () => {
@@ -342,15 +372,14 @@ describe('saving', () => {
     });
 
     test('a save with a file already chosen announces at once, with no delay', async () => {
-        // Nothing opened, so nothing stole focus and there is nothing to wait
-        // for. Waiting would make saving mid-test feel like it had not worked.
+        // Nothing opened, so nothing stole focus and there is nothing to wait for.
         vi.mocked(picker.hasSavedFile).mockReturnValue(true);
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
-        await saveFileButtonClick(clickEvent('perform-save'));
+        await saveFileButtonClick(clickEvent('eval-save-file'));
 
-        expect(documentStub.getElementById('perform-msg')!.textContent)
-            .toBe('Functional Test data saved!');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent)
+            .toBe('Evaluation data saved.');
     });
 
     test('loading forgets where the last evaluation was saved', async () => {
@@ -363,7 +392,7 @@ describe('saving', () => {
         expect(picker.forgetSavedFile).toHaveBeenCalled();
     });
 
-    test('an unrecognised control falls back to the evaluation status region', async () => {
+    test('the evaluation control uses the evaluation status region', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('eval-save-file'));
@@ -371,5 +400,26 @@ describe('saving', () => {
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
             .toBe('Evaluation data saved.');
+    });
+
+    test('the Perform download reports success in the Perform status region', async () => {
+        vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
+
+        await saveFileButtonClick(clickEvent('perform-save'));
+        vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
+
+        expect(documentStub.getElementById('perform-msg')!.textContent)
+            .toBe('Functional Test data saved!');
+        expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
+    });
+
+    test('the Perform download returns focus to Back', async () => {
+        vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
+
+        await saveFileButtonClick(clickEvent('perform-save'));
+        vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
+
+        expect(documentStub.getElementById('perform-back')!.focused).toBe(true);
+        expect(documentStub.getElementById('perform-save')!.focused).toBe(false);
     });
 });

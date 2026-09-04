@@ -1,11 +1,14 @@
 import { defaults } from './config/defaults.js';
 import { fillCheckboxMenu } from './ui/controls.js';
+import { addModalDialogEvents } from './ui/dialogs.js';
 import { requireEl } from './ui/dom.js';
 import {
     addFormEvents, backButtonClicked, editTestButtonClicked, newExtensionButtonClicked,
     newStepButtonClick, saveTestButtonClicked
 } from './ui/editor-view.js';
-import { evalViewResultsButtonClicked } from './ui/eval-results-view.js';
+import {
+    addEvalResultsDialogEvents, evalViewResultsButtonClicked
+} from './ui/eval-results-view.js';
 import {
     addTestButtonClicked, backEvaluationButtonClicked, deleteTestButtonClicked,
     editEvaluationButtonClicked, editSelectedTestButtonClicked, newEvaluationButtonClicked,
@@ -19,12 +22,16 @@ import {
 } from './ui/issue-dialog.js';
 import { populateEvaluationDetails, refreshTestList } from './ui/evaluation-view.js';
 import { restoreScreenTitle } from './ui/screens.js';
-import { hasUnsavedChanges } from './state/store.js';
+import { hasUnsavedWork } from './state/store.js';
 import { addOverallCommentsDialogEvents } from './ui/overall-comments-dialog.js';
 import { addPerformScreenEvents, performButtonClick } from './ui/perform-view.js';
+import { addPageEditDialogEvents } from './ui/page-edit.js';
+import { addViewResultsDialogEvents } from './ui/results-view.js';
+import { decorateIconLabels } from './ui/icons.js';
 
 /** Wires the controls that exist in index.html from the start. */
 function initialize(): void {
+    decorateIconLabels();
     requireEl("eval-file-load").addEventListener("click", loadEvalButtonClicked);
     requireEl("eval-new").addEventListener("click", newEvaluationButtonClicked);
     requireEl("eval-edit").addEventListener("click", editEvaluationButtonClicked);
@@ -46,7 +53,6 @@ function initialize(): void {
 
     const testSave = requireEl("test-save");
     testSave.addEventListener('click', saveTestButtonClicked);
-    testSave.removeAttribute("disabled");
     requireEl("test-editor-back").addEventListener('click', backButtonClicked);
 
     requireEl("perform-test").addEventListener('click', performButtonClick);
@@ -77,7 +83,7 @@ function initialize(): void {
     // a closed tab. The browser shows its own wording; nothing here can choose
     // it, and it only fires at all once the tester has interacted with the page.
     window.addEventListener('beforeunload', (e) => {
-        if (!hasUnsavedChanges()) {
+        if (!hasUnsavedWork()) {
             return;
         }
         e.preventDefault();
@@ -86,6 +92,10 @@ function initialize(): void {
     });
 
     addIssueDialogEvents();
+    addPageEditDialogEvents();
+    addEvalResultsDialogEvents();
+    addViewResultsDialogEvents();
+    addModalDialogEvents();
     // Whatever closes a dialog -- its button, Escape, or code -- the page is
     // named for the screen underneath again.
     for (const dialog of document.querySelectorAll('dialog')) {

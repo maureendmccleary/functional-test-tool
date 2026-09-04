@@ -10,6 +10,7 @@ import {
 } from '../state/store.js';
 import { clearTable, fillListbox, setLinkedText } from './controls.js';
 import { requireEl } from './dom.js';
+import { createIcon } from './icons.js';
 import { showStatusMessage } from './status.js';
 import { populateIssuesList, populateSummaryList, updateAddIssueButtons } from './perform-view.js';
 import { setSectionTitle } from './screens.js';
@@ -52,7 +53,7 @@ export function showAddIssueControls(): void {
     const addIssueDiv = requireEl("add-issue-controls");
     addIssueDiv.classList.remove('inactive');
     fillListbox(defaults["issue-scores"], "add-issue-score");
-    requireEl("add-issue-dialog-new-issue").setAttribute("disabled", "true");
+    requireEl("add-issue-dialog-new-issue").classList.add("inactive");
     requireEl("add-issue-dialog-save").classList.remove("inactive");
     requireEl<HTMLInputElement>("add-issue-description").value = "";
     requireEl<HTMLInputElement>("add-issue-findingURL").value = "";
@@ -62,11 +63,11 @@ export function showAddIssueControls(): void {
     requireEl("add-issue-description").focus();
 }
 
-/** Hides the issue fields and re-enables New Issue. */
+/** Hides the issue fields and replaces Save Issue with New Issue. */
 export function hideAddIssueControls(): void {
     requireEl("add-issue-controls").classList.add("inactive");
     requireEl("add-issue-dialog-save").classList.add("inactive");
-    requireEl("add-issue-dialog-new-issue").removeAttribute("disabled");
+    requireEl("add-issue-dialog-new-issue").classList.remove("inactive");
 }
 
 /** How the dialog names the record it is open on: "Step 3", "Extension 1". */
@@ -120,17 +121,15 @@ export function insertIssueTable(newIssue: Issue): void {
     cell4.textContent = newIssue.score;
     cell4.classList.add("cell-centered");
     const deleteIssueButton = document.createElement('button');
+    deleteIssueButton.classList.add('icon-only');
     deleteIssueButton.setAttribute("aria-label", "delete");
-    const deleteIssueIcon = document.createElement("span");
-    deleteIssueIcon.classList.add("fa", "fa-trash");
-    deleteIssueButton.appendChild(deleteIssueIcon);
+    deleteIssueButton.appendChild(createIcon("trash"));
     deleteIssueButton.type = "button";
     deleteIssueButton.addEventListener("click", deleteIssue);
     const editIssueButton = document.createElement('button');
+    editIssueButton.classList.add('icon-only');
     editIssueButton.setAttribute("aria-label", "edit");
-    const editIssueIcon = document.createElement("span");
-    editIssueIcon.classList.add("fa", "fa-edit");
-    editIssueButton.appendChild(editIssueIcon);
+    editIssueButton.appendChild(createIcon("edit"));
     editIssueButton.type = "button";
     editIssueButton.addEventListener("click", editIssue);
     cell5.appendChild(editIssueButton);
@@ -309,7 +308,7 @@ export function newIssueButtonClick(): void {
 
 /** Opens the issue dialog for the step whose button was activated. */
 /**
- * Closes the dialog from its own X button, asking first if an issue is part
+ * Closes the dialog from either of its controls, asking first if an issue is part
  * entered.
  *
  * Registered once at startup, not each time the dialog opens. As an inline
@@ -328,6 +327,8 @@ export function addIssueDialogCloseClicked(e: Event): void {
 /** Wires the issue dialog's own controls. Called once at startup. */
 export function addIssueDialogEvents(): void {
     requireEl("add-issue-dialog-close").addEventListener("click", addIssueDialogCloseClicked);
+    requireEl("add-issue-dialog-close-bottom")
+        .addEventListener("click", addIssueDialogCloseClicked);
     requireEl("add-issue-dialog-new-issue").addEventListener("click", newIssueButtonClick);
 }
 
@@ -343,6 +344,13 @@ export function addIssueDialogEvents(): void {
  *
  * Focus is the exception: it can only be placed once the dialog is open.
  */
+/** Gets the owning button even when its decorative icon received the click. */
+export function getIssueButtonControlId(e: Event): string {
+    return (e.currentTarget as HTMLElement | null)?.id
+        || (e.target as HTMLElement | null)?.id
+        || "";
+}
+
 export function addIssueButtonClick(e: Event): void {
     e.preventDefault();
     const addIssueDialog = requireEl<HTMLDialogElement>("add-issue-dialog");
@@ -350,7 +358,7 @@ export function addIssueButtonClick(e: Event): void {
 
     // Which button was pressed decides both the index and the list it indexes,
     // so an issue found in extension 2 is not filed against step 2.
-    const buttonId = (e.target as HTMLElement).id;
+    const buttonId = getIssueButtonControlId(e);
     setCurrentSection(isExtensionElementId(buttonId) ? 'extensions' : 'steps');
     setCurrentStep(getStepNumber(buttonId));
 
@@ -382,7 +390,7 @@ export function addIssueButtonClick(e: Event): void {
     heading.focus();
 }
 
-// Runs whenever the add-issue dialog closes (X button, Escape key, or programmatic close), so the
+// Runs whenever the add-issue dialog closes (either button, Escape key, or programmatic close), so the
 // step buttons and issue lists always reflect the current data regardless of how the dialog was
 // dismissed. The score is deliberately left alone: it is the tester's, and recomputing it here
 // would overwrite their choice and mark an untouched run as performed.

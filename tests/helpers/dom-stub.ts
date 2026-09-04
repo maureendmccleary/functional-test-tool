@@ -12,9 +12,19 @@ export interface ElementStub {
     innerHTML: string;
     textContent: string;
     focused: boolean;
+    open: boolean;
     children: ElementStub[];
     attributes: Map<string, string>;
+    classList: {
+        add(...tokens: string[]): void;
+        remove(...tokens: string[]): void;
+        contains(token: string): boolean;
+    };
     focus(): void;
+    showModal(): void;
+    close(): void;
+    addEventListener(type: string, listener: EventListener): void;
+    dispatchEvent(event: Event): boolean;
     appendChild(child: ElementStub): ElementStub;
     removeChild(child: ElementStub): ElementStub;
     setAttribute(name: string, value: string): void;
@@ -30,16 +40,49 @@ export interface ElementStub {
 }
 
 export function createElementStub(tagName = 'DIV'): ElementStub {
+    const classes = new Set<string>();
+    const listeners = new Map<string, EventListener[]>();
     const element: ElementStub = {
         tagName,
         value: '',
         innerHTML: '',
         textContent: '',
         focused: false,
+        open: false,
         children: [],
         attributes: new Map<string, string>(),
+        classList: {
+            add(...tokens) {
+                tokens.forEach((token) => classes.add(token));
+            },
+            remove(...tokens) {
+                tokens.forEach((token) => classes.delete(token));
+            },
+            contains(token) {
+                return classes.has(token);
+            }
+        },
         focus() {
             element.focused = true;
+        },
+        showModal() {
+            element.open = true;
+        },
+        close() {
+            element.open = false;
+        },
+        addEventListener(type, listener) {
+            const registered = listeners.get(type) || [];
+            if (!registered.includes(listener)) {
+                registered.push(listener);
+            }
+            listeners.set(type, registered);
+        },
+        dispatchEvent(event) {
+            (listeners.get(event.type) || []).forEach((listener) => {
+                listener.call(element as unknown as EventTarget, event);
+            });
+            return true;
         },
         appendChild(child) {
             element.children.push(child);
@@ -75,6 +118,7 @@ export interface DocumentStub {
     elements: Map<string, ElementStub>;
     getElementById(id: string): ElementStub | null;
     createElement(tagName: string): ElementStub;
+    createElementNS(namespace: string, tagName: string): ElementStub;
     querySelector(selector: string): ElementStub | null;
 }
 
@@ -108,6 +152,9 @@ export function installDocumentStub(ids: string[]): DocumentStub {
             return elements.get(id) ?? null;
         },
         createElement(tagName) {
+            return createElementStub(tagName);
+        },
+        createElementNS(_namespace, tagName) {
             return createElementStub(tagName);
         },
         querySelector(selector) {

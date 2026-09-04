@@ -1,9 +1,15 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
-import { clearDocumentStub, installDocumentStub, type DocumentStub } from './helpers/dom-stub.js';
-import { setCurrentRunIndex, setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
 import {
-    openTestRun, outOfScopeChanged, populateIssuesList, populateSummaryList
+    clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
+} from './helpers/dom-stub.js';
+import {
+    markEvaluationChanged, markEvaluationSaved, setCurrentRunIndex, setCurrentTestIndex,
+    setEvaluation
+} from '../src/state/store.js';
+import {
+    openTestRun, outOfScopeChanged, performBackButtonClicked, populateIssuesList, populateSummaryList,
+    setIssueButtonContent
 } from '../src/ui/perform-view.js';
 
 /**
@@ -141,6 +147,26 @@ describe('populateIssuesList', () => {
     });
 });
 
+describe('issue button labels', () => {
+    test('adds, removes and restores the plus with the Add Issue label', () => {
+        const button = createElementStub('BUTTON');
+
+        setIssueButtonContent(button as unknown as HTMLElement, 0);
+        expect(button.children[0].classList.contains('icon-add')).toBe(true);
+        expect(button.children[1].textContent).toBe('Add Issue');
+        expect(button.classList.contains('control-with-icon')).toBe(true);
+
+        setIssueButtonContent(button as unknown as HTMLElement, 2);
+        expect(button.children).toHaveLength(1);
+        expect(button.children[0].textContent).toBe('View 2 Issues');
+        expect(button.classList.contains('control-with-icon')).toBe(false);
+
+        setIssueButtonContent(button as unknown as HTMLElement, 0);
+        expect(button.children).toHaveLength(2);
+        expect(button.children[0].classList.contains('icon-add')).toBe(true);
+    });
+});
+
 describe('populateSummaryList', () => {
     test('lists the comments recorded against the run', () => {
         twoTests([['Stoppers:', 'Focus is lost']], 0);
@@ -250,5 +276,23 @@ describe('outOfScopeChanged', () => {
     test('a checkbox with no record behind it is left alone', () => {
         evaluationWithRun();
         expect(() => outOfScopeChanged(changeEvent('out-of-scope[7]', true))).not.toThrow();
+    });
+});
+
+describe('leaving Perform', () => {
+    test('keeps the existing file-save warning exactly', () => {
+        markEvaluationChanged();
+        const confirm = vi.fn(() => false);
+        (globalThis as unknown as { window: { confirm: typeof confirm } }).window = { confirm };
+        const preventDefault = vi.fn();
+
+        performBackButtonClicked({ preventDefault } as unknown as Event);
+
+        expect(preventDefault).toHaveBeenCalledOnce();
+        expect(confirm).toHaveBeenCalledWith(
+            'These results have not been saved to a file. They are kept while the app is open, '
+            + 'but will be lost if you close it. Go back anyway?'
+        );
+        markEvaluationSaved();
     });
 });

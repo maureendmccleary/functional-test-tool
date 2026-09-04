@@ -224,7 +224,9 @@ export function appendNewlines(div: HTMLElement): void {
  * whose aria-controls names the region it shows and hides.
  */
 export function toggleMenu(e: Event): void {
-    const target = e.target as HTMLElement;
+    // A labelled control may contain a decorative SVG. currentTarget is the
+    // button that owns the handler even when its icon was what received the click.
+    const target = (e.currentTarget || e.target) as HTMLElement;
     const isExpanded = target.getAttribute('aria-expanded') === 'true';
 
     target.setAttribute('aria-expanded', String(!isExpanded));

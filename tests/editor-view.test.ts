@@ -4,11 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FunctionalTest } from '../src/types.js';
 import { emptyFunctionalTest } from '../src/domain/functional-test.js';
-import { blurFormField, collapseAssistiveTechnologies } from '../src/ui/editor-view.js';
+import { toggleMenu } from '../src/ui/controls.js';
+import {
+    blurFormField, collapseAssistiveTechnologies, getEventControlId, saveTestChanges,
+    updateTestEditorBackLink
+} from '../src/ui/editor-view.js';
 import {
     clearDocumentStub, createElementStub, installDocumentStub, type DocumentStub
 } from './helpers/dom-stub.js';
-import { setCurrentTestIndex, setEvaluation } from '../src/state/store.js';
+import {
+    beginPageEditSession, discardPageEditSession, getCurrentTest, hasPendingPageChanges,
+    hasUnsavedChanges, setCurrentTestIndex, setEvaluation
+} from '../src/state/store.js';
 
 /**
  * The editor writes each field straight onto the test using the field's `name`
@@ -40,7 +47,8 @@ function withTest(): FunctionalTest {
     const test = emptyFunctionalTest(1);
     setEvaluation({ tests: [test], score: 0 });
     setCurrentTestIndex(0);
-    return test;
+    beginPageEditSession();
+    return getCurrentTest();
 }
 
 describe('editor field names', () => {
@@ -59,6 +67,14 @@ describe('editor field names', () => {
 });
 
 describe('blurFormField', () => {
+    beforeEach(() => {
+        installDocumentStub(['test-save', 'test-editor-msg']);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
     test('writes the start location and operating system onto the test', () => {
         const test = withTest();
         blurFormField(blurEvent('startLocation', 'https://example.org'));
@@ -75,6 +91,45 @@ describe('blurFormField', () => {
 
         expect(test.steps[0].instructions).toBe('do the thing');
         expect(test.steps[0].issues).toHaveLength(1);
+    });
+});
+
+describe('delete button events', () => {
+    test('uses the button id when a nested icon is clicked', () => {
+        const event = {
+            currentTarget: { id: 'step-delete[3]' },
+            target: { id: '' }
+        } as unknown as Event;
+
+        expect(getEventControlId(event)).toBe('step-delete[3]');
+    });
+});
+
+describe('the editor Back link', () => {
+    let documentStub: DocumentStub;
+
+    beforeEach(() => {
+        documentStub = installDocumentStub(['test-editor-back']);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('names and targets the evaluation screen when opened from there', () => {
+        updateTestEditorBackLink('evaluation');
+        const back = documentStub.getElementById('test-editor-back')!;
+
+        expect(back.getAttribute('href')).toBe('#evaluation-editor-heading');
+        expect(back.getAttribute('aria-label')).toBe('Back to Evaluation');
+    });
+
+    test('names and targets Evaluation Home when opened from the landing screen', () => {
+        updateTestEditorBackLink('landing');
+        const back = documentStub.getElementById('test-editor-back')!;
+
+        expect(back.getAttribute('href')).toBe('#landing-heading');
+        expect(back.getAttribute('aria-label')).toBe('Back to Evaluation Home');
     });
 });
 
@@ -114,5 +169,82 @@ describe('collapsing the assistive technology list', () => {
         vi.advanceTimersByTime(SPOKEN_MS);
         expect(documentStub.getElementById('app-status')!.textContent)
             .toBe('Assistive technology list collapsed.');
+    });
+});
+
+describe('expanding the assistive technology list', () => {
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('uses the disclosure button when its nested chevron receives the click', () => {
+        const documentStub = installDocumentStub(['test-edit-at-menu']);
+        const button = createElementStub('BUTTON');
+        button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', 'test-edit-at-menu');
+
+        toggleMenu({
+            currentTarget: button,
+            target: createElementStub('svg')
+        } as unknown as Event);
+
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        expect((documentStub.getElementById('test-edit-at-menu') as unknown as { hidden: boolean }).hidden)
+            .toBe(false);
+    });
+});
+
+describe('saving Functional Test changes', () => {
+    const saveIds = [
+        'select-test', 'eval-select-test', 'edit-test', 'perform-test',
+        'eval-edit-test', 'eval-delete-test', 'test-edit-at-menu', 'test-save',
+        'test-editor-msg', 'test-edit-name', 'test-edit-at-btn', 'app-status'
+    ];
+
+    beforeEach(() => {
+        installDocumentStub(saveIds);
+    });
+
+    afterEach(() => {
+        clearDocumentStub();
+    });
+
+    test('commits a valid draft, creates its run, and resets Save changes', () => {
+        const test = emptyFunctionalTest(1);
+        test.name = 'Original';
+        test.assistiveTechnologies = ['NVDA'];
+        setEvaluation({ tests: [test], score: 0 });
+        setCurrentTestIndex(0);
+        beginPageEditSession();
+        getCurrentTest().name = 'Updated';
+
+        const result = saveTestChanges();
+
+        expect(result.saved).toBe(true);
+        expect(result.message).toContain('Changes saved successfully.');
+        expect(hasPendingPageChanges()).toBe(false);
+        expect(hasUnsavedChanges()).toBe(true);
+        expect(document.getElementById('test-save')!.getAttribute('aria-disabled')).toBe('true');
+
+        discardPageEditSession();
+        expect(getCurrentTest().name).toBe('Updated');
+        expect(getCurrentTest().runs).toHaveLength(1);
+    });
+
+    test('keeps an invalid draft pending and focuses its first invalid field', () => {
+        const test = emptyFunctionalTest(1);
+        test.assistiveTechnologies = ['NVDA'];
+        setEvaluation({ tests: [test], score: 0 });
+        setCurrentTestIndex(0);
+        beginPageEditSession();
+        getCurrentTest().goal = 'Changed';
+
+        const result = saveTestChanges();
+
+        expect(result).toEqual({ saved: false });
+        expect(hasPendingPageChanges()).toBe(true);
+        expect(hasUnsavedChanges()).toBe(false);
+        expect((document.getElementById('test-edit-name') as unknown as { focused: boolean }).focused)
+            .toBe(true);
     });
 });
