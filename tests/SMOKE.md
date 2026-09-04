@@ -234,6 +234,19 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       does not read the whole screen back after focus moves inside it
 - [ ] Every step shows its instructions, its recorded issues, and an **Add Issue**
       button
+- [ ] A web address written into a step's instructions is a **link**, and
+      activating it opens that page in a new tab with the tool still open behind
+      it. The same in extensions, in **View Results**, and in the step text the
+      Add Issue dialog shows
+- [ ] An address with no scheme -- `catalogue.example.org/holds` -- stays plain
+      text rather than being guessed at
+- [ ] `javascript:` and `data:` addresses stay plain text and are **never**
+      activatable
+      <br>*(evaluation files are passed between testers, so a step is untrusted
+      input like any other)*
+- [ ] A full stop after an address is not part of the link, and an address
+      inside brackets does not swallow the closing one
+- [ ] Each link is a tab stop between the step's text and its Add Issue button
 - [ ] Assistive Technology reads as **text**, showing NVDA. There is no
       technology to choose: the script is written for one
 - [ ] Close it, select the `- JAWS` entry, **Perform**: the same steps with the
@@ -477,6 +490,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Those values match what was saved from the perform screen, and the
       Scorecard's Overall Rating averages the ratings
 - [ ] **Generate Report (.docx)** downloads a file that opens in Word
+- [ ] An address in a step's instructions is a working hyperlink in Word, so a
+      reader following up a finding can go straight to the page
 - [ ] In the report, both Problem Summary and Significant Issues are grouped
       under bold `Stoppers:` / `Major Issues:` / `Minor Issues` / `Advisory`
       lines, most severe first, with any unbannered line printed above them
