@@ -81,9 +81,9 @@ loaded. Your current evaluation is left alone.
 
 ### Saving the evaluation file
 
-**Save Evaluation** on the home screen writes the whole evaluation —
-every script, every result — to a `.json` file. This is the file you reload next
-time, and the file you send to a colleague.
+**Save Evaluation** on the home screen, beside **Load Evaluation File...**,
+writes the whole evaluation — every script, every result — to a `.json` file.
+This is the file you reload next time, and the file you send to a colleague.
 
 The first save asks where to put it, and suggests a name taken from the
 evaluation's own name. After that it writes straight back to the same file, so

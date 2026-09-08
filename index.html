@@ -56,8 +56,16 @@
       -->
       <p><a id="user-guide-link" href="./user-guide.html" target="_blank"
           rel="noopener noreferrer">User guide (opens in a new tab)</a></p>
+      <!--
+        Save sits beside Load because that is where anyone looking for it looks
+        first, even though it is the one control here that waits on an
+        evaluation existing. Grouping it with Edit and View Evaluation Results,
+        which share that disabled-until-loaded behaviour, left the group named
+        for files holding no way to write one.
+      -->
       <div role="group" aria-label="Evaluation File Actions">
         <button type="button" id="eval-file-load">Load Evaluation File...</button>
+        <button type="button" id="eval-save-file" disabled>Save Evaluation</button>
         <button type="button" id="eval-new">New Evaluation</button>
       </div>
       <br><br>
@@ -69,7 +77,6 @@
         <div role="group" aria-label="Evaluation Details Actions">
           <button type="button" id="eval-edit" data-icon="edit" disabled>Edit Evaluation</button>
           <button type="button" id="eval-view-results" disabled>View Evaluation Results</button>
-          <button type="button" id="eval-save-file" disabled>Save Evaluation</button>
         </div>
       </div>
       <br><br>

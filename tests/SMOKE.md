@@ -49,6 +49,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation**,
       **Edit Functional Test**, and **Perform** all become enabled, alongside
       **New Evaluation**
+- [ ] **Save Evaluation** is read out inside the "Evaluation File Actions"
+      group, straight after **Load Evaluation File...**, rather than down in
+      Evaluation Details
 - [ ] "Q3 2026 Accessibility Evaluation loaded successfully. 4 functional tests."
       is announced (it appears ~100 ms after the picker closes -- the delay is
       deliberate, see `../ARCHITECTURE.md`)
