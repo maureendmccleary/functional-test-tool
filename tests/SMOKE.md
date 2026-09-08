@@ -118,7 +118,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Change an Evaluation detail: **Save changes** enables immediately; restore
       the original value exactly and it becomes disabled again without a prompt
 - [ ] **Save changes** stays on the Evaluation screen, announces "Changes saved
-      successfully.", and becomes disabled
+      successfully. Use Save Evaluation on the home screen to write the file.",
+      and becomes disabled
 - [ ] **Back** after saving returns to the landing screen without a prompt; the
       functional test list is there with Edit and Perform, and there is no
       **New Functional Test** button
@@ -142,9 +143,10 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] **Edit Evaluation** -> **Add Test**, fill in Name and Goal, and check
       **NVDA**, **JAWS** and **ZoomText**
 - [ ] **Save changes** enables after the first effective edit, stays in the
-      editor when pressed, announces "Changes saved successfully" and which
-      functional tests were created: the one it saved as, then the two more, each named
-      `NN name - technology`
+      editor when pressed, announces "Changes saved successfully", which
+      functional tests were created -- the one it saved as, then the two more,
+      each named `NN name - technology` -- and, last, the reminder to use
+      **Save Evaluation**
 - [ ] The focused **Save changes** button remains a keyboard stop, is announced
       as disabled after saving, and enables again after another edit
 - [ ] Only the technology the editor is now on stays checked
@@ -642,6 +644,10 @@ appear on screen, and the two are separate elements now.
 - [ ] Loading a file announces the evaluation by name
 - [ ] **Save changes** in both editors announces "Changes saved successfully."
       once, and the Functional Test message also announces what it created
+- [ ] Both editors close with "Use Save Evaluation on the home screen to write
+      the file." -- last, after what was created, so the names are not buried
+- [ ] **Save and continue** from the Unsaved changes dialog carries the same
+      reminder on the screen it lands on
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
 - [ ] Saving on the perform screen, then going **Back**: the save message is not

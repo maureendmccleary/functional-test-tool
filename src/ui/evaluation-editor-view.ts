@@ -12,7 +12,7 @@ import {
 } from './evaluation-view.js';
 import {
     CHANGES_SAVED_MESSAGE, type PageSaveResult, pageDraftChanged, pageSaveIsDisabled,
-    requestPageExit, updatePageSaveState
+    pageSavedAnnouncement, requestPageExit, updatePageSaveState
 } from './page-edit.js';
 import { showScreen } from './screens.js';
 import { showStatusMessage } from './status.js';
@@ -135,7 +135,7 @@ export function saveEvaluationButtonClicked(e: Event): void {
 
     const result = saveEvaluationChanges();
     if (result.saved) {
-        showStatusMessage('evaluation-editor-msg', result.message || CHANGES_SAVED_MESSAGE, 0);
+        showStatusMessage('evaluation-editor-msg', pageSavedAnnouncement(result.message), 0);
     }
 }
 

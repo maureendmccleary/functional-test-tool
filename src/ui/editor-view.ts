@@ -17,7 +17,7 @@ import { openEvaluationEditor, populateEvaluationDetails, refreshTestList } from
 import { createIcon } from './icons.js';
 import {
     CHANGES_SAVED_MESSAGE, type PageSaveResult, pageDraftChanged, pageSaveIsDisabled,
-    requestPageExit, updatePageSaveState
+    pageSavedAnnouncement, requestPageExit, updatePageSaveState
 } from './page-edit.js';
 import { type ScreenName, setSectionTitle, showScreen } from './screens.js';
 import { announce, showStatusMessage } from './status.js';
@@ -520,7 +520,7 @@ export function saveTestButtonClicked(e: Event): void {
 
     const result = saveTestChanges();
     if (result.saved) {
-        showStatusMessage('test-editor-msg', result.message || CHANGES_SAVED_MESSAGE, 0);
+        showStatusMessage('test-editor-msg', pageSavedAnnouncement(result.message), 0);
     }
 }
 

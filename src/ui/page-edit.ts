@@ -7,6 +7,21 @@ import { showStatusMessage } from './status.js';
 
 export const CHANGES_SAVED_MESSAGE = 'Changes saved successfully.';
 
+/**
+ * Every draft save carries this. Save changes commits the draft into the
+ * evaluation the tab is holding and writes no file, so a scripter who heard
+ * only "Changes saved successfully" closed the tab and lost the work. Save
+ * Evaluation is on the landing screen rather than either editor, which is why
+ * the reminder has to say where it is.
+ */
+export const SAVE_TO_FILE_REMINDER =
+    'Use Save Evaluation on the home screen to write the file.';
+
+/** A draft-save announcement, told that nothing has reached a file yet. */
+export function pageSavedAnnouncement(message?: string): string {
+    return `${message || CHANGES_SAVED_MESSAGE} ${SAVE_TO_FILE_REMINDER}`;
+}
+
 /** The outcome a page-specific save hands to the shared leave dialog. */
 export interface PageSaveResult {
     saved: boolean;
@@ -87,7 +102,7 @@ function saveAndContinue(): void {
     endPageEditSession();
     request.continueNavigation();
     showStatusMessage(
-        request.successStatusId, result.message || CHANGES_SAVED_MESSAGE, 0
+        request.successStatusId, pageSavedAnnouncement(result.message), 0
     );
 }
 

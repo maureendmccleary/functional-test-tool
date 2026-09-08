@@ -108,6 +108,11 @@ your edits as a draft until you choose **Save changes**. The button stays
 unavailable until something has actually changed, so it is never inviting you to
 save nothing.
 
+**Save changes does not write a file.** It commits the draft into the evaluation
+this browser tab is holding, and nothing more; that is why it says so and points
+you at **Save Evaluation** every time. Until you use **Save Evaluation**, closing
+the tab still loses the work.
+
 If you leave one of those screens with a draft still open, an **Unsaved changes**
 dialog offers three choices:
 

@@ -4,7 +4,8 @@ import {
     setEvaluation
 } from '../src/state/store.js';
 import {
-    addPageEditDialogEvents, CHANGES_SAVED_MESSAGE, pageDraftChanged, pageSaveIsDisabled,
+    addPageEditDialogEvents, CHANGES_SAVED_MESSAGE, pageDraftChanged, pageSavedAnnouncement,
+    pageSaveIsDisabled, SAVE_TO_FILE_REMINDER,
     type PageSaveResult, requestPageExit, updatePageSaveState
 } from '../src/ui/page-edit.js';
 import {
@@ -133,7 +134,16 @@ describe('the unsaved page exit guard', () => {
         expect(continued).toHaveBeenCalledOnce();
         expect(getEvaluation().name).toBe('Changed');
         expect(documentStub.getElementById('destination-status')!.textContent)
-            .toBe(CHANGES_SAVED_MESSAGE);
+            .toBe(pageSavedAnnouncement());
+    });
+
+    test('every draft save says the work has not reached a file', () => {
+        // Save changes commits into the tab and writes nothing, which is what
+        // sent a scripter looking for a file that was never written.
+        expect(pageSavedAnnouncement()).toBe(`${CHANGES_SAVED_MESSAGE} ${SAVE_TO_FILE_REMINDER}`);
+        expect(pageSavedAnnouncement('Saved as 01 Place a hold - NVDA.'))
+            .toBe(`Saved as 01 Place a hold - NVDA. ${SAVE_TO_FILE_REMINDER}`);
+        expect(SAVE_TO_FILE_REMINDER).toContain('Save Evaluation');
     });
 
     test('a failed save stays on the page and does not discard the draft', () => {
