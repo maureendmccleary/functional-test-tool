@@ -5,7 +5,7 @@
 - [What the tool is for](#what-the-tool-is-for)
 - [Opening and saving your work](#opening-and-saving-your-work)
   - [Loading an evaluation](#loading-an-evaluation)
-  - [Downloading the evaluation file](#downloading-the-evaluation-file)
+  - [Saving the evaluation file](#saving-the-evaluation-file)
   - [Downloading the report](#downloading-the-report)
   - [Unsaved changes](#unsaved-changes)
 - [For scripters](#for-scripters)
@@ -61,7 +61,7 @@ has to be able to say so.
 
 ## Opening and saving your work
 
-Everything you do lives in the browser tab until you download it. Downloading is
+Everything you do lives in the browser tab until you save it to a file. Saving is
 what makes it permanent.
 
 > **Chrome or Edge is required for loading and saving files.** The file controls
@@ -79,17 +79,17 @@ Cancelling the file dialog does nothing at all — it is not an error.
 If a file cannot be read you are told which problem it hit, and nothing is
 loaded. Your current evaluation is left alone.
 
-### Downloading the evaluation file
+### Saving the evaluation file
 
-**Download Evaluation File** on the home screen writes the whole evaluation —
+**Save Evaluation** on the home screen writes the whole evaluation —
 every script, every result — to a `.json` file. This is the file you reload next
 time, and the file you send to a colleague.
 
-The first download asks where to put it, and suggests a name taken from the
+The first save asks where to put it, and suggests a name taken from the
 evaluation's own name. After that it writes straight back to the same file, so
-you can download often without a dialog interrupting you each time.
+you can save often without a dialog interrupting you each time.
 
-**Download it often.** Nothing is stored on a server.
+**Save often.** Nothing is stored on a server.
 
 ### Downloading the report
 
@@ -116,8 +116,8 @@ dialog offers three choices:
 - **Save and continue** — apply the draft, then leave
 
 Separately, closing or reloading the browser tab with work that has not been
-downloaded raises the browser's own warning. That is your last line of defence,
-not a substitute for downloading.
+saved raises the browser's own warning. That is your last line of defence, not a
+substitute for saving.
 
 ---
 
@@ -126,8 +126,8 @@ not a substitute for downloading.
 ### Starting a new evaluation
 
 **New Evaluation** on the home screen opens the Evaluation screen on an empty
-evaluation. If the evaluation already open has changes you have not downloaded,
-you are asked before it is replaced.
+evaluation. If the evaluation already open has changes you have not saved, you
+are asked before it is replaced.
 
 Fill in the three cover fields:
 
@@ -138,7 +138,7 @@ Fill in the three cover fields:
 | **Evaluation** | the name of this evaluation, such as "Q3 2026 Accessibility Evaluation" |
 
 The Asset and Evaluation appear on the report's cover, and the Evaluation name
-is used for the downloaded file names.
+is used for the saved file names.
 
 ### Editing an evaluation
 
@@ -263,9 +263,10 @@ Work down the steps, performing the task with the technology named at the top.
 **Get past a failure and keep going** where you can, so the whole task is
 covered; that is why problems can appear on steps after a severe one.
 
-**Download Functional Test Results** saves the whole evaluation, including
-everything you have recorded. **Back** returns to the home screen — your results
-stay in the tool, but they are only permanent once downloaded.
+**Save Evaluation** saves the whole evaluation, including everything you have
+recorded. It is the same action as **Save Evaluation** on the home screen and
+writes the same file. **Back** returns to the home screen — your results stay in
+the tool, but they are only permanent once saved.
 
 ### Adding an issue
 
