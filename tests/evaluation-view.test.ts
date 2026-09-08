@@ -351,10 +351,10 @@ describe('saving', () => {
         // Read before the first await: once the picker opens, dispatch is over
         // and event.currentTarget is null.
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
-            .toBe('Evaluation data saved.');
+            .toBe('Evaluation saved to file.');
     });
 
-    test('saving returns focus to the Download Evaluation File button', async () => {
+    test('saving returns focus to the Save Evaluation button', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('eval-save-file'));
@@ -379,7 +379,7 @@ describe('saving', () => {
         await saveFileButtonClick(clickEvent('eval-save-file'));
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
-            .toBe('Evaluation data saved.');
+            .toBe('Evaluation saved to file.');
     });
 
     test('loading forgets where the last evaluation was saved', async () => {
@@ -399,21 +399,21 @@ describe('saving', () => {
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
         expect(documentStub.getElementById('evaluation-msg')!.textContent)
-            .toBe('Evaluation data saved.');
+            .toBe('Evaluation saved to file.');
     });
 
-    test('the Perform download reports success in the Perform status region', async () => {
+    test('the Perform save reports success in the Perform status region', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('perform-save'));
         vi.advanceTimersByTime(SAVE_ANNOUNCE_DELAY_MS);
 
         expect(documentStub.getElementById('perform-msg')!.textContent)
-            .toBe('Functional Test data saved!');
+            .toBe('Evaluation saved to file.');
         expect(documentStub.getElementById('evaluation-msg')!.textContent).toBe('');
     });
 
-    test('the Perform download returns focus to Back', async () => {
+    test('the Perform save returns focus to Back', async () => {
         vi.mocked(picker.saveEvaluation).mockResolvedValue(undefined);
 
         await saveFileButtonClick(clickEvent('perform-save'));

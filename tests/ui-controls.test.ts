@@ -36,10 +36,10 @@ describe('Back controls', () => {
     });
 });
 
-describe('file download controls', () => {
-    test('file-writing actions say Download while in-memory actions still say Save', () => {
-        expect(html).toContain('id="eval-save-file" disabled>Download Evaluation File</button>');
-        expect(html).toContain('id="perform-save">Download Functional Test Results</button>');
+describe('file saving controls', () => {
+    test('both file-writing actions carry the same Save Evaluation label', () => {
+        expect(html).toContain('id="eval-save-file" disabled>Save Evaluation</button>');
+        expect(html).toContain('id="perform-save">Save Evaluation</button>');
         expect(tagWithId('eval-editor-save')).toContain('aria-disabled="true"');
         expect(html).toContain('aria-disabled="true">Save changes</button>');
         expect(tagWithId('test-save')).toContain('aria-disabled="true"');
