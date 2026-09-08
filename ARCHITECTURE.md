@@ -63,8 +63,9 @@ changed.
 - **Functional test editor** — one script: its metadata, its assistive
   technologies, and its steps.
 - **Perform** — one run of one script: every step, every extension, an issue
-  list and Add Issue button per step, the score and the summary. Its Download
-  action writes the current evaluation data without leaving the run.
+  list and Add Issue button per step, the score and the summary. Its Save
+  Evaluation action writes the current evaluation to its file without leaving the
+  run, and is deliberately labelled the same as the landing screen's.
 
 Perform was a modal dialog, and Add Issue, View Results and View Summary all
 open from it, which made those nested modals. Nesting cost real bugs: a message
@@ -431,8 +432,8 @@ status region belonging to the control used, and checks
 screen reader users work in Firefox, where these APIs do not exist.
 
 **Saving asks where only once.** `io/file-picker.ts` keeps the handle from the
-first save and writes straight to it afterwards, so a tester can download an
-updated evaluation without a file dialog stealing focus every time, which
+first save and writes straight to it afterwards, so a tester can save an updated
+evaluation without a file dialog stealing focus every time, which
 is most of what makes saving disruptive with a screen reader. The handle is
 deliberately *not* taken from opening a file: Save would then overwrite whatever
 was loaded with no prompt, and the first thing anyone opens is a file they did

@@ -21,18 +21,24 @@ import { showStatusMessage } from './status.js';
 const LOAD_ANNOUNCE_DELAY_MS = 100;
 const SAVE_ANNOUNCE_DELAY_MS = 500;
 
+/**
+ * What every save reports. Both controls write the same evaluation to the same
+ * file, so they say the same thing: a screen-specific wording read as a
+ * different action, which is what sent testers looking for a second save.
+ */
+const SAVE_MESSAGE = 'Evaluation saved to file.';
+
 /** Status and focus destinations for each durable file-saving action. */
 const SAVE_STATUS_TARGETS: Record<
-    string, { elementId: string; message: string; focusId?: string }
+    string, { elementId: string; focusId?: string }
 > = {
     // Back is quieter than returning to Save and reading on into View Results.
     'perform-save': {
         elementId: 'perform-msg',
-        message: 'Functional Test data saved!',
         focusId: 'perform-back'
     }
 };
-const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg', message: 'Evaluation data saved.' };
+const DEFAULT_SAVE_STATUS = { elementId: 'evaluation-msg' };
 
 const UNSUPPORTED_BROWSER_MESSAGE =
     'This browser cannot open or save files. Use Chrome or Edge.';
@@ -308,9 +314,9 @@ export async function saveFileButtonClick(e: Event): Promise<void> {
     if (silent) {
         // No dialog opened, so nothing stole focus and there is nothing to wait
         // for. Announcing at once is what makes saving mid-test feel immediate.
-        showStatusMessage(status.elementId, status.message, 0);
+        showStatusMessage(status.elementId, SAVE_MESSAGE, 0);
         return;
     }
-    reportAfterDialog(status.elementId, status.message,
+    reportAfterDialog(status.elementId, SAVE_MESSAGE,
         SAVE_ANNOUNCE_DELAY_MS, { focusId });
 }

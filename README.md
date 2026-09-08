@@ -10,7 +10,7 @@ technology, so no technology an evaluation covers is left untested.
 ## Using the tool
 
 [USER-GUIDE.md](USER-GUIDE.md) is the guide for scripters and testers: what the
-tool is for, loading and downloading files, writing scripts, and performing
+tool is for, loading and saving files, writing scripts, and performing
 them. It is published with the app at
 [/user-guide.html](https://maureendmccleary.github.io/functional-test-tool/user-guide.html),
 built from that Markdown by `scripts/build-user-guide.mjs`, and linked from the

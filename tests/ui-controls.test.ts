@@ -36,10 +36,10 @@ describe('Back controls', () => {
     });
 });
 
-describe('file download controls', () => {
-    test('file-writing actions say Download while in-memory actions still say Save', () => {
-        expect(html).toContain('id="eval-save-file" disabled>Download Evaluation File</button>');
-        expect(html).toContain('id="perform-save">Download Functional Test Results</button>');
+describe('file saving controls', () => {
+    test('both file-writing actions carry the same Save Evaluation label', () => {
+        expect(html).toContain('id="eval-save-file" disabled>Save Evaluation</button>');
+        expect(html).toContain('id="perform-save">Save Evaluation</button>');
         expect(tagWithId('eval-editor-save')).toContain('aria-disabled="true"');
         expect(html).toContain('aria-disabled="true">Save changes</button>');
         expect(tagWithId('test-save')).toContain('aria-disabled="true"');
@@ -55,14 +55,27 @@ describe('page action placement', () => {
 
         expect(details).toContain('id="eval-edit"');
         expect(details).toContain('id="eval-view-results"');
-        expect(details).toContain('id="eval-save-file"');
 
         const fileActions = html.slice(
             html.indexOf('aria-label="Evaluation File Actions"'), detailsStart
         );
         expect(fileActions).not.toContain('id="eval-edit"');
         expect(fileActions).not.toContain('id="eval-view-results"');
-        expect(fileActions).not.toContain('id="eval-save-file"');
+    });
+
+    test('keeps Save with Load in the group named for files', () => {
+        // A tester hunting for the save reads the group called Evaluation File
+        // Actions and stops there, so a file group holding no way to write one
+        // is what sent them looking on other screens.
+        const detailsStart = html.indexOf('id="landing-details-heading"');
+        const fileActions = html.slice(
+            html.indexOf('aria-label="Evaluation File Actions"'), detailsStart
+        );
+
+        expect(fileActions).toContain('id="eval-file-load"');
+        expect(fileActions).toContain('id="eval-save-file"');
+        expect(fileActions.indexOf('id="eval-file-load"'))
+            .toBeLessThan(fileActions.indexOf('id="eval-save-file"'));
     });
 
     test('puts Evaluation editor actions immediately after its heading', () => {

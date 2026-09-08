@@ -54,9 +54,9 @@ describe('announce', () => {
         // A live region keeps its last message, and it reads as ordinary page
         // content afterwards: a save announced on one screen was still there to
         // be found on the next.
-        announce('Functional Test data saved!');
+        announce('Evaluation saved to file.');
         vi.advanceTimersByTime(SPOKEN_MS);
-        expect(liveRegion().textContent).toBe('Functional Test data saved!');
+        expect(liveRegion().textContent).toBe('Evaluation saved to file.');
 
         vi.runAllTimers();
         expect(liveRegion().textContent).toBe('');

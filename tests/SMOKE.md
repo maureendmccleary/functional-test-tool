@@ -46,9 +46,12 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] You stay on the landing screen, and its Evaluation Details show
       "Riverbend Public Library", "Library Catalogue" and
       "Q3 2026 Accessibility Evaluation" as text, not as editable fields
-- [ ] **Edit Evaluation**, **View Evaluation Results**, **Download Evaluation File**,
+- [ ] **Edit Evaluation**, **View Evaluation Results**, **Save Evaluation**,
       **Edit Functional Test**, and **Perform** all become enabled, alongside
       **New Evaluation**
+- [ ] **Save Evaluation** is read out inside the "Evaluation File Actions"
+      group, straight after **Load Evaluation File...**, rather than down in
+      Evaluation Details
 - [ ] "Q3 2026 Accessibility Evaluation loaded successfully. 4 functional tests."
       is announced (it appears ~100 ms after the picker closes -- the delay is
       deliberate, see `../ARCHITECTURE.md`)
@@ -214,8 +217,8 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] Edit a step's text on a test that already has recorded issues, then reopen
       **Perform**: the issues are still attached to that step
 - [ ] **Save changes** does **not** open a file picker: it commits the script in
-      memory and reports what it created. The file can be written from **Download
-      Evaluation File** on the landing screen or the Download action in Perform
+      memory and reports what it created. The file can be written from **Save
+      Evaluation** on the landing screen or the same action in Perform
 
 ## 4a. Extensions
 
@@ -237,8 +240,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
       earlier "loaded successfully" message is **not** read out again
 - [ ] The Perform Back control is exposed as a link named
       "Back to Evaluation Home"
-- [ ] **Download Functional Test Results** follows **Back** in the Perform action
-      group and downloads the current evaluation data without leaving the screen
+- [ ] **Save Evaluation** follows **Back** in the Perform action group, carries
+      the same label as the landing screen's, and writes the current evaluation
+      data without leaving the screen
 - [ ] **Back** after recording anything warns that the results are not saved to a
       file; cancelling stays on the perform screen with everything intact
 - [ ] Accepting that warning and going back, then performing the same test
@@ -533,9 +537,9 @@ cp tests/fixtures/evaluation-with-runs.json /tmp/smoke.json
 - [ ] An evaluation with no name set downloads as `evaluation-results.docx`,
       with no dangling separator left on the end
 - [ ] An evaluation named with something a file name cannot carry -- try
-      `Q3/2026: audit` -- still downloads, with those characters spaced out
-      rather than the download failing
-- [ ] **Download Evaluation File** on a *new* evaluation opens the save dialog
+      `Q3/2026: audit` -- still saves, with those characters spaced out
+      rather than the save failing
+- [ ] **Save Evaluation** on a *new* evaluation opens the save dialog
       already filled in with the evaluation's name and `.json`, or
       `evaluation.json` when it has no name yet
       <br>*(the file pickers cannot be driven from a test, so this one is only
@@ -640,14 +644,14 @@ appear on screen, and the two are separate elements now.
       once, and the Functional Test message also announces what it created
 - [ ] Deleting a step, and deleting an extension, are each announced
 - [ ] Saving two issues in a row announces **both**, not just the first
-- [ ] Download on the perform screen, then go **Back**: the save message is not
+- [ ] Saving on the perform screen, then going **Back**: the save message is not
       read out a second time on the landing screen, nor found there by browsing
 - [ ] Dialog messages interrupt rather than wait: saving, editing and deleting
       an issue are each heard even though focus moves at the same moment
-- [ ] **Download Evaluation File** puts focus back on that button and then
-      announces, without the document title being read first
-- [ ] **Download Functional Test Results** on the perform screen returns focus to
-      **Back** and announces, without reading on into the next button
+- [ ] **Save Evaluation** on the landing screen puts focus back on that button
+      and then announces, without the document title being read first
+- [ ] **Save Evaluation** on the perform screen returns focus to **Back** and
+      announces, without reading on into the next button
 - [ ] Cancelling either file picker restores focus appropriately and announces
       nothing
 - [ ] Loading a file lands focus on "Select a Functional Test" and announces the
@@ -670,13 +674,14 @@ appear on screen, and the two are separate elements now.
 
 - [ ] The **first** save asks where to put the file; every save after it writes
       straight there with no dialog, and says so at once
-- [ ] **Download Functional Test Results** on the perform screen, twice: the second
-      does not open a dialog
-- [ ] **Download Evaluation File** twice: the second save does not open a dialog
+- [ ] **Save Evaluation** on the perform screen, twice: the second does not open
+      a dialog
+- [ ] **Save Evaluation** on the landing screen twice: the second save does not
+      open a dialog
 - [ ] Load a different evaluation, then save: it asks again rather than writing
       over the file the previous one came from
 - [ ] **New Evaluation**, then save: it asks again for the same reason
-- [ ] **Download Evaluation File** over `C:\Users\momcc\smoke.json`
+- [ ] **Save Evaluation** over `C:\Users\momcc\smoke.json`
 - [ ] With no edits made in this session, the saved file matches the golden:
 
 ```bash
